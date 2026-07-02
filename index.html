@@ -178,6 +178,11 @@ input,select{font-family:inherit;}
 }
 .edit-btn:hover{background:#EEF0F3;}
 .project-row.edit-mode{background:#FFF9EC;border-color:var(--gold);}
+.project-row.locked-row{background:#F4F9F5;border-color:#CFE8D6;}
+.locked-badge{
+  background:#E9F7EE;color:#1E7A3D;font-size:11.5px;font-weight:700;
+  padding:5px 12px;border-radius:14px;white-space:nowrap;flex-shrink:0;
+}
 .edit-fields{display:flex;gap:8px;flex-wrap:wrap;}
 .edit-fields input{
   flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;
@@ -244,6 +249,15 @@ table.results tr:hover td{background:#F8F9FB;}
 .goal-pill{
   background:#EEF0F3;color:var(--navy);font-size:11px;padding:2px 9px;border-radius:12px;display:inline-block;
 }
+.approve-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
+}
+.approve-btn.is-approved{background:#E9F7EE;color:#1E7A3D;}
+.approve-btn.is-approved:hover{background:#d8f0e0;}
+.approve-btn.is-pending{background:#F1F2F5;color:var(--text-muted);}
+.approve-btn.is-pending:hover{background:#e2e5ea;}
+tr.approved-row td{background:#FAFDFB;}
 
 .pending-list{
   background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:22px;
@@ -355,6 +369,11 @@ table.results tr:hover td{background:#F8F9FB;}
       <select id="filterProgram"><option value="">كل البرامج التنفيذية</option></select>
       <select id="filterYear"><option value="">كل السنوات</option></select>
       <select id="filterManager"><option value="">كل المدراء</option></select>
+      <select id="filterApproval">
+        <option value="">كل المشاريع (معتمدة وغير معتمدة)</option>
+        <option value="approved">المعتمدة فقط</option>
+        <option value="pending">غير المعتمدة فقط</option>
+      </select>
       <input type="text" id="filterSearch" placeholder="بحث باسم المشروع...">
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
       <button class="print-btn" id="printBtn">طباعة</button>
@@ -369,6 +388,7 @@ table.results tr:hover td{background:#F8F9FB;}
           <th>اسم المشروع / المبادرة</th>
           <th>مالك المشروع</th>
           <th>السنة</th>
+          <th>اعتماد المدير العام</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
@@ -531,7 +551,7 @@ function renderYearPanel(panelEl, program){
     html += `<div class="empty-note">لا توجد مشاريع مدخلة لسنة ${y} بعد.</div>`;
   }else{
     items.forEach((it,i)=>{
-      if(editingProjectId === it.id){
+      if(editingProjectId === it.id && !it.approved){
         html += `
         <div class="project-row edit-mode">
           <div class="idx">${i+1}</div>
@@ -541,6 +561,16 @@ function renderYearPanel(panelEl, program){
           </div>
           <button class="save-btn" data-id="${it.id}" title="حفظ">✓</button>
           <button class="cancel-btn" title="إلغاء">✕</button>
+        </div>`;
+      }else if(it.approved){
+        html += `
+        <div class="project-row locked-row">
+          <div class="idx">${i+1}</div>
+          <div class="info">
+            <div class="pname2">${escapeHtml(it.projectName)}</div>
+            ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+          </div>
+          <span class="locked-badge" title="تم اعتماد هذا المشروع من المدير العام ولا يمكن تعديله أو حذفه">🔒 معتمد</span>
         </div>`;
       }else{
         html += `
@@ -626,7 +656,8 @@ function buildFilters(){
   fy.innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
   const fm = document.getElementById("filterManager");
   fm.innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${m}">${m}</option>`).join("");
-  [fg,fp,fy,fm].forEach(el=> el.onchange = renderAdmin);
+  const fa = document.getElementById("filterApproval");
+  [fg,fp,fy,fm,fa].forEach(el=> el.onchange = renderAdmin);
   document.getElementById("filterSearch").oninput = renderAdmin;
   document.getElementById("exportBtn").onclick = exportCsv;
   document.getElementById("printBtn").onclick = ()=> window.print();
@@ -636,12 +667,13 @@ function renderAdmin(){
   // summary
   const totalProjects = ALL_PROJECTS.length;
   const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
+  const approvedCount = ALL_PROJECTS.filter(p=>p.approved).length;
   const summary = document.getElementById("summaryGrid");
   summary.innerHTML = `
     <div class="summary-card"><div class="num">${totalProjects}</div><div class="lbl">إجمالي المشاريع المدخلة</div></div>
     <div class="summary-card"><div class="num">${programsWithData} / 36</div><div class="lbl">برامج بدأت الإدخال</div></div>
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
-    <div class="summary-card"><div class="num">5</div><div class="lbl">سنوات الخطة (2026-2030)</div></div>
+    <div class="summary-card"><div class="num">${approvedCount} / ${totalProjects}</div><div class="lbl">مشاريع معتمدة من المدير العام</div></div>
   `;
 
   // pending chips
@@ -656,6 +688,7 @@ function renderAdmin(){
   const prog = document.getElementById("filterProgram").value;
   const yr = document.getElementById("filterYear").value;
   const mgr = document.getElementById("filterManager").value;
+  const ap = document.getElementById("filterApproval").value;
   const q = document.getElementById("filterSearch").value.trim().toLowerCase();
 
   let rows = ALL_PROJECTS.filter(pr=>{
@@ -663,30 +696,43 @@ function renderAdmin(){
     if(prog && pr.programCode!==prog) return false;
     if(yr && String(pr.year)!==yr) return false;
     if(mgr && pr.govManager!==mgr) return false;
+    if(ap==="approved" && !pr.approved) return false;
+    if(ap==="pending" && pr.approved) return false;
     if(q && !(pr.projectName||"").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
 
   const tbody = document.getElementById("resultsBody");
   if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
   }else{
     tbody.innerHTML = rows.map(r=>`
-      <tr>
+      <tr class="${r.approved?'approved-row':''}">
         <td><span class="goal-pill">${r.goalName}</span></td>
         <td>${r.programCode} — ${r.programName}</td>
         <td>${r.govManager}</td>
         <td>${escapeHtml(r.projectName)}</td>
         <td>${escapeHtml(r.projectOwner||"—")}</td>
         <td><span class="year-pill">${r.year}</span></td>
+        <td><button class="approve-btn ${r.approved?'is-approved':'is-pending'}" data-id="${r.id}">${r.approved ? "✓ معتمد" : "اعتماد"}</button></td>
       </tr>
     `).join("");
+    tbody.querySelectorAll(".approve-btn").forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.dataset.id;
+        const isApproved = btn.classList.contains("is-approved");
+        updateProject(id, {
+          approved: !isApproved,
+          approvedAt: !isApproved ? firebase.firestore.FieldValue.serverTimestamp() : null
+        });
+      };
+    });
   }
 }
 
 function exportCsv(){
-  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة"]];
-  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year]));
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة","اعتماد المدير العام"]];
+  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year, r.approved?"معتمد":"غير معتمد"]));
   const csv = "\uFEFF" + rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const link = document.createElement("a");
