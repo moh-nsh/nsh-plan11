@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خطة التنمية الخمسية الحادية عشرة 2026-2030</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --navy:#1B2A3A;
+  --navy-light:#2A3F55;
+  --red:#C8102E;
+  --gold:#C9962E;
+  --bg:#F5F6F8;
+  --white:#FFFFFF;
+  --border:#E2E5EA;
+  --text-muted:#6B7688;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Tajawal','Cairo',sans-serif;
+  background:var(--bg);
+  color:var(--navy);
+  min-height:100vh;
+}
+h1,h2,h3,.brand-font{font-family:'Cairo',sans-serif;}
+button{font-family:inherit;cursor:pointer;border:none;}
+input,select{font-family:inherit;}
+.hidden{display:none !important;}
+
+/* ===== Top bar ===== */
+.topbar{
+  background:var(--navy);
+  color:#fff;
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+.topbar .left{display:flex;align-items:center;gap:12px;}
+.topbar img{height:42px;}
+.topbar .title{font-family:'Cairo',sans-serif;font-weight:700;font-size:16px;}
+.topbar .subtitle{font-size:12px;color:#c9d2de;}
+.topbar .actions{display:flex;align-items:center;gap:14px;}
+.topbar .who{font-size:13px;background:rgba(255,255,255,.1);padding:6px 14px;border-radius:20px;}
+.logout-btn{
+  background:var(--red);color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;
+}
+.logout-btn:hover{background:#a80d25;}
+
+/* ===== Login screen ===== */
+.login-wrap{
+  max-width:1000px;margin:0 auto;padding:40px 20px 60px;text-align:center;
+}
+.login-logos{display:flex;justify-content:center;align-items:center;gap:30px;margin-bottom:10px;}
+.login-logos img{height:90px;}
+.login-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:26px;color:var(--navy);margin-top:14px;}
+.login-sub{color:var(--text-muted);font-size:14px;margin-top:6px;margin-bottom:36px;}
+.gold-rule{width:70px;height:4px;background:var(--gold);margin:16px auto 30px;border-radius:2px;}
+
+.manager-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+  text-align:right;
+}
+.manager-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-right:5px solid var(--gold);
+  border-radius:12px;
+  padding:18px 20px;
+  transition:.15s;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.manager-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 20px rgba(27,42,58,.12);
+  border-right-color:var(--red);
+}
+.manager-card .name{font-family:'Cairo',sans-serif;font-weight:700;font-size:15px;color:var(--navy);}
+.manager-card .count{font-size:12px;color:var(--text-muted);margin-top:6px;}
+
+.admin-card{
+  margin-top:34px;
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--navy);color:#fff;
+  padding:12px 26px;border-radius:10px;
+  font-weight:700;font-size:14px;
+  box-shadow:0 4px 14px rgba(27,42,58,.25);
+}
+.admin-card:hover{background:var(--navy-light);}
+.admin-card svg{width:18px;height:18px;}
+
+/* ===== Modal ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(20,25,35,.55);
+  display:flex;align-items:center;justify-content:center;z-index:200;
+}
+.modal-box{
+  background:#fff;border-radius:14px;padding:30px 30px;width:340px;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;
+}
+.modal-box h3{font-family:'Cairo',sans-serif;margin-bottom:16px;color:var(--navy);}
+.modal-box input{
+  width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;
+  font-size:15px;text-align:center;letter-spacing:2px;margin-bottom:14px;
+}
+.modal-actions{display:flex;gap:10px;}
+.modal-actions button{flex:1;padding:11px;border-radius:8px;font-weight:700;font-size:14px;}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{background:#a80d25;}
+.btn-secondary{background:#EEF0F3;color:var(--navy);}
+.btn-secondary:hover{background:#e2e5ea;}
+.modal-error{color:var(--red);font-size:12px;margin-bottom:10px;min-height:16px;}
+
+/* ===== Dashboard shell ===== */
+.dash-wrap{max-width:1200px;margin:0 auto;padding:26px 20px 60px;}
+.section-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);margin-bottom:4px;}
+.section-desc{color:var(--text-muted);font-size:13px;margin-bottom:22px;}
+
+/* ===== Program card (manager view) ===== */
+.program-card{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  margin-bottom:22px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.program-head{
+  background:linear-gradient(90deg,var(--navy),var(--navy-light));
+  color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+}
+.program-head .pname{font-family:'Cairo',sans-serif;font-weight:700;font-size:15px;}
+.program-head .pcode{
+  background:var(--gold);color:var(--navy);font-weight:800;font-size:12px;
+  padding:3px 10px;border-radius:20px;
+}
+.central-box{
+  background:#F8F9FB;border-bottom:1px solid var(--border);
+  padding:10px 22px;font-size:12.5px;color:var(--text-muted);
+  display:flex;gap:20px;flex-wrap:wrap;
+}
+.central-box b{color:var(--navy);}
+
+.year-tabs{display:flex;gap:6px;padding:14px 22px 0;flex-wrap:wrap;}
+.year-tab{
+  padding:7px 18px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;
+  background:#EEF0F3;color:var(--text-muted);
+}
+.year-tab.active{background:var(--gold);color:var(--navy);}
+.year-tab .badge{
+  display:inline-block;margin-right:6px;background:var(--navy);color:#fff;
+  border-radius:10px;font-size:10px;padding:0 6px;
+}
+.year-tab.active .badge{background:var(--navy);color:#fff;}
+
+.year-panel{padding:18px 22px 22px;}
+.project-row{
+  display:flex;gap:10px;align-items:center;
+  border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;
+  background:#FCFCFD;
+}
+.project-row .idx{
+  width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;
+}
+.project-row .info{flex:1;}
+.project-row .pname2{font-weight:700;font-size:13.5px;}
+.project-row .powner{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.del-btn{
+  background:none;color:var(--red);font-size:18px;padding:4px 8px;border-radius:6px;
+}
+.del-btn:hover{background:#fdeaea;}
+.edit-btn{
+  background:none;color:var(--navy);font-size:15px;padding:4px 9px;border-radius:6px;
+}
+.edit-btn:hover{background:#EEF0F3;}
+.project-row.edit-mode{background:#FFF9EC;border-color:var(--gold);}
+.edit-fields{display:flex;gap:8px;flex-wrap:wrap;}
+.edit-fields input{
+  flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;
+}
+.edit-fields input:focus{outline:none;border-color:var(--gold);}
+.save-btn{
+  background:#1E7A3D;color:#fff;font-size:15px;width:30px;height:30px;border-radius:6px;flex-shrink:0;
+}
+.save-btn:hover{background:#166030;}
+.cancel-btn{
+  background:#EEF0F3;color:var(--navy);font-size:15px;width:30px;height:30px;border-radius:6px;flex-shrink:0;
+}
+.cancel-btn:hover{background:#e2e5ea;}
+.empty-note{color:var(--text-muted);font-size:12.5px;padding:6px 2px 14px;}
+
+.add-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.add-form input{
+  flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;
+}
+.add-form input:focus{outline:none;border-color:var(--gold);}
+.add-btn{
+  background:var(--navy);color:#fff;padding:10px 22px;border-radius:8px;font-weight:700;font-size:13.5px;
+}
+.add-btn:hover{background:var(--navy-light);}
+
+/* ===== Admin dashboard ===== */
+.filters-bar{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:16px 20px;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center;
+}
+.filters-bar select,.filters-bar input[type=text]{
+  padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:160px;
+}
+.export-btn{
+  background:var(--gold);color:var(--navy);padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;
+}
+.export-btn:hover{opacity:.85;}
+.print-btn{
+  background:#EEF0F3;color:var(--navy);padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;
+}
+
+.summary-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;
+}
+.summary-card{
+  background:#fff;border:1px solid var(--border);border-right:4px solid var(--gold);
+  border-radius:12px;padding:16px 18px;
+}
+.summary-card .num{font-family:'Cairo',sans-serif;font-weight:800;font-size:24px;color:var(--navy);}
+.summary-card .lbl{font-size:12px;color:var(--text-muted);margin-top:4px;}
+
+table.results{
+  width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+table.results th{
+  background:var(--navy);color:#fff;padding:12px 14px;font-size:12.5px;text-align:right;font-family:'Cairo',sans-serif;
+}
+table.results td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--border);}
+table.results tr:hover td{background:#F8F9FB;}
+.year-pill{
+  background:var(--navy);color:#fff;font-size:11px;padding:2px 9px;border-radius:12px;display:inline-block;
+}
+.goal-pill{
+  background:#EEF0F3;color:var(--navy);font-size:11px;padding:2px 9px;border-radius:12px;display:inline-block;
+}
+
+.pending-list{
+  background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:22px;
+}
+.pending-list h3{font-family:'Cairo',sans-serif;font-size:14px;margin-bottom:10px;color:var(--navy);}
+.pending-chip{
+  display:inline-block;background:#FDEAEA;color:var(--red);font-size:11.5px;
+  padding:4px 10px;border-radius:14px;margin:3px;
+}
+.ok-chip{
+  display:inline-block;background:#E9F7EE;color:#1E7A3D;font-size:11.5px;
+  padding:4px 10px;border-radius:14px;margin:3px;
+}
+
+.footer-note{
+  text-align:center;color:var(--text-muted);font-size:11.5px;padding:20px;
+}
+
+@media print{
+  .topbar,.filters-bar,.export-btn,.print-btn,.logout-btn,.add-form,.del-btn,.edit-btn{display:none !important;}
+  body{background:#fff;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-logos">
+      <img src="moh-logo.png" alt="وزارة الصحة">
+      <img src="plan-logo.png" alt="خطة التنمية الخمسية الحادية عشرة">
+    </div>
+    <div class="login-title">خطة التنمية الخمسية الحادية عشرة 2026 - 2030</div>
+    <div class="login-sub">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | تجميع مشاريع ومبادرات البرامج التنفيذية</div>
+    <div class="gold-rule"></div>
+    <div id="managerGrid" class="manager-grid"></div>
+    <div id="adminCardWrap">
+      <div class="admin-card" id="adminCardBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span id="adminLabel">قسم التخطيط والدراسات</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PASSWORD MODAL ===================== -->
+<div id="pwModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>دخول قسم التخطيط والدراسات</h3>
+    <input type="password" id="pwInput" placeholder="الرقم السري" maxlength="30">
+    <div class="modal-error" id="pwError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="pwCancel">إلغاء</button>
+      <button class="btn-primary" id="pwSubmit">دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MANAGER DASHBOARD ===================== -->
+<div id="managerScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">إدخال مشاريع البرامج التنفيذية</div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="who" id="managerWho"></div>
+      <button class="logout-btn" id="mgrLogout">تسجيل الخروج</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">برامجي التنفيذية</div>
+    <div class="section-desc">أضف مشروعًا أو مبادرة لكل سنة من سنوات الخطة (2026-2030) لكل برنامج تنفيذي تشرف عليه</div>
+    <div id="programsContainer"></div>
+  </div>
+</div>
+
+<!-- ===================== ADMIN DASHBOARD ===================== -->
+<div id="adminScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">قسم التخطيط والدراسات - لوحة التجميع والاستعراض</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">استعراض المشاريع المجمّعة</div>
+    <div class="section-desc">تصفية وتصدير جميع المشاريع المدخلة من مدراء البرامج التنفيذية بالمحافظة</div>
+
+    <div id="summaryGrid" class="summary-grid"></div>
+
+    <div class="pending-list">
+      <h3>حالة الإدخال حسب البرنامج التنفيذي (36 برنامج)</h3>
+      <div id="pendingChips"></div>
+    </div>
+
+    <div class="filters-bar">
+      <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
+      <select id="filterProgram"><option value="">كل البرامج التنفيذية</option></select>
+      <select id="filterYear"><option value="">كل السنوات</option></select>
+      <select id="filterManager"><option value="">كل المدراء</option></select>
+      <input type="text" id="filterSearch" placeholder="بحث باسم المشروع...">
+      <button class="export-btn" id="exportBtn">تصدير CSV</button>
+      <button class="print-btn" id="printBtn">طباعة</button>
+    </div>
+
+    <table class="results">
+      <thead>
+        <tr>
+          <th>الهدف الاستراتيجي</th>
+          <th>البرنامج التنفيذي</th>
+          <th>مدير المحافظة</th>
+          <th>اسم المشروع / المبادرة</th>
+          <th>مالك المشروع</th>
+          <th>السنة</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer-note">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | دائرة التخطيط والتنظيم الصحي</div>
+
+<script src="data.js"></script>
+<script>
+/* =========================================================================
+   إعداد Firebase — يجب استبدال القيم أدناه بإعدادات مشروعك الخاص في Firebase
+   (Firebase Console > Project Settings > General > Your apps > SDK setup)
+   ========================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME.firebaseapp.com",
+  projectId: "REPLACE_ME",
+  storageBucket: "REPLACE_ME.appspot.com",
+  messagingSenderId: "REPLACE_ME",
+  appId: "REPLACE_ME"
+};
+const COLLECTION_NAME = "nsh_plan11_projects"; // مجموعة بيانات جديدة ومستقلة
+const ADMIN_PASSWORD = "planning2026"; // غيّر هذا الرقم السري قبل النشر
+
+let db = null;
+let firebaseReady = false;
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  firebaseReady = FIREBASE_CONFIG.apiKey !== "REPLACE_ME";
+}catch(e){ console.error("Firebase init error", e); }
+
+let ALL_PROJECTS = []; // كاش محلي من Firestore
+let currentManager = null;
+let activeYearByProgram = {};
+let editingProjectId = null;
+
+/* ---------------- Firestore helpers ---------------- */
+function listenToProjects(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(COLLECTION_NAME).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    ALL_PROJECTS = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function addProject(data){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد. راجع إعداد Firebase في أعلى الملف."); return; }
+  data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+  db.collection(COLLECTION_NAME).add(data);
+}
+function deleteProject(id){
+  if(!firebaseReady) return;
+  db.collection(COLLECTION_NAME).doc(id).delete();
+}
+function updateProject(id, data){
+  if(!firebaseReady) return;
+  data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+  db.collection(COLLECTION_NAME).doc(id).update(data);
+}
+
+/* ---------------- Screens ---------------- */
+function showScreen(id){
+  ["loginScreen","managerScreen","adminScreen"].forEach(s=>{
+    document.getElementById(s).classList.toggle("hidden", s!==id);
+  });
+}
+
+/* ---------------- Login screen build ---------------- */
+function buildLogin(){
+  const grid = document.getElementById("managerGrid");
+  grid.innerHTML = "";
+  GOV_MANAGERS.forEach(name=>{
+    const count = PROGRAMS.filter(p=>p.govManager===name).length;
+    const card = document.createElement("div");
+    card.className = "manager-card";
+    card.style.cursor="pointer";
+    card.innerHTML = `<div class="name">${name}</div><div class="count">${count} برنامج تنفيذي</div>`;
+    card.onclick = ()=> enterManager(name);
+    grid.appendChild(card);
+  });
+  document.getElementById("adminLabel").textContent = ADMIN_NAME;
+}
+
+document.getElementById("adminCardBtn").onclick = ()=>{
+  document.getElementById("pwInput").value="";
+  document.getElementById("pwError").textContent="";
+  document.getElementById("pwModal").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("pwInput").focus(),50);
+};
+document.getElementById("pwCancel").onclick = ()=> document.getElementById("pwModal").classList.add("hidden");
+document.getElementById("pwSubmit").onclick = submitPw;
+document.getElementById("pwInput").addEventListener("keydown", e=>{ if(e.key==="Enter") submitPw(); });
+function submitPw(){
+  const val = document.getElementById("pwInput").value;
+  if(val === ADMIN_PASSWORD){
+    document.getElementById("pwModal").classList.add("hidden");
+    enterAdmin();
+  }else{
+    document.getElementById("pwError").textContent = "الرقم السري غير صحيح";
+  }
+}
+
+/* ---------------- Manager dashboard ---------------- */
+function enterManager(name){
+  currentManager = name;
+  document.getElementById("managerWho").textContent = name;
+  showScreen("managerScreen");
+  renderManagerPrograms();
+}
+document.getElementById("mgrLogout").onclick = ()=>{ currentManager=null; showScreen("loginScreen"); };
+
+function renderManagerPrograms(){
+  const container = document.getElementById("programsContainer");
+  container.innerHTML = "";
+  const myPrograms = PROGRAMS.filter(p=>p.govManager===currentManager);
+  myPrograms.forEach(p=>{
+    if(!activeYearByProgram[p.code]) activeYearByProgram[p.code] = YEARS[0];
+    const goal = STRATEGIC_GOALS.find(g=>g.id===p.goalId);
+    const card = document.createElement("div");
+    card.className = "program-card";
+    card.innerHTML = `
+      <div class="program-head">
+        <div class="pname">${p.name}</div>
+        <div class="pcode">${p.code} — ${goal.name}</div>
+      </div>
+      <div class="central-box">
+        <span><b>المدير المركزي:</b> ${p.central.name}</span>
+        <span><b>الوظيفة:</b> ${p.central.title}</span>
+        <span><b>هاتف:</b> ${p.central.phone}</span>
+      </div>
+      <div class="year-tabs" data-code="${p.code}"></div>
+      <div class="year-panel" data-code="${p.code}"></div>
+    `;
+    container.appendChild(card);
+    const tabsWrap = card.querySelector(".year-tabs");
+    YEARS.forEach(y=>{
+      const tab = document.createElement("div");
+      const cnt = ALL_PROJECTS.filter(pr=>pr.programCode===p.code && pr.year===y).length;
+      tab.className = "year-tab" + (activeYearByProgram[p.code]===y ? " active":"");
+      tab.innerHTML = `${y} <span class="badge">${cnt}</span>`;
+      tab.onclick = ()=>{ activeYearByProgram[p.code]=y; renderManagerPrograms(); };
+      tabsWrap.appendChild(tab);
+    });
+    renderYearPanel(card.querySelector(".year-panel"), p);
+  });
+  if(myPrograms.length===0){
+    container.innerHTML = "<div class='empty-note'>لا توجد برامج مرتبطة بهذا الاسم.</div>";
+  }
+}
+
+function renderYearPanel(panelEl, program){
+  const y = activeYearByProgram[program.code];
+  const items = ALL_PROJECTS.filter(pr=>pr.programCode===program.code && pr.year===y);
+  let html = "";
+  if(items.length===0){
+    html += `<div class="empty-note">لا توجد مشاريع مدخلة لسنة ${y} بعد.</div>`;
+  }else{
+    items.forEach((it,i)=>{
+      if(editingProjectId === it.id){
+        html += `
+        <div class="project-row edit-mode">
+          <div class="idx">${i+1}</div>
+          <div class="info edit-fields">
+            <input type="text" class="editName" value="${escapeAttr(it.projectName)}" placeholder="اسم المشروع / المبادرة">
+            <input type="text" class="editOwner" value="${escapeAttr(it.projectOwner||"")}" placeholder="مالك المشروع (اختياري)">
+          </div>
+          <button class="save-btn" data-id="${it.id}" title="حفظ">✓</button>
+          <button class="cancel-btn" title="إلغاء">✕</button>
+        </div>`;
+      }else{
+        html += `
+        <div class="project-row">
+          <div class="idx">${i+1}</div>
+          <div class="info">
+            <div class="pname2">${escapeHtml(it.projectName)}</div>
+            ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+          </div>
+          <button class="edit-btn" data-id="${it.id}" title="تعديل">✎</button>
+          <button class="del-btn" data-id="${it.id}" title="حذف">✕</button>
+        </div>`;
+      }
+    });
+  }
+  html += `
+    <div class="add-form">
+      <input type="text" placeholder="اسم المشروع / المبادرة" class="newProjName">
+      <input type="text" placeholder="مالك المشروع (اختياري)" class="newProjOwner">
+      <button class="add-btn">إضافة</button>
+    </div>`;
+  panelEl.innerHTML = html;
+
+  panelEl.querySelectorAll(".del-btn").forEach(btn=>{
+    btn.onclick = ()=>{ if(confirm("هل تريد حذف هذا المشروع؟")) deleteProject(btn.dataset.id); };
+  });
+  panelEl.querySelectorAll(".edit-btn").forEach(btn=>{
+    btn.onclick = ()=>{ editingProjectId = btn.dataset.id; renderManagerPrograms(); };
+  });
+  panelEl.querySelectorAll(".cancel-btn").forEach(btn=>{
+    btn.onclick = ()=>{ editingProjectId = null; renderManagerPrograms(); };
+  });
+  panelEl.querySelectorAll(".save-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const row = btn.closest(".project-row");
+      const nm = row.querySelector(".editName").value.trim();
+      const ow = row.querySelector(".editOwner").value.trim();
+      if(!nm){ row.querySelector(".editName").focus(); return; }
+      updateProject(btn.dataset.id, { projectName: nm, projectOwner: ow });
+      editingProjectId = null;
+      renderManagerPrograms();
+    };
+  });
+  const addBtn = panelEl.querySelector(".add-btn");
+  const nameInput = panelEl.querySelector(".newProjName");
+  const ownerInput = panelEl.querySelector(".newProjOwner");
+  const doAdd = ()=>{
+    const nm = nameInput.value.trim();
+    if(!nm){ nameInput.focus(); return; }
+    addProject({
+      programCode: program.code,
+      programName: program.name,
+      goalId: program.goalId,
+      goalName: STRATEGIC_GOALS.find(g=>g.id===program.goalId).name,
+      govManager: currentManager,
+      projectName: nm,
+      projectOwner: ownerInput.value.trim(),
+      year: y
+    });
+    nameInput.value=""; ownerInput.value="";
+  };
+  addBtn.onclick = doAdd;
+  nameInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
+  ownerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
+}
+
+/* ---------------- Admin dashboard ---------------- */
+function enterAdmin(){
+  showScreen("adminScreen");
+  buildFilters();
+  renderAdmin();
+}
+document.getElementById("adminLogout").onclick = ()=> showScreen("loginScreen");
+
+function buildFilters(){
+  const fg = document.getElementById("filterGoal");
+  fg.innerHTML = "<option value=''>كل البرامج الاستراتيجية</option>" +
+    STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  const fp = document.getElementById("filterProgram");
+  fp.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" +
+    PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  const fy = document.getElementById("filterYear");
+  fy.innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  const fm = document.getElementById("filterManager");
+  fm.innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${m}">${m}</option>`).join("");
+  [fg,fp,fy,fm].forEach(el=> el.onchange = renderAdmin);
+  document.getElementById("filterSearch").oninput = renderAdmin;
+  document.getElementById("exportBtn").onclick = exportCsv;
+  document.getElementById("printBtn").onclick = ()=> window.print();
+}
+
+function renderAdmin(){
+  // summary
+  const totalProjects = ALL_PROJECTS.length;
+  const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
+  const summary = document.getElementById("summaryGrid");
+  summary.innerHTML = `
+    <div class="summary-card"><div class="num">${totalProjects}</div><div class="lbl">إجمالي المشاريع المدخلة</div></div>
+    <div class="summary-card"><div class="num">${programsWithData} / 36</div><div class="lbl">برامج بدأت الإدخال</div></div>
+    <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
+    <div class="summary-card"><div class="num">5</div><div class="lbl">سنوات الخطة (2026-2030)</div></div>
+  `;
+
+  // pending chips
+  const chips = document.getElementById("pendingChips");
+  chips.innerHTML = PROGRAMS.map(p=>{
+    const has = ALL_PROJECTS.some(pr=>pr.programCode===p.code);
+    return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
+  }).join("");
+
+  // table
+  const g = document.getElementById("filterGoal").value;
+  const prog = document.getElementById("filterProgram").value;
+  const yr = document.getElementById("filterYear").value;
+  const mgr = document.getElementById("filterManager").value;
+  const q = document.getElementById("filterSearch").value.trim().toLowerCase();
+
+  let rows = ALL_PROJECTS.filter(pr=>{
+    if(g && String(pr.goalId)!==g) return false;
+    if(prog && pr.programCode!==prog) return false;
+    if(yr && String(pr.year)!==yr) return false;
+    if(mgr && pr.govManager!==mgr) return false;
+    if(q && !(pr.projectName||"").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
+
+  const tbody = document.getElementById("resultsBody");
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
+  }else{
+    tbody.innerHTML = rows.map(r=>`
+      <tr>
+        <td><span class="goal-pill">${r.goalName}</span></td>
+        <td>${r.programCode} — ${r.programName}</td>
+        <td>${r.govManager}</td>
+        <td>${escapeHtml(r.projectName)}</td>
+        <td>${escapeHtml(r.projectOwner||"—")}</td>
+        <td><span class="year-pill">${r.year}</span></td>
+      </tr>
+    `).join("");
+  }
+}
+
+function exportCsv(){
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة"]];
+  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year]));
+  const csv = "\uFEFF" + rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "مشاريع_الخطة_الخمسية_11.csv";
+  link.click();
+}
+
+function escapeHtml(str){
+  return String(str||"").replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));
+}
+function escapeAttr(str){
+  return escapeHtml(str);
+}
+
+/* ---------------- Init ---------------- */
+buildLogin();
+listenToProjects(()=>{
+  if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
+  if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
+});
+if(!firebaseReady){
+  console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
+}
+</script>
+</body>
+</html>
