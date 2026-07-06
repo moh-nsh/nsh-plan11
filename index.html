@@ -276,9 +276,35 @@ tr.approved-row td{background:#FAFDFB;}
   text-align:center;color:var(--text-muted);font-size:11.5px;padding:20px;
 }
 
+.meeting-btn{
+  background:var(--gold);color:var(--navy);padding:9px 20px;border-radius:8px;font-weight:700;font-size:13px;
+}
+.meeting-btn:hover{opacity:.85;}
+
+.meeting-goal-block{margin-bottom:36px;}
+.meeting-goal-title{
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;color:var(--navy);
+  background:#EEF0F3;padding:10px 18px;border-right:5px solid var(--gold);border-radius:8px;margin-bottom:12px;
+}
+table.meeting-table{width:100%;border-collapse:collapse;background:#fff;margin-bottom:6px;}
+table.meeting-table th{
+  background:var(--navy);color:#fff;padding:10px 8px;font-size:12.5px;font-family:'Cairo',sans-serif;
+  border:1px solid var(--navy-light);text-align:center;
+}
+table.meeting-table td{
+  border:1px solid var(--border);padding:8px;font-size:12px;vertical-align:top;text-align:center;
+}
+.mt-goal-cell{background:#F8F9FB;font-weight:700;font-size:12.5px;color:var(--navy);}
+.mt-prog-cell{text-align:right;font-weight:700;background:#FBFBFC;min-width:170px;}
+.mt-empty{color:#C7CBD3;}
+.mt-proj{padding:3px 0;text-align:right;line-height:1.4;}
+.mt-proj.mt-approved{color:#1E7A3D;font-weight:700;}
+
 @media print{
-  .topbar,.filters-bar,.export-btn,.print-btn,.logout-btn,.add-form,.del-btn,.edit-btn{display:none !important;}
+  .topbar,.filters-bar,.export-btn,.print-btn,.logout-btn,.add-form,.del-btn,.edit-btn,.meeting-btn{display:none !important;}
   body{background:#fff;}
+  .meeting-goal-block{page-break-inside:avoid;page-break-after:always;}
+  .meeting-goal-block:last-child{page-break-after:auto;}
 }
 </style>
 </head>
@@ -350,6 +376,7 @@ tr.approved-row td{background:#FAFDFB;}
       </div>
     </div>
     <div class="actions">
+      <button class="meeting-btn" id="openMeetingBtn">📋 عرض الاجتماع</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
@@ -394,6 +421,24 @@ tr.approved-row td{background:#FAFDFB;}
       <tbody id="resultsBody"></tbody>
     </table>
   </div>
+</div>
+
+<!-- ===================== MEETING VIEW (for presentation) ===================== -->
+<div id="meetingScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">عرض الاجتماع - المشاريع والمبادرات حسب البرنامج الاستراتيجي</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="print-btn" id="meetingPrintBtn">طباعة / PDF</button>
+      <button class="logout-btn" id="meetingBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap" id="meetingContent"></div>
 </div>
 
 <div class="footer-note">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | دائرة التخطيط والتنظيم الصحي</div>
@@ -455,7 +500,7 @@ function updateProject(id, data){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -644,6 +689,43 @@ function enterAdmin(){
   renderAdmin();
 }
 document.getElementById("adminLogout").onclick = ()=> showScreen("loginScreen");
+document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); renderMeetingView(); };
+document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
+
+function renderMeetingView(){
+  let html = "";
+  STRATEGIC_GOALS.forEach(g=>{
+    const progs = PROGRAMS.filter(p=>p.goalId===g.id);
+    html += `<div class="meeting-goal-block">`;
+    html += `<div class="meeting-goal-title">${g.id}. ${g.name}</div>`;
+    html += `<table class="meeting-table"><thead><tr>
+        <th style="min-width:110px;">البرنامج الاستراتيجي</th>
+        <th style="min-width:170px;">البرنامج التنفيذي</th>
+        ${YEARS.map(y=>`<th>${y}</th>`).join("")}
+      </tr></thead><tbody>`;
+    progs.forEach((p,pi)=>{
+      html += "<tr>";
+      if(pi===0){
+        html += `<td class="mt-goal-cell" rowspan="${progs.length}">${escapeHtml(g.name)}</td>`;
+      }
+      html += `<td class="mt-prog-cell">${p.code} ${escapeHtml(p.name)}</td>`;
+      YEARS.forEach(y=>{
+        const items = ALL_PROJECTS.filter(pr=>pr.programCode===p.code && pr.year===y);
+        if(items.length===0){
+          html += `<td class="mt-empty">—</td>`;
+        }else{
+          html += `<td>${items.map(it=>
+            `<div class="mt-proj ${it.approved?'mt-approved':''}">${it.approved?"✓ ":""}${escapeHtml(it.projectName)}</div>`
+          ).join("")}</td>`;
+        }
+      });
+      html += "</tr>";
+    });
+    html += "</tbody></table></div>";
+  });
+  document.getElementById("meetingContent").innerHTML = html;
+}
 
 function buildFilters(){
   const fg = document.getElementById("filterGoal");
@@ -753,6 +835,7 @@ buildLogin();
 listenToProjects(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
+  if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
 });
 if(!firebaseReady){
   console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
