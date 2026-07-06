@@ -169,6 +169,9 @@ input,select{font-family:inherit;}
 .project-row .info{flex:1;}
 .project-row .pname2{font-weight:700;font-size:13.5px;}
 .project-row .powner{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.project-row .pnote{font-size:12px;color:#8a6d1f;margin-top:2px;font-style:italic;}
+.project-row.approved-open-row{background:#F7FBF8;border-color:#DCEEE1;}
+.project-row.rejected-open-row{background:#FDF8F8;border-color:#F3D6D9;}
 .del-btn{
   background:none;color:var(--red);font-size:18px;padding:4px 8px;border-radius:6px;
 }
@@ -312,15 +315,29 @@ table.meeting-table td{
 .mt-empty{color:#C7CBD3;}
 
 .mt-proj-item{
-  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:6px;
   padding:5px 8px;border-radius:7px;margin-bottom:4px;background:#FAFAFB;text-align:right;
 }
 .mt-proj-item:last-child{margin-bottom:0;}
 .mt-proj-item.mt-status-approved{background:#E9F7EE;}
 .mt-proj-item.mt-status-rejected{background:#FDEAEA;}
+.mt-proj-main{flex:1;min-width:0;}
 .mt-proj-text{font-size:12px;line-height:1.35;}
 .mt-status-approved .mt-proj-text{color:#1E7A3D;font-weight:700;}
 .mt-status-rejected .mt-proj-text{color:#B3202E;text-decoration:line-through;}
+.mt-proj-note{font-size:11px;color:#8a6d1f;font-style:italic;margin-top:3px;line-height:1.3;}
+.mt-note-edit{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;}
+.mt-note-edit input{
+  flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;
+}
+.mt-note-edit input:focus{outline:none;border-color:var(--gold);}
+.mt-note-save,.mt-note-cancel{
+  font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;flex-shrink:0;
+}
+.mt-note-save{background:var(--navy);color:#fff;}
+.mt-note-save:hover{background:var(--navy-light);}
+.mt-note-cancel{background:#EEF0F3;color:var(--navy);}
+.mt-note-cancel:hover{background:#e2e5ea;}
 .mt-proj-actions{display:flex;gap:4px;flex-shrink:0;}
 .mt-act-btn{
   width:22px;height:22px;border-radius:5px;font-size:12px;font-weight:700;
@@ -332,6 +349,8 @@ table.meeting-table td{
 .mt-reject-btn{background:#EEF0F3;color:#B3202E;}
 .mt-reject-btn:hover{background:#fadadd;}
 .mt-reject-btn.is-active{background:#B3202E;color:#fff;}
+.mt-note-btn{background:#EEF0F3;color:#8a6d1f;}
+.mt-note-btn:hover{background:#f5edd6;}
 
 tr.rejected-row td{background:#FDF6F6;}
 
@@ -450,6 +469,7 @@ tr.rejected-row td{background:#FDF6F6;}
           <th>مدير المحافظة</th>
           <th>اسم المشروع / المبادرة</th>
           <th>مالك المشروع</th>
+          <th>ملاحظات</th>
           <th>السنة</th>
           <th>قرار المدير العام</th>
         </tr>
@@ -514,6 +534,7 @@ let ALL_PROJECTS = []; // كاش محلي من Firestore
 let currentManager = null;
 let activeYearByProgram = {};
 let editingProjectId = null;
+let editingNoteId = null; // لتحرير الملاحظات داخل صفحة عرض الاجتماع
 
 /* ---------------- Firestore helpers ---------------- */
 function listenToProjects(cb){
@@ -648,36 +669,32 @@ function renderYearPanel(panelEl, program){
     html += `<div class="empty-note">لا توجد مشاريع مدخلة لسنة ${y} بعد.</div>`;
   }else{
     items.forEach((it,i)=>{
-      if(editingProjectId === it.id && !it.approved && !it.rejected){
+      if(editingProjectId === it.id){
         html += `
         <div class="project-row edit-mode">
           <div class="idx">${i+1}</div>
           <div class="info edit-fields">
             <input type="text" class="editName" value="${escapeAttr(it.projectName)}" placeholder="اسم المشروع / المبادرة">
             <input type="text" class="editOwner" value="${escapeAttr(it.projectOwner||"")}" placeholder="مالك المشروع (اختياري)">
+            <input type="text" class="editNotes" value="${escapeAttr(it.notes||"")}" placeholder="ملاحظات (اختياري)">
           </div>
           <button class="save-btn" data-id="${it.id}" title="حفظ">✓</button>
           <button class="cancel-btn" title="إلغاء">✕</button>
         </div>`;
-      }else if(it.approved || it.rejected){
-        const isApproved = !!it.approved;
-        html += `
-        <div class="project-row locked-row ${isApproved?'':'rejected-locked'}">
-          <div class="idx">${i+1}</div>
-          <div class="info">
-            <div class="pname2">${escapeHtml(it.projectName)}</div>
-            ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
-          </div>
-          <span class="locked-badge ${isApproved?'':'rejected-badge'}" title="${isApproved ? 'تم اعتماد هذا المشروع من المدير العام ولا يمكن تعديله أو حذفه' : 'تم رفض هذا المشروع في الاجتماع ولا يمكن تعديله'}">${isApproved ? "🔒 معتمد" : "🔒 مرفوض"}</span>
-        </div>`;
       }else{
+        const rowClass = it.approved ? "approved-open-row" : (it.rejected ? "rejected-open-row" : "");
+        const badge = it.approved
+          ? `<span class="locked-badge" style="margin-inline-end:6px;">✓ معتمد</span>`
+          : (it.rejected ? `<span class="locked-badge rejected-badge" style="margin-inline-end:6px;">✕ مرفوض</span>` : "");
         html += `
-        <div class="project-row">
+        <div class="project-row ${rowClass}">
           <div class="idx">${i+1}</div>
           <div class="info">
             <div class="pname2">${escapeHtml(it.projectName)}</div>
             ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+            ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
           </div>
+          ${badge}
           <button class="edit-btn" data-id="${it.id}" title="تعديل">✎</button>
           <button class="del-btn" data-id="${it.id}" title="حذف">✕</button>
         </div>`;
@@ -688,6 +705,7 @@ function renderYearPanel(panelEl, program){
     <div class="add-form">
       <input type="text" placeholder="اسم المشروع / المبادرة" class="newProjName">
       <input type="text" placeholder="مالك المشروع (اختياري)" class="newProjOwner">
+      <input type="text" placeholder="ملاحظات (اختياري)" class="newProjNotes">
       <button class="add-btn">إضافة</button>
     </div>`;
   panelEl.innerHTML = html;
@@ -706,8 +724,9 @@ function renderYearPanel(panelEl, program){
       const row = btn.closest(".project-row");
       const nm = row.querySelector(".editName").value.trim();
       const ow = row.querySelector(".editOwner").value.trim();
+      const nt = row.querySelector(".editNotes").value.trim();
       if(!nm){ row.querySelector(".editName").focus(); return; }
-      updateProject(btn.dataset.id, { projectName: nm, projectOwner: ow });
+      updateProject(btn.dataset.id, { projectName: nm, projectOwner: ow, notes: nt });
       editingProjectId = null;
       renderManagerPrograms();
     };
@@ -715,6 +734,7 @@ function renderYearPanel(panelEl, program){
   const addBtn = panelEl.querySelector(".add-btn");
   const nameInput = panelEl.querySelector(".newProjName");
   const ownerInput = panelEl.querySelector(".newProjOwner");
+  const notesInput = panelEl.querySelector(".newProjNotes");
   const doAdd = ()=>{
     const nm = nameInput.value.trim();
     if(!nm){ nameInput.focus(); return; }
@@ -726,13 +746,15 @@ function renderYearPanel(panelEl, program){
       govManager: currentManager,
       projectName: nm,
       projectOwner: ownerInput.value.trim(),
+      notes: notesInput.value.trim(),
       year: y
     });
-    nameInput.value=""; ownerInput.value="";
+    nameInput.value=""; ownerInput.value=""; notesInput.value="";
   };
   addBtn.onclick = doAdd;
   nameInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
   ownerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
+  notesInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
 }
 
 /* ---------------- Admin dashboard ---------------- */
@@ -798,12 +820,23 @@ function renderMeetingView(){
           html += `<td>${items.map(it=>{
             const status = it.approved ? "approved" : (it.rejected ? "rejected" : "pending");
             const icon = status==="approved" ? "✓ " : (status==="rejected" ? "✕ " : "");
+            const isEditingNote = editingNoteId === it.id;
             return `
               <div class="mt-proj-item mt-status-${status}">
-                <span class="mt-proj-text">${icon}${escapeHtml(it.projectName)}</span>
+                <div class="mt-proj-main">
+                  <span class="mt-proj-text">${icon}${escapeHtml(it.projectName)}</span>
+                  ${(it.notes && !isEditingNote) ? `<div class="mt-proj-note">📝 ${escapeHtml(it.notes)}</div>` : ""}
+                  ${isEditingNote ? `
+                    <div class="mt-note-edit">
+                      <input type="text" class="mt-note-input" value="${escapeAttr(it.notes||"")}" placeholder="أضف ملاحظة (مثلاً: تغيّرت الصياغة، أو نُقل لسنة أخرى)...">
+                      <button class="mt-note-save" data-id="${it.id}">حفظ</button>
+                      <button class="mt-note-cancel">إلغاء</button>
+                    </div>` : ""}
+                </div>
                 <span class="mt-proj-actions">
                   <button class="mt-act-btn mt-approve-btn ${status==='approved'?'is-active':''}" data-id="${it.id}" data-action="approved" title="اعتماد">✓</button>
                   <button class="mt-act-btn mt-reject-btn ${status==='rejected'?'is-active':''}" data-id="${it.id}" data-action="rejected" title="رفض">✕</button>
+                  <button class="mt-act-btn mt-note-btn" data-id="${it.id}" title="إضافة / تعديل ملاحظة">📝</button>
                 </span>
               </div>`;
           }).join("")}</td>`;
@@ -816,12 +849,27 @@ function renderMeetingView(){
   const container = document.getElementById("meetingContent");
   container.innerHTML = html || "<div class='empty-note'>لا توجد نتائج مطابقة لهذا الاختيار.</div>";
 
-  container.querySelectorAll(".mt-act-btn").forEach(btn=>{
+  container.querySelectorAll(".mt-act-btn.mt-approve-btn, .mt-act-btn.mt-reject-btn").forEach(btn=>{
     btn.onclick = ()=>{
       const id = btn.dataset.id;
       const action = btn.dataset.action; // 'approved' or 'rejected'
       const isActive = btn.classList.contains("is-active");
       setProjectStatus(id, isActive ? "pending" : action);
+    };
+  });
+  container.querySelectorAll(".mt-note-btn").forEach(btn=>{
+    btn.onclick = ()=>{ editingNoteId = btn.dataset.id; renderMeetingView(); };
+  });
+  container.querySelectorAll(".mt-note-cancel").forEach(btn=>{
+    btn.onclick = ()=>{ editingNoteId = null; renderMeetingView(); };
+  });
+  container.querySelectorAll(".mt-note-save").forEach(btn=>{
+    btn.onclick = ()=>{
+      const item = btn.closest(".mt-proj-item");
+      const val = item.querySelector(".mt-note-input").value.trim();
+      updateProject(btn.dataset.id, { notes: val });
+      editingNoteId = null;
+      renderMeetingView();
     };
   });
 }
@@ -888,7 +936,7 @@ function renderAdmin(){
 
   const tbody = document.getElementById("resultsBody");
   if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
   }else{
     tbody.innerHTML = rows.map(r=>{
       const status = r.approved ? "approved" : (r.rejected ? "rejected" : "pending");
@@ -899,6 +947,7 @@ function renderAdmin(){
         <td>${r.govManager}</td>
         <td>${escapeHtml(r.projectName)}</td>
         <td>${escapeHtml(r.projectOwner||"—")}</td>
+        <td>${r.notes ? `<span style="color:#8a6d1f;font-style:italic;">📝 ${escapeHtml(r.notes)}</span>` : "—"}</td>
         <td><span class="year-pill">${r.year}</span></td>
         <td>
           <button class="approve-btn ${status==='approved'?'is-approved':'is-pending'}" data-id="${r.id}" data-action="approved">${status==='approved' ? "✓ معتمد" : "اعتماد"}</button>
@@ -918,8 +967,8 @@ function renderAdmin(){
 }
 
 function exportCsv(){
-  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة","قرار المدير العام"]];
-  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year, r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار")]));
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام"]];
+  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.notes||"",r.year, r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار")]));
   const csv = "\uFEFF" + rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const link = document.createElement("a");
