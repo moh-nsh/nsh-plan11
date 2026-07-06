@@ -179,10 +179,12 @@ input,select{font-family:inherit;}
 .edit-btn:hover{background:#EEF0F3;}
 .project-row.edit-mode{background:#FFF9EC;border-color:var(--gold);}
 .project-row.locked-row{background:#F4F9F5;border-color:#CFE8D6;}
+.project-row.locked-row.rejected-locked{background:#FDF6F6;border-color:#F3CACE;}
 .locked-badge{
   background:#E9F7EE;color:#1E7A3D;font-size:11.5px;font-weight:700;
   padding:5px 12px;border-radius:14px;white-space:nowrap;flex-shrink:0;
 }
+.locked-badge.rejected-badge{background:#FDEAEA;color:#B3202E;}
 .edit-fields{display:flex;gap:8px;flex-wrap:wrap;}
 .edit-fields input{
   flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;
@@ -251,12 +253,14 @@ table.results tr:hover td{background:#F8F9FB;}
 }
 .approve-btn{
   display:inline-flex;align-items:center;gap:5px;
-  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
+  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;margin:2px;
 }
 .approve-btn.is-approved{background:#E9F7EE;color:#1E7A3D;}
 .approve-btn.is-approved:hover{background:#d8f0e0;}
 .approve-btn.is-pending{background:#F1F2F5;color:var(--text-muted);}
 .approve-btn.is-pending:hover{background:#e2e5ea;}
+.approve-btn.is-rejected{background:#FDEAEA;color:#B3202E;}
+.approve-btn.is-rejected:hover{background:#fadadd;}
 tr.approved-row td{background:#FAFDFB;}
 
 .pending-list{
@@ -281,6 +285,15 @@ tr.approved-row td{background:#FAFDFB;}
 }
 .meeting-btn:hover{opacity:.85;}
 
+.meeting-filters{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:14px 18px;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;
+}
+.meeting-filters select{
+  padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:220px;
+}
+.meeting-filters select:disabled{background:#F5F6F8;color:var(--text-muted);}
+
 .meeting-goal-block{margin-bottom:36px;}
 .meeting-goal-title{
   font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;color:var(--navy);
@@ -297,11 +310,33 @@ table.meeting-table td{
 .mt-goal-cell{background:#F8F9FB;font-weight:700;font-size:12.5px;color:var(--navy);}
 .mt-prog-cell{text-align:right;font-weight:700;background:#FBFBFC;min-width:170px;}
 .mt-empty{color:#C7CBD3;}
-.mt-proj{padding:3px 0;text-align:right;line-height:1.4;}
-.mt-proj.mt-approved{color:#1E7A3D;font-weight:700;}
+
+.mt-proj-item{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:5px 8px;border-radius:7px;margin-bottom:4px;background:#FAFAFB;text-align:right;
+}
+.mt-proj-item:last-child{margin-bottom:0;}
+.mt-proj-item.mt-status-approved{background:#E9F7EE;}
+.mt-proj-item.mt-status-rejected{background:#FDEAEA;}
+.mt-proj-text{font-size:12px;line-height:1.35;}
+.mt-status-approved .mt-proj-text{color:#1E7A3D;font-weight:700;}
+.mt-status-rejected .mt-proj-text{color:#B3202E;text-decoration:line-through;}
+.mt-proj-actions{display:flex;gap:4px;flex-shrink:0;}
+.mt-act-btn{
+  width:22px;height:22px;border-radius:5px;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.mt-approve-btn{background:#EEF0F3;color:#1E7A3D;}
+.mt-approve-btn:hover{background:#d8f0e0;}
+.mt-approve-btn.is-active{background:#1E7A3D;color:#fff;}
+.mt-reject-btn{background:#EEF0F3;color:#B3202E;}
+.mt-reject-btn:hover{background:#fadadd;}
+.mt-reject-btn.is-active{background:#B3202E;color:#fff;}
+
+tr.rejected-row td{background:#FDF6F6;}
 
 @media print{
-  .topbar,.filters-bar,.export-btn,.print-btn,.logout-btn,.add-form,.del-btn,.edit-btn,.meeting-btn{display:none !important;}
+  .topbar,.filters-bar,.export-btn,.print-btn,.logout-btn,.add-form,.del-btn,.edit-btn,.meeting-btn,.meeting-filters,.mt-proj-actions{display:none !important;}
   body{background:#fff;}
   .meeting-goal-block{page-break-inside:avoid;page-break-after:always;}
   .meeting-goal-block:last-child{page-break-after:auto;}
@@ -397,9 +432,10 @@ table.meeting-table td{
       <select id="filterYear"><option value="">كل السنوات</option></select>
       <select id="filterManager"><option value="">كل المدراء</option></select>
       <select id="filterApproval">
-        <option value="">كل المشاريع (معتمدة وغير معتمدة)</option>
+        <option value="">كل المشاريع (بجميع الحالات)</option>
         <option value="approved">المعتمدة فقط</option>
-        <option value="pending">غير المعتمدة فقط</option>
+        <option value="rejected">المرفوضة فقط</option>
+        <option value="pending">قيد الانتظار (بدون قرار)</option>
       </select>
       <input type="text" id="filterSearch" placeholder="بحث باسم المشروع...">
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
@@ -415,7 +451,7 @@ table.meeting-table td{
           <th>اسم المشروع / المبادرة</th>
           <th>مالك المشروع</th>
           <th>السنة</th>
-          <th>اعتماد المدير العام</th>
+          <th>قرار المدير العام</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
@@ -438,7 +474,13 @@ table.meeting-table td{
       <button class="logout-btn" id="meetingBackBtn">رجوع</button>
     </div>
   </div>
-  <div class="dash-wrap" id="meetingContent"></div>
+  <div class="dash-wrap">
+    <div class="meeting-filters">
+      <select id="meetingGoalFilter"><option value="">عرض كل الأهداف الاستراتيجية</option></select>
+      <select id="meetingProgramFilter" disabled><option value="">اختر الهدف الاستراتيجي أولاً</option></select>
+    </div>
+    <div id="meetingContent"></div>
+  </div>
 </div>
 
 <div class="footer-note">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | دائرة التخطيط والتنظيم الصحي</div>
@@ -496,6 +538,16 @@ function updateProject(id, data){
   if(!firebaseReady) return;
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
   db.collection(COLLECTION_NAME).doc(id).update(data);
+}
+// حالة القرار: 'approved' | 'rejected' | 'pending' (بدون قرار)
+function setProjectStatus(id, status){
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  updateProject(id, {
+    approved: status==="approved",
+    rejected: status==="rejected",
+    approvedAt: status==="approved" ? now : null,
+    rejectedAt: status==="rejected" ? now : null
+  });
 }
 
 /* ---------------- Screens ---------------- */
@@ -596,7 +648,7 @@ function renderYearPanel(panelEl, program){
     html += `<div class="empty-note">لا توجد مشاريع مدخلة لسنة ${y} بعد.</div>`;
   }else{
     items.forEach((it,i)=>{
-      if(editingProjectId === it.id && !it.approved){
+      if(editingProjectId === it.id && !it.approved && !it.rejected){
         html += `
         <div class="project-row edit-mode">
           <div class="idx">${i+1}</div>
@@ -607,15 +659,16 @@ function renderYearPanel(panelEl, program){
           <button class="save-btn" data-id="${it.id}" title="حفظ">✓</button>
           <button class="cancel-btn" title="إلغاء">✕</button>
         </div>`;
-      }else if(it.approved){
+      }else if(it.approved || it.rejected){
+        const isApproved = !!it.approved;
         html += `
-        <div class="project-row locked-row">
+        <div class="project-row locked-row ${isApproved?'':'rejected-locked'}">
           <div class="idx">${i+1}</div>
           <div class="info">
             <div class="pname2">${escapeHtml(it.projectName)}</div>
             ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
           </div>
-          <span class="locked-badge" title="تم اعتماد هذا المشروع من المدير العام ولا يمكن تعديله أو حذفه">🔒 معتمد</span>
+          <span class="locked-badge ${isApproved?'':'rejected-badge'}" title="${isApproved ? 'تم اعتماد هذا المشروع من المدير العام ولا يمكن تعديله أو حذفه' : 'تم رفض هذا المشروع في الاجتماع ولا يمكن تعديله'}">${isApproved ? "🔒 معتمد" : "🔒 مرفوض"}</span>
         </div>`;
       }else{
         html += `
@@ -689,14 +742,41 @@ function enterAdmin(){
   renderAdmin();
 }
 document.getElementById("adminLogout").onclick = ()=> showScreen("loginScreen");
-document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); renderMeetingView(); };
+document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
 document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
 
+function buildMeetingFilters(){
+  const fg = document.getElementById("meetingGoalFilter");
+  fg.innerHTML = "<option value=''>عرض كل الأهداف الاستراتيجية</option>" +
+    STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  fg.onchange = ()=>{
+    const fp = document.getElementById("meetingProgramFilter");
+    if(fg.value===""){
+      fp.disabled = true;
+      fp.innerHTML = "<option value=''>اختر الهدف الاستراتيجي أولاً</option>";
+    }else{
+      fp.disabled = false;
+      const progs = PROGRAMS.filter(p=>p.goalId===Number(fg.value));
+      fp.innerHTML = "<option value=''>كل البرامج التنفيذية بهذا الهدف</option>" +
+        progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    }
+    renderMeetingView();
+  };
+  document.getElementById("meetingProgramFilter").onchange = renderMeetingView;
+}
+
 function renderMeetingView(){
+  const selGoal = document.getElementById("meetingGoalFilter").value;
+  const selProgram = document.getElementById("meetingProgramFilter").value;
+  let goals = STRATEGIC_GOALS;
+  if(selGoal) goals = goals.filter(g=> String(g.id)===selGoal);
+
   let html = "";
-  STRATEGIC_GOALS.forEach(g=>{
-    const progs = PROGRAMS.filter(p=>p.goalId===g.id);
+  goals.forEach(g=>{
+    let progs = PROGRAMS.filter(p=>p.goalId===g.id);
+    if(selProgram) progs = progs.filter(p=>p.code===selProgram);
+    if(progs.length===0) return;
     html += `<div class="meeting-goal-block">`;
     html += `<div class="meeting-goal-title">${g.id}. ${g.name}</div>`;
     html += `<table class="meeting-table"><thead><tr>
@@ -715,16 +795,35 @@ function renderMeetingView(){
         if(items.length===0){
           html += `<td class="mt-empty">—</td>`;
         }else{
-          html += `<td>${items.map(it=>
-            `<div class="mt-proj ${it.approved?'mt-approved':''}">${it.approved?"✓ ":""}${escapeHtml(it.projectName)}</div>`
-          ).join("")}</td>`;
+          html += `<td>${items.map(it=>{
+            const status = it.approved ? "approved" : (it.rejected ? "rejected" : "pending");
+            const icon = status==="approved" ? "✓ " : (status==="rejected" ? "✕ " : "");
+            return `
+              <div class="mt-proj-item mt-status-${status}">
+                <span class="mt-proj-text">${icon}${escapeHtml(it.projectName)}</span>
+                <span class="mt-proj-actions">
+                  <button class="mt-act-btn mt-approve-btn ${status==='approved'?'is-active':''}" data-id="${it.id}" data-action="approved" title="اعتماد">✓</button>
+                  <button class="mt-act-btn mt-reject-btn ${status==='rejected'?'is-active':''}" data-id="${it.id}" data-action="rejected" title="رفض">✕</button>
+                </span>
+              </div>`;
+          }).join("")}</td>`;
         }
       });
       html += "</tr>";
     });
     html += "</tbody></table></div>";
   });
-  document.getElementById("meetingContent").innerHTML = html;
+  const container = document.getElementById("meetingContent");
+  container.innerHTML = html || "<div class='empty-note'>لا توجد نتائج مطابقة لهذا الاختيار.</div>";
+
+  container.querySelectorAll(".mt-act-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.id;
+      const action = btn.dataset.action; // 'approved' or 'rejected'
+      const isActive = btn.classList.contains("is-active");
+      setProjectStatus(id, isActive ? "pending" : action);
+    };
+  });
 }
 
 function buildFilters(){
@@ -750,12 +849,14 @@ function renderAdmin(){
   const totalProjects = ALL_PROJECTS.length;
   const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
   const approvedCount = ALL_PROJECTS.filter(p=>p.approved).length;
+  const rejectedCount = ALL_PROJECTS.filter(p=>p.rejected).length;
   const summary = document.getElementById("summaryGrid");
   summary.innerHTML = `
     <div class="summary-card"><div class="num">${totalProjects}</div><div class="lbl">إجمالي المشاريع المدخلة</div></div>
     <div class="summary-card"><div class="num">${programsWithData} / 36</div><div class="lbl">برامج بدأت الإدخال</div></div>
+    <div class="summary-card"><div class="num">${approvedCount}</div><div class="lbl">مشاريع معتمدة</div></div>
+    <div class="summary-card"><div class="num">${rejectedCount}</div><div class="lbl">مشاريع مرفوضة</div></div>
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
-    <div class="summary-card"><div class="num">${approvedCount} / ${totalProjects}</div><div class="lbl">مشاريع معتمدة من المدير العام</div></div>
   `;
 
   // pending chips
@@ -779,7 +880,8 @@ function renderAdmin(){
     if(yr && String(pr.year)!==yr) return false;
     if(mgr && pr.govManager!==mgr) return false;
     if(ap==="approved" && !pr.approved) return false;
-    if(ap==="pending" && pr.approved) return false;
+    if(ap==="rejected" && !pr.rejected) return false;
+    if(ap==="pending" && (pr.approved || pr.rejected)) return false;
     if(q && !(pr.projectName||"").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
@@ -788,33 +890,36 @@ function renderAdmin(){
   if(rows.length===0){
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
   }else{
-    tbody.innerHTML = rows.map(r=>`
-      <tr class="${r.approved?'approved-row':''}">
+    tbody.innerHTML = rows.map(r=>{
+      const status = r.approved ? "approved" : (r.rejected ? "rejected" : "pending");
+      return `
+      <tr class="${status==='approved'?'approved-row':(status==='rejected'?'rejected-row':'')}">
         <td><span class="goal-pill">${r.goalName}</span></td>
         <td>${r.programCode} — ${r.programName}</td>
         <td>${r.govManager}</td>
         <td>${escapeHtml(r.projectName)}</td>
         <td>${escapeHtml(r.projectOwner||"—")}</td>
         <td><span class="year-pill">${r.year}</span></td>
-        <td><button class="approve-btn ${r.approved?'is-approved':'is-pending'}" data-id="${r.id}">${r.approved ? "✓ معتمد" : "اعتماد"}</button></td>
-      </tr>
-    `).join("");
+        <td>
+          <button class="approve-btn ${status==='approved'?'is-approved':'is-pending'}" data-id="${r.id}" data-action="approved">${status==='approved' ? "✓ معتمد" : "اعتماد"}</button>
+          <button class="approve-btn reject-variant ${status==='rejected'?'is-rejected':'is-pending'}" data-id="${r.id}" data-action="rejected">${status==='rejected' ? "✕ مرفوض" : "رفض"}</button>
+        </td>
+      </tr>`;
+    }).join("");
     tbody.querySelectorAll(".approve-btn").forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.dataset.id;
-        const isApproved = btn.classList.contains("is-approved");
-        updateProject(id, {
-          approved: !isApproved,
-          approvedAt: !isApproved ? firebase.firestore.FieldValue.serverTimestamp() : null
-        });
+        const action = btn.dataset.action;
+        const isActive = btn.classList.contains(action==="approved" ? "is-approved" : "is-rejected");
+        setProjectStatus(id, isActive ? "pending" : action);
       };
     });
   }
 }
 
 function exportCsv(){
-  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة","اعتماد المدير العام"]];
-  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year, r.approved?"معتمد":"غير معتمد"]));
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","السنة","قرار المدير العام"]];
+  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.year, r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار")]));
   const csv = "\uFEFF" + rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const link = document.createElement("a");
