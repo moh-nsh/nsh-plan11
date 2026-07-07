@@ -25,7 +25,7 @@ const PROGRAMS = [
 
   // 2. التوسع في التغطية الصحية الشاملة
   { code: "2.1", goalId: 2, name: "برنامج تطوير الخدمات التأهيلية والتلطيفية", govManager: "د. فايز الراشدي", central: { name: "د. تركية البوسعيدية", title: "طبيب استشاري أول طب أسرة ومجتمع / مدير دائرة الرعاية التأهيلية والتلطيفية", phone: "99374114", email: "turkiya17@hotmail.com" } },
-  { code: "2.2", goalId: 2, name: "برنامج تطوير الخدمات التخصصية", govManager: "د. مصلح المصلحي + د. نهور الشيذانية", central: { name: "د. سعيد المخيني", title: "طبيب استشاري صحة عامة", phone: "99202662", email: "suh.moh.om@gmail.com" } },
+  { code: "2.2", goalId: 2, name: "برنامج تطوير الخدمات التخصصية", govManager: "د. مصلح المصلحي", central: { name: "د. سعيد المخيني", title: "طبيب استشاري صحة عامة", phone: "99202662", email: "suh.moh.om@gmail.com" } },
   { code: "2.3", goalId: 2, name: "برنامج تعزيز صحة الطفل", govManager: "د. حسناء البلوشية", central: { name: "د. جمانة بنت أحمد العبدواني", title: "مديرة دائرة صحة الطفل", phone: "99333253", email: "Jumana.alabduwani@moh.gov.om" } },
   { code: "2.4", goalId: 2, name: "برنامج خدمات الصحة الافتراضية", govManager: "د. فايز الراشدي", central: { name: "د. أنس الكيمياني", title: "طبيب اختصاصي أول طب أسرة / مدير دائرة الصحة الافتراضية", phone: "95140960", email: "anas.alkamiyani@moh.gov.om" } },
   { code: "2.5", goalId: 2, name: "برنامج خدمات الصحة الإنجابية", govManager: "د. حسناء البلوشية", central: { name: "د. جميلة بنت تيسير العبري", title: "مديرة دائرة الصحة الإنجابية", phone: "99474953", email: "Jamila.alabri@moh.gov.om" } },
