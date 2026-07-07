@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
   --navy:#1B2A3A;
@@ -121,6 +121,43 @@ input,select{font-family:inherit;}
 
 /* ===== Dashboard shell ===== */
 .dash-wrap{max-width:1200px;margin:0 auto;padding:26px 20px 60px;}
+
+.mgr-tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);}
+.mgr-tab{
+  padding:12px 22px;font-size:13.5px;font-weight:700;color:var(--text-muted);
+  border-bottom:3px solid transparent;background:none;
+}
+.mgr-tab:hover{color:var(--navy);}
+.mgr-tab.active{color:var(--navy);border-bottom-color:var(--gold);}
+
+.ov-project-card{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:16px 20px;margin-bottom:14px;
+}
+.ov-project-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.ov-project-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);}
+.ov-project-meta{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
+.ov-pct-badge{font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;color:var(--navy);}
+.ov-progress-bar{height:8px;background:#E2E5EA;border-radius:5px;overflow:hidden;margin-bottom:10px;}
+.ov-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#1E7A3D);border-radius:5px;}
+.ov-phase-row{display:flex;gap:8px;flex-wrap:wrap;}
+.ov-phase-pill{
+  font-size:11px;padding:4px 10px;border-radius:12px;background:#F1F2F5;color:var(--text-muted);font-weight:700;
+}
+.ov-phase-pill.done{background:#E9F7EE;color:#1E7A3D;}
+.ov-phase-pill.active{background:#FFF9EC;color:#8a6d1f;}
+.ov-no-detail{font-size:12px;color:var(--text-muted);font-style:italic;}
+
+.mgr-auth-row{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#FCFCFD;
+}
+.mgr-auth-row .mname{font-weight:700;font-size:13px;color:var(--navy);}
+.mgr-auth-row .mupdated{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.reset-pw-btn{
+  background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;flex-shrink:0;
+}
+.reset-pw-btn:hover{background:var(--navy-light);}
 .section-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);margin-bottom:4px;}
 .section-desc{color:var(--text-muted);font-size:13px;margin-bottom:22px;}
 
@@ -191,6 +228,7 @@ input,select{font-family:inherit;}
 .locked-badge.rejected-badge{background:#FDEAEA;color:#B3202E;}
 .locked-badge.admin-lock-badge{background:var(--navy);color:#fff;}
 .project-row.admin-locked-row{background:#F3F4F6;border-color:#C7CBD3;}
+.project-row.closed-row{background:#F5F3FB;border-color:#D9D0F0;}
 .lock-toggle-btn{
   font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
   background:#F1F2F5;color:var(--text-muted);
@@ -198,6 +236,15 @@ input,select{font-family:inherit;}
 .lock-toggle-btn:hover{background:#e2e5ea;}
 .lock-toggle-btn.is-locked{background:var(--navy);color:#fff;}
 .lock-toggle-btn.is-locked:hover{background:var(--navy-light);}
+.lock-toggle-btn:disabled{opacity:.5;cursor:not-allowed;}
+.close-proj-btn{
+  background:#F1EEFB;color:#5B3EAF;font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
+}
+.close-proj-btn:hover{background:#e6e0f7;}
+.reopen-btn{
+  background:#5B3EAF;color:#fff;font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
+}
+.reopen-btn:hover{background:#4c3392;}
 .edit-fields{display:flex;gap:8px;flex-wrap:wrap;}
 .edit-fields input{
   flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;
@@ -364,6 +411,10 @@ table.meeting-table td{
 .mt-lock-btn{background:#EEF0F3;color:var(--navy);}
 .mt-lock-btn:hover{background:#e2e5ea;}
 .mt-lock-btn.is-active{background:var(--navy);color:#fff;}
+.mt-close-btn{background:#EEF0F3;color:#5B3EAF;}
+.mt-close-btn:hover{background:#e6e0f7;}
+.mt-reopen-btn{background:#5B3EAF;color:#fff;}
+.mt-reopen-btn:hover{background:#4c3392;}
 
 tr.rejected-row td{background:#FDF6F6;}
 
@@ -481,15 +532,57 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
-<!-- ===================== PASSWORD MODAL ===================== -->
+<!-- ===================== PASSWORD MODAL (يُستخدم لدخول الإدارة ودخول المدراء) ===================== -->
 <div id="pwModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3>دخول قسم التخطيط والدراسات</h3>
+    <h3 id="pwModalTitle">دخول قسم التخطيط والدراسات</h3>
     <input type="password" id="pwInput" placeholder="الرقم السري" maxlength="30">
     <div class="modal-error" id="pwError"></div>
     <div class="modal-actions">
       <button class="btn-secondary" id="pwCancel">إلغاء</button>
       <button class="btn-primary" id="pwSubmit">دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CHANGE PASSWORD MODAL (للمدير لتغيير كلمة مروره بنفسه) ===================== -->
+<div id="changePwModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>تغيير كلمة المرور</h3>
+    <input type="password" id="changePwCurrent" placeholder="كلمة المرور الحالية" maxlength="30">
+    <input type="password" id="changePwNew" placeholder="كلمة المرور الجديدة" maxlength="30" style="margin-top:8px;">
+    <input type="password" id="changePwConfirm" placeholder="تأكيد كلمة المرور الجديدة" maxlength="30" style="margin-top:8px;">
+    <div class="modal-error" id="changePwError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="changePwCancel">إلغاء</button>
+      <button class="btn-primary" id="changePwSubmit">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ADMIN RESET MANAGER PASSWORD MODAL ===================== -->
+<div id="resetPwModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="resetPwTitle">إعادة تعيين كلمة المرور</h3>
+    <input type="password" id="resetPwNew" placeholder="كلمة المرور الجديدة" maxlength="30">
+    <div class="modal-error" id="resetPwError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="resetPwCancel">إلغاء</button>
+      <button class="btn-primary" id="resetPwSubmit">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CLOSE PROJECT MODAL ===================== -->
+<div id="closeProjectModal" class="modal-overlay hidden">
+  <div class="modal-box" style="width:400px;">
+    <h3>إغلاق المشروع (اكتمال)</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">يُستخدم بعد التأكد من مناقشة المدير العام لهذا المشروع واكتماله وفق الخطة المحددة.</p>
+    <textarea id="closeProjectNote" rows="3" placeholder="ملاحظة الإغلاق (مثلاً: تمت مناقشته مع المدير العام بتاريخ ...)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    <div class="modal-error" id="closeProjectError"></div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn-secondary" id="closeProjectCancel">إلغاء</button>
+      <button class="btn-primary" id="closeProjectSubmit">تأكيد الإغلاق</button>
     </div>
   </div>
 </div>
@@ -506,13 +599,26 @@ tr.rejected-row td{background:#FDF6F6;}
     </div>
     <div class="actions">
       <div class="who" id="managerWho"></div>
+      <button class="logout-btn" id="mgrChangePwBtn" style="background:var(--navy-light);">🔑 كلمة المرور</button>
       <button class="logout-btn" id="mgrLogout">تسجيل الخروج</button>
     </div>
   </div>
-  <div class="dash-wrap">
+  <div class="dash-wrap" style="padding-bottom:0;">
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
+      <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
+    </div>
+  </div>
+  <div class="dash-wrap" id="mgrInputView">
     <div class="section-title">برامجي التنفيذية</div>
     <div class="section-desc">أضف مشروعًا أو مبادرة لكل سنة من سنوات الخطة (2026-2030) لكل برنامج تنفيذي تشرف عليه</div>
     <div id="programsContainer"></div>
+  </div>
+  <div class="dash-wrap hidden" id="mgrOverviewView">
+    <div class="section-title">لوحة المتابعة</div>
+    <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل الخطط التفصيلية</div>
+    <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
+    <div id="mgrOverviewContent"></div>
   </div>
 </div>
 
@@ -547,6 +653,12 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="detailCoverageChips"></div>
     </div>
 
+    <div class="pending-list">
+      <h3>🔑 إدارة كلمات مرور مدراء البرامج</h3>
+      <div class="section-desc" style="margin-bottom:14px;">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت (مثلاً لو نسيها أو للحفاظ على المدخلات)</div>
+      <div id="managerAuthList"></div>
+    </div>
+
     <div class="filters-bar">
       <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
       <select id="filterProgram"><option value="">كل البرامج التنفيذية</option></select>
@@ -575,6 +687,7 @@ tr.rejected-row td{background:#FDF6F6;}
           <th>السنة</th>
           <th>قرار المدير العام</th>
           <th>القفل النهائي</th>
+          <th>إغلاق المشروع</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
@@ -666,6 +779,8 @@ const FIREBASE_CONFIG = {
 };
 const COLLECTION_NAME = "nsh_plan11_projects"; // مجموعة بيانات جديدة ومستقلة
 const DETAILS_COLLECTION = "nsh_plan11_project_details"; // الخطط التفصيلية لكل مشروع
+const MANAGER_AUTH_COLLECTION = "nsh_plan11_manager_auth"; // كلمات مرور مدراء البرامج
+const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
 
 // 4 مراحل ثابتة بأوزان ثابتة (حسب نموذج الخطة التفصيلية)
@@ -707,6 +822,23 @@ const PROGRAM_CARD_FIELD_DEFS = [
   { key:"executingEntities", label:"الجهات المنفذة للمشاريع المرتبطة بالبرنامج", textarea:true }
 ];
 
+// ألوان تصدير Excel (مطابقة لهوية المنصة البصرية)
+const XL_NAVY = "FF1B2A3A", XL_GOLD = "FFC9962E", XL_LIGHTGRAY = "FFEEF0F3", XL_WHITE = "FFFFFFFF", XL_MUTED = "FF6B7688";
+const XL_PHASE_TINTS = ["FFE9F7EE","FFEAF1FB","FFFFF9EC","FFFDF6F6"];
+const XL_BORDER = { style:"thin", color:{argb:"FFD8DCE3"} };
+const XL_ALL_BORDERS = { top:XL_BORDER, left:XL_BORDER, right:XL_BORDER, bottom:XL_BORDER };
+function xlApplyBorders(ws, r1,c1,r2,c2){
+  for(let r=r1;r<=r2;r++) for(let c=c1;c<=c2;c++) ws.getCell(r,c).border = XL_ALL_BORDERS;
+}
+async function downloadWorkbook(wb, filename){
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:"application/octet-stream"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+
 let db = null;
 let firebaseReady = false;
 try{
@@ -718,6 +850,10 @@ try{
 let ALL_PROJECTS = []; // كاش محلي من Firestore
 let ALL_PROJECT_DETAILS = []; // كاش محلي للخطط التفصيلية
 let ALL_PROGRAM_CARDS = []; // كاش محلي لبطاقات تعريف البرامج التنفيذية
+let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدراء
+let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
+let pendingResetManager = null; // اسم المدير الذي يعيد الإدارة تعيين كلمة مروره حاليًا
+let pendingCloseProjectId = null; // معرّف المشروع الجاري إغلاقه حاليًا
 let currentManager = null;
 let activeYearByProgram = {};
 let editingProjectId = null;
@@ -760,6 +896,16 @@ function setProjectStatus(id, status){
 // قفل نهائي من قسم التخطيط والدراسات: يمنع مدير البرنامج من التعديل أو الحذف حتى يُفتح مجددًا
 function setProjectLocked(id, locked){
   updateProject(id, { locked: !!locked });
+}
+// إغلاق المشروع بعد اكتماله ومناقشته مع المدير العام (يقفله تلقائيًا أيضًا)
+function setProjectClosed(id, closed, note){
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  updateProject(id, {
+    closed: !!closed,
+    closedNote: closed ? (note||"") : null,
+    closedAt: closed ? now : null,
+    locked: !!closed
+  });
 }
 
 /* ---------------- الخطة التفصيلية لكل مشروع ---------------- */
@@ -821,6 +967,33 @@ function saveProgramCard(programCode, data){
     });
 }
 
+/* ---------------- كلمات مرور المدراء ---------------- */
+function listenToManagerAuth(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(MANAGER_AUTH_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    ALL_MANAGER_AUTH = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function getManagerPassword(name){
+  const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+  return (rec && rec.password) ? rec.password : DEFAULT_MANAGER_PASSWORD;
+}
+// يستخدمها المدير نفسه لتغيير كلمة مروره (لا تحتاج صلاحية إدارة)
+function setManagerPassword(name, newPassword){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  return db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({
+    password: newPassword,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=> true).catch(err=>{
+    console.error(err);
+    alert("تعذّر حفظ كلمة المرور. على الأغلب قواعد الأمان في Firestore لا تسمح بالوصول لمجموعة \"" + MANAGER_AUTH_COLLECTION + "\". راجع مع قسم التخطيط لإضافتها. تفاصيل الخطأ: " + err.message);
+    return false;
+  });
+}
+
 /* ---------------- Screens ---------------- */
 function showScreen(id){
   ["loginScreen","managerScreen","adminScreen","meetingScreen"].forEach(s=>{
@@ -837,29 +1010,41 @@ function buildLogin(){
     const card = document.createElement("div");
     card.className = "manager-card";
     card.style.cursor="pointer";
-    card.innerHTML = `<div class="name">${name}</div><div class="count">${count} برنامج تنفيذي</div>`;
-    card.onclick = ()=> enterManager(name);
+    card.innerHTML = `<div class="name">🔒 ${name}</div><div class="count">${count} برنامج تنفيذي</div>`;
+    card.onclick = ()=> openLoginPrompt(name);
     grid.appendChild(card);
   });
   document.getElementById("adminLabel").textContent = ADMIN_NAME;
 }
 
-document.getElementById("adminCardBtn").onclick = ()=>{
+function openLoginPrompt(managerName){
+  pendingLoginManager = managerName; // null = دخول الإدارة
+  document.getElementById("pwModalTitle").textContent = managerName ? ("دخول: " + managerName) : "دخول قسم التخطيط والدراسات";
   document.getElementById("pwInput").value="";
   document.getElementById("pwError").textContent="";
   document.getElementById("pwModal").classList.remove("hidden");
   setTimeout(()=>document.getElementById("pwInput").focus(),50);
-};
+}
+document.getElementById("adminCardBtn").onclick = ()=> openLoginPrompt(null);
 document.getElementById("pwCancel").onclick = ()=> document.getElementById("pwModal").classList.add("hidden");
 document.getElementById("pwSubmit").onclick = submitPw;
 document.getElementById("pwInput").addEventListener("keydown", e=>{ if(e.key==="Enter") submitPw(); });
 function submitPw(){
   const val = document.getElementById("pwInput").value;
-  if(val === ADMIN_PASSWORD){
-    document.getElementById("pwModal").classList.add("hidden");
-    enterAdmin();
+  if(pendingLoginManager === null){
+    if(val === ADMIN_PASSWORD){
+      document.getElementById("pwModal").classList.add("hidden");
+      enterAdmin();
+    }else{
+      document.getElementById("pwError").textContent = "الرقم السري غير صحيح";
+    }
   }else{
-    document.getElementById("pwError").textContent = "الرقم السري غير صحيح";
+    if(val === getManagerPassword(pendingLoginManager)){
+      document.getElementById("pwModal").classList.add("hidden");
+      enterManager(pendingLoginManager);
+    }else{
+      document.getElementById("pwError").textContent = "كلمة المرور غير صحيحة";
+    }
   }
 }
 
@@ -868,9 +1053,98 @@ function enterManager(name){
   currentManager = name;
   document.getElementById("managerWho").textContent = name;
   showScreen("managerScreen");
+  switchMgrTab("input");
   renderManagerPrograms();
 }
 document.getElementById("mgrLogout").onclick = ()=>{ currentManager=null; showScreen("loginScreen"); };
+
+/* ---- تبويبات صفحة المدير: إدخال المشاريع / لوحة المتابعة ---- */
+function switchMgrTab(tab){
+  const isInput = tab==="input";
+  document.getElementById("mgrTabInput").classList.toggle("active", isInput);
+  document.getElementById("mgrTabOverview").classList.toggle("active", !isInput);
+  document.getElementById("mgrInputView").classList.toggle("hidden", !isInput);
+  document.getElementById("mgrOverviewView").classList.toggle("hidden", isInput);
+  if(!isInput) renderManagerOverview();
+}
+document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
+document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
+
+/* ---- تغيير كلمة مرور المدير ---- */
+document.getElementById("mgrChangePwBtn").onclick = ()=>{
+  document.getElementById("changePwCurrent").value = "";
+  document.getElementById("changePwNew").value = "";
+  document.getElementById("changePwConfirm").value = "";
+  document.getElementById("changePwError").textContent = "";
+  document.getElementById("changePwModal").classList.remove("hidden");
+};
+document.getElementById("changePwCancel").onclick = ()=> document.getElementById("changePwModal").classList.add("hidden");
+document.getElementById("changePwSubmit").onclick = ()=>{
+  const cur = document.getElementById("changePwCurrent").value;
+  const nw = document.getElementById("changePwNew").value;
+  const conf = document.getElementById("changePwConfirm").value;
+  const errEl = document.getElementById("changePwError");
+  if(cur !== getManagerPassword(currentManager)){ errEl.textContent = "كلمة المرور الحالية غير صحيحة"; return; }
+  if(!nw || nw.length<4){ errEl.textContent = "كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل"; return; }
+  if(nw !== conf){ errEl.textContent = "كلمة المرور الجديدة وتأكيدها غير متطابقين"; return; }
+  setManagerPassword(currentManager, nw).then(ok=>{
+    if(ok){ document.getElementById("changePwModal").classList.add("hidden"); alert("تم تغيير كلمة المرور بنجاح."); }
+  });
+};
+
+function renderManagerOverview(){
+  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  const withDetail = myProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const avgPct = withDetail.length
+    ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
+    : 0;
+  const closedCount = myProjects.filter(p=>p.closed).length;
+
+  document.getElementById("mgrOverviewSummary").innerHTML = `
+    <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي مشاريعي</div></div>
+    <div class="summary-card"><div class="num">${withDetail.length} / ${myProjects.length}</div><div class="lbl">لديها خطة تفصيلية</div></div>
+    <div class="summary-card"><div class="num">${avgPct}%</div><div class="lbl">متوسط نسبة الإنجاز</div></div>
+    <div class="summary-card"><div class="num">${closedCount}</div><div class="lbl">مشاريع مغلقة ومكتملة</div></div>
+  `;
+
+  const container = document.getElementById("mgrOverviewContent");
+  if(myProjects.length===0){
+    container.innerHTML = `<div class="empty-note">لا توجد مشاريع مُدخلة بعد.</div>`;
+    return;
+  }
+  container.innerHTML = [...myProjects].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year).map(pr=>{
+    const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const pct = detailRec ? computeOverallPct(detailRec) : 0;
+    let phaseHtml = `<div class="ov-no-detail">لم تُدخل الخطة التفصيلية لهذا المشروع بعد.</div>`;
+    if(detailRec && Array.isArray(detailRec.phases)){
+      phaseHtml = `<div class="ov-phase-row">` + detailRec.phases.map(ph=>{
+        const steps = ph.steps||[];
+        const total = steps.length;
+        const done = steps.filter(s=>s.status==="مكتمل").length;
+        const inProg = steps.filter(s=>s.status==="قيد التنفيذ").length;
+        const cls = total>0 && done===total ? "done" : (inProg>0 || done>0 ? "active" : "");
+        return `<span class="ov-phase-pill ${cls}">${ph.name}: ${done}/${total}</span>`;
+      }).join("") + `</div>`;
+    }
+    const statusBadges = [
+      pr.closed ? `<span class="locked-badge" style="background:#5B3EAF;color:#fff;">✅ مغلق</span>` : "",
+      pr.locked && !pr.closed ? `<span class="locked-badge admin-lock-badge">🔒 مقفل</span>` : "",
+      pr.approved ? `<span class="locked-badge">✓ معتمد</span>` : (pr.rejected ? `<span class="locked-badge rejected-badge">✕ مرفوض</span>` : "")
+    ].filter(Boolean).join(" ");
+    return `
+      <div class="ov-project-card">
+        <div class="ov-project-head">
+          <div>
+            <div class="ov-project-name">${escapeHtml(pr.projectName)}</div>
+            <div class="ov-project-meta">${pr.programCode} — ${pr.programName} | سنة ${pr.year} ${statusBadges}</div>
+          </div>
+          <div class="ov-pct-badge">${detailRec ? pct+"%" : "—"}</div>
+        </div>
+        <div class="ov-progress-bar"><div class="ov-progress-fill" style="width:${pct}%;"></div></div>
+        ${phaseHtml}
+      </div>`;
+  }).join("");
+}
 
 function renderManagerPrograms(){
   const container = document.getElementById("programsContainer");
@@ -938,7 +1212,19 @@ function renderYearPanel(panelEl, program){
           ? `<button class="detail-btn has-detail" data-id="${it.id}" title="الخطة التفصيلية">📋 ${computeOverallPct(detailRec)}%</button>`
           : `<button class="detail-btn" data-id="${it.id}" title="إضافة خطة تفصيلية">📋 خطة تفصيلية</button>`;
 
-        if(it.locked){
+        if(it.closed){
+          html += `
+          <div class="project-row locked-row closed-row">
+            <div class="idx">${i+1}</div>
+            <div class="info">
+              <div class="pname2">${escapeHtml(it.projectName)}</div>
+              ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+              ${it.closedNote ? `<div class="pnote">📌 ملاحظة الإغلاق: ${escapeHtml(it.closedNote)}</div>` : ""}
+            </div>
+            <span class="locked-badge" style="background:#5B3EAF;color:#fff;" title="اكتمل هذا المشروع وأُغلق نهائيًا من قسم التخطيط">✅ مغلق ومكتمل</span>
+            ${detailBtn}
+          </div>`;
+        }else if(it.locked){
           html += `
           <div class="project-row locked-row admin-locked-row">
             <div class="idx">${i+1}</div>
@@ -1039,6 +1325,33 @@ document.getElementById("adminLogout").onclick = ()=> showScreen("loginScreen");
 document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
 document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
+document.getElementById("resetPwCancel").onclick = ()=> document.getElementById("resetPwModal").classList.add("hidden");
+document.getElementById("resetPwSubmit").onclick = ()=>{
+  const nw = document.getElementById("resetPwNew").value;
+  const errEl = document.getElementById("resetPwError");
+  if(!nw || nw.length<4){ errEl.textContent = "كلمة المرور يجب أن تكون 4 أحرف على الأقل"; return; }
+  setManagerPassword(pendingResetManager, nw).then(ok=>{
+    if(ok){ document.getElementById("resetPwModal").classList.add("hidden"); alert("تم إعادة تعيين كلمة المرور بنجاح."); }
+  });
+};
+function openCloseProjectModal(id){
+  pendingCloseProjectId = id;
+  document.getElementById("closeProjectNote").value = "";
+  document.getElementById("closeProjectError").textContent = "";
+  document.getElementById("closeProjectModal").classList.remove("hidden");
+}
+document.getElementById("closeProjectCancel").onclick = ()=> document.getElementById("closeProjectModal").classList.add("hidden");
+document.getElementById("closeProjectSubmit").onclick = ()=>{
+  const note = document.getElementById("closeProjectNote").value.trim();
+  if(!note){ document.getElementById("closeProjectError").textContent = "الرجاء إضافة ملاحظة توضح تاريخ/نتيجة مناقشة المدير العام"; return; }
+  setProjectClosed(pendingCloseProjectId, true, note);
+  document.getElementById("closeProjectModal").classList.add("hidden");
+};
+function reopenProject(id){
+  if(confirm("هل تريد إعادة فتح هذا المشروع؟ سيصبح قابلاً للتعديل من مدير البرنامج مجددًا.")){
+    setProjectClosed(id, false, "");
+  }
+}
 
 function buildMeetingFilters(){
   const fg = document.getElementById("meetingGoalFilter");
@@ -1111,7 +1424,10 @@ function renderMeetingView(){
                   <button class="mt-act-btn mt-approve-btn ${status==='approved'?'is-active':''}" data-id="${it.id}" data-action="approved" title="اعتماد">✓</button>
                   <button class="mt-act-btn mt-reject-btn ${status==='rejected'?'is-active':''}" data-id="${it.id}" data-action="rejected" title="رفض">✕</button>
                   <button class="mt-act-btn mt-note-btn" data-id="${it.id}" title="إضافة / تعديل ملاحظة">📝</button>
-                  <button class="mt-act-btn mt-lock-btn ${it.locked?'is-active':''}" data-id="${it.id}" title="${it.locked ? 'مقفل - اضغط للفتح' : 'قفل نهائي'}">${it.locked ? "🔒" : "🔓"}</button>
+                  <button class="mt-act-btn mt-lock-btn ${it.locked?'is-active':''}" data-id="${it.id}" ${it.closed?'disabled':''} title="${it.locked ? 'مقفل - اضغط للفتح' : 'قفل نهائي'}">${it.locked ? "🔒" : "🔓"}</button>
+                  ${it.closed
+                    ? `<button class="mt-act-btn mt-reopen-btn" data-id="${it.id}" title="${it.closedNote?escapeAttr(it.closedNote):'إعادة فتح المشروع'}">✅</button>`
+                    : `<button class="mt-act-btn mt-close-btn" data-id="${it.id}" title="إغلاق المشروع (اكتمال)">🏁</button>`}
                   <button class="detail-btn ${detailRec?'has-detail':''}" data-id="${it.id}" style="width:auto;height:auto;padding:2px 6px;font-size:10px;" title="الخطة التفصيلية">${detailBtnLabel}</button>
                 </span>
               </div>`;
@@ -1138,6 +1454,12 @@ function renderMeetingView(){
   });
   container.querySelectorAll(".mt-lock-btn").forEach(btn=>{
     btn.onclick = ()=>{ setProjectLocked(btn.dataset.id, !btn.classList.contains("is-active")); };
+  });
+  container.querySelectorAll(".mt-close-btn").forEach(btn=>{
+    btn.onclick = ()=> openCloseProjectModal(btn.dataset.id);
+  });
+  container.querySelectorAll(".mt-reopen-btn").forEach(btn=>{
+    btn.onclick = ()=> reopenProject(btn.dataset.id);
   });
   container.querySelectorAll(".mt-note-cancel").forEach(btn=>{
     btn.onclick = ()=>{ editingNoteId = null; renderMeetingView(); };
@@ -1209,6 +1531,30 @@ function renderAdmin(){
     }).join("");
   }
 
+  // manager password management list
+  const authList = document.getElementById("managerAuthList");
+  authList.innerHTML = GOV_MANAGERS.map(name=>{
+    const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+    const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
+    return `
+      <div class="mgr-auth-row">
+        <div>
+          <div class="mname">${name}</div>
+          <div class="mupdated">${statusText}</div>
+        </div>
+        <button class="reset-pw-btn" data-name="${escapeAttr(name)}">إعادة تعيين</button>
+      </div>`;
+  }).join("");
+  authList.querySelectorAll(".reset-pw-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      pendingResetManager = btn.dataset.name;
+      document.getElementById("resetPwTitle").textContent = "إعادة تعيين كلمة مرور: " + pendingResetManager;
+      document.getElementById("resetPwNew").value = "";
+      document.getElementById("resetPwError").textContent = "";
+      document.getElementById("resetPwModal").classList.remove("hidden");
+    };
+  });
+
   // table
   const g = document.getElementById("filterGoal").value;
   const prog = document.getElementById("filterProgram").value;
@@ -1231,7 +1577,7 @@ function renderAdmin(){
 
   const tbody = document.getElementById("resultsBody");
   if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
   }else{
     tbody.innerHTML = rows.map(r=>{
       const status = r.approved ? "approved" : (r.rejected ? "rejected" : "pending");
@@ -1252,7 +1598,10 @@ function renderAdmin(){
           <button class="approve-btn ${status==='approved'?'is-approved':'is-pending'}" data-id="${r.id}" data-action="approved">${status==='approved' ? "✓ معتمد" : "اعتماد"}</button>
           <button class="approve-btn reject-variant ${status==='rejected'?'is-rejected':'is-pending'}" data-id="${r.id}" data-action="rejected">${status==='rejected' ? "✕ مرفوض" : "رفض"}</button>
         </td>
-        <td><button class="lock-toggle-btn ${r.locked?'is-locked':''}" data-id="${r.id}">${r.locked ? "🔒 مقفل" : "🔓 فتح"}</button></td>
+        <td><button class="lock-toggle-btn ${r.locked?'is-locked':''}" data-id="${r.id}" ${r.closed?'disabled title="مغلق - افتح المشروع أولاً"':''}>${r.locked ? "🔒 مقفل" : "🔓 فتح"}</button></td>
+        <td>${r.closed
+          ? `<button class="reopen-btn" data-id="${r.id}" title="${r.closedNote?escapeAttr(r.closedNote):''}">✅ مغلق - إعادة فتح</button>`
+          : `<button class="close-proj-btn" data-id="${r.id}">إغلاق المشروع</button>`}</td>
       </tr>`;
     }).join("");
     tbody.querySelectorAll(".approve-btn").forEach(btn=>{
@@ -1268,17 +1617,25 @@ function renderAdmin(){
         setProjectLocked(btn.dataset.id, !btn.classList.contains("is-locked"));
       };
     });
+    tbody.querySelectorAll(".close-proj-btn").forEach(btn=>{
+      btn.onclick = ()=> openCloseProjectModal(btn.dataset.id);
+    });
+    tbody.querySelectorAll(".reopen-btn").forEach(btn=>{
+      btn.onclick = ()=> reopenProject(btn.dataset.id);
+    });
   }
 }
 
 function exportCsv(){
-  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","الخطة التفصيلية"]];
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","حالة الإغلاق","ملاحظة الإغلاق","الخطة التفصيلية"]];
   ALL_PROJECTS.forEach(r=>{
     const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===r.id);
     rows.push([
       r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.notes||"",r.year,
       r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار"),
       r.locked?"مقفل":"مفتوح",
+      r.closed?"مغلق ومكتمل":"مستمر",
+      r.closedNote||"",
       detailRec ? computeOverallPct(detailRec)+"%" : "غير مُدخلة"
     ]);
   });
@@ -1492,8 +1849,8 @@ function wireDetailModalStaticEvents(){
   document.getElementById("detailExportBtn").onclick = exportProjectDetailToExcel;
 }
 
-function exportProjectDetailToExcel(){
-  if(typeof XLSX === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
+async function exportProjectDetailToExcel(){
+  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
   const overlay = document.getElementById("detailModalOverlay");
   const projectId = overlay.dataset.projectId;
   const project = ALL_PROJECTS.find(p=>p.id===projectId);
@@ -1537,61 +1894,134 @@ function exportProjectDetailToExcel(){
     ["أعضاء فريق المشروع", fieldsData.teamMembers||""]
   ];
 
-  const aoa = [];
-  aoa.push(["اسم المشروع: " + (project.projectName||"")]);
-  infoRows.forEach(([label,val])=> aoa.push([null, label, val]));
-  aoa.push([null,null,null,null,null,null,"المدة الزمنية الاجمالية بالاسابيع", null, totalWeeks]);
-  aoa.push(["خطوات العمل","الوزن","المرحلة","خطوات العمل\n(يجب أن تشير خطوات العمل الى المخرج المتوقع من الخطوة)","الوثائق الداعمة\n(ما يثبت اتمام خطوة العمل)","تاريخ البدء\n(من بداية المشروع)","تاريخ الانتهاء","المدة الزمنية (بالأسابيع)","المستهدف الشهري%","الحالة"]);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("الخطة التفصيلية", { views:[{ rightToLeft:true }] });
+  ws.columns = [{width:14},{width:12},{width:16},{width:30},{width:24},{width:12},{width:12},{width:11},{width:13},{width:13}];
 
+  // العنوان
+  ws.mergeCells(1,1,1,10);
+  const titleCell = ws.getCell(1,1);
+  titleCell.value = "اسم المشروع: " + (project.projectName||"");
+  titleCell.font = { bold:true, size:16, color:{argb:XL_WHITE} };
+  titleCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_NAVY} };
+  titleCell.alignment = { horizontal:"center", vertical:"middle" };
+  ws.getRow(1).height = 28;
+
+  // بيانات المشروع الأساسية
+  infoRows.forEach(([label,val], idx)=>{
+    const r = idx+2;
+    ws.mergeCells(r,3,r,10);
+    const labelCell = ws.getCell(r,2);
+    labelCell.value = label;
+    labelCell.font = { bold:true, size:11, color:{argb:XL_NAVY} };
+    labelCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_LIGHTGRAY} };
+    labelCell.alignment = { horizontal:"right", vertical:"middle", wrapText:true };
+    const valCell = ws.getCell(r,3);
+    valCell.value = val;
+    valCell.font = { size:11 };
+    valCell.alignment = { horizontal:"right", vertical:"middle", wrapText:true };
+    ws.getRow(r).height = 20;
+  });
+  xlApplyBorders(ws, 2,2,16,10);
+
+  // المدة الزمنية الإجمالية
+  ws.mergeCells(17,7,17,8);
+  const lbl17 = ws.getCell(17,7);
+  lbl17.value = "المدة الزمنية الاجمالية بالاسابيع";
+  lbl17.font = { bold:true, color:{argb:XL_NAVY} };
+  lbl17.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_GOLD} };
+  lbl17.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+  const val17 = ws.getCell(17,9);
+  val17.value = totalWeeks;
+  val17.font = { bold:true, size:12 };
+  val17.alignment = { horizontal:"center", vertical:"middle" };
+  ws.getRow(17).height = 26;
+  xlApplyBorders(ws, 17,7,17,9);
+
+  // رأس جدول خطوات العمل
+  const headers = ["خطوات العمل","الوزن","المرحلة","خطوات العمل","الوثائق الداعمة","تاريخ البدء","تاريخ الانتهاء","المدة (بالأسابيع)","المستهدف الشهري%","الحالة"];
+  headers.forEach((h,ci)=>{
+    const cell = ws.getCell(18, ci+1);
+    cell.value = h;
+    cell.font = { bold:true, color:{argb:XL_WHITE}, size:11 };
+    cell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_NAVY} };
+    cell.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+  });
+  ws.getRow(18).height = 30;
+
+  // صفوف المراحل والخطوات
+  let currentRow = 19;
   const phaseRowRanges = [];
-  let currentRow = aoa.length + 1;
-  phases.forEach(ph=>{
+  phases.forEach((ph, pi)=>{
     const startRow = currentRow;
-    ph.steps.forEach((st, si)=>{
-      aoa.push([
-        null,
-        si===0 ? ph.weight : null,
-        si===0 ? ph.name : null,
-        st.name, st.docs, st.startDate, st.endDate, st.durationWeeks || null, null, st.status
-      ]);
+    const tint = XL_PHASE_TINTS[pi % XL_PHASE_TINTS.length];
+    ph.steps.forEach(st=>{
+      const r = currentRow;
+      ws.getCell(r,4).value = st.name;
+      ws.getCell(r,5).value = st.docs;
+      ws.getCell(r,6).value = st.startDate;
+      ws.getCell(r,7).value = st.endDate;
+      ws.getCell(r,8).value = st.durationWeeks || null;
+      ws.getCell(r,10).value = st.status;
+      for(let c=4;c<=10;c++){
+        const cell = ws.getCell(r,c);
+        cell.font = { size:10.5 };
+        cell.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+      }
+      ws.getCell(r,4).alignment = { horizontal:"right", vertical:"middle", wrapText:true };
       currentRow++;
     });
-    phaseRowRanges.push({ startRow, endRow: currentRow-1, weight: ph.weight });
+    const endRow = currentRow-1;
+    phaseRowRanges.push({ startRow, endRow, weight: ph.weight });
+
+    if(endRow>startRow){
+      ws.mergeCells(startRow,2,endRow,2);
+      ws.mergeCells(startRow,3,endRow,3);
+    }
+    const weightCell = ws.getCell(startRow,2);
+    weightCell.value = ph.weight;
+    weightCell.numFmt = "0%";
+    weightCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:tint} };
+    weightCell.font = { bold:true, color:{argb:XL_NAVY} };
+    weightCell.alignment = { horizontal:"center", vertical:"middle" };
+    const nameCell = ws.getCell(startRow,3);
+    nameCell.value = ph.name;
+    nameCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:tint} };
+    nameCell.font = { bold:true, color:{argb:XL_NAVY} };
+    nameCell.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+    xlApplyBorders(ws, startRow,1,endRow,10);
   });
-  aoa.push([]);
-  aoa.push(["**ملاحظة: تم إعداد هذه الاستمارة آليًا عبر منصة متابعة مشاريع الخطة الخمسية الحادية عشرة."]);
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
+  // معادلة المستهدف الشهري% (نفس معادلة الملف الأصلي)
   phaseRowRanges.forEach(range=>{
     for(let r=range.startRow; r<=range.endRow; r++){
-      const cellRef = XLSX.utils.encode_cell({ r:r-1, c:8 });
-      ws[cellRef] = { t:"n", f:`(H${r}/SUM($H$${range.startRow}:$H$${range.endRow}))*$B$${range.startRow}`, z:"0%" };
+      const cell = ws.getCell(r,9);
+      cell.value = { formula: `(H${r}/SUM($H$${range.startRow}:$H$${range.endRow}))*$B$${range.startRow}` };
+      cell.numFmt = "0%";
+      cell.font = { bold:true, color:{argb:XL_NAVY}, size:10.5 };
+      cell.alignment = { horizontal:"center", vertical:"middle" };
     }
   });
 
-  ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:9} }];
-  infoRows.forEach((_, idx)=>{
-    const r = idx+1;
-    ws["!merges"].push({ s:{r:r,c:2}, e:{r:r,c:9} });
-  });
-  ws["!merges"].push({ s:{r:16,c:6}, e:{r:16,c:7} });
-  phaseRowRanges.forEach(range=>{
-    if(range.endRow > range.startRow){
-      ws["!merges"].push({ s:{r:range.startRow-1,c:1}, e:{r:range.endRow-1,c:1} });
-      ws["!merges"].push({ s:{r:range.startRow-1,c:2}, e:{r:range.endRow-1,c:2} });
-    }
-  });
+  // عمود "خطوات العمل" الرأسي
   const lastStepRow = phaseRowRanges[phaseRowRanges.length-1].endRow;
-  ws["!merges"].push({ s:{r:17,c:0}, e:{r:lastStepRow-1,c:0} });
+  ws.mergeCells(18,1,lastStepRow,1);
+  const vertCell = ws.getCell(18,1);
+  vertCell.value = "خطوات العمل";
+  vertCell.font = { bold:true, size:14, color:{argb:XL_NAVY} };
+  vertCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_GOLD} };
+  vertCell.alignment = { horizontal:"center", vertical:"middle", textRotation:90 };
 
-  ws["!cols"] = [{wch:14},{wch:10},{wch:16},{wch:28},{wch:22},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12}];
+  // ملاحظة ختامية
+  const noteRow = lastStepRow+2;
+  ws.mergeCells(noteRow,1,noteRow,10);
+  const noteCell = ws.getCell(noteRow,1);
+  noteCell.value = "تم إعداد هذه الاستمارة آليًا عبر منصة متابعة مشاريع الخطة الخمسية الحادية عشرة.";
+  noteCell.font = { italic:true, size:10, color:{argb:XL_MUTED} };
+  noteCell.alignment = { horizontal:"right" };
 
-  const wb = XLSX.utils.book_new();
-  wb.Workbook = { Views: [{ RTL: true }] };
-  XLSX.utils.book_append_sheet(wb, ws, "الخطة التفصيلية");
   const safeName = (project.projectName||"مشروع").replace(/[\\/:*?"<>|]/g,"_").slice(0,40);
-  XLSX.writeFile(wb, `الخطة_التفصيلية_${safeName}.xlsx`);
+  await downloadWorkbook(wb, `الخطة_التفصيلية_${safeName}.xlsx`);
 }
 
 /* ==================== بطاقة تعريف البرنامج التنفيذي ==================== */
@@ -1635,8 +2065,8 @@ function wireProgramCardEvents(){
   });
 }
 
-function exportProgramCardToExcel(){
-  if(typeof XLSX === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
+async function exportProgramCardToExcel(){
+  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
   const programCode = document.getElementById("cardModalOverlay").dataset.programCode;
   const program = PROGRAMS.find(p=>p.code===programCode);
   if(!program) return;
@@ -1657,18 +2087,35 @@ function exportProgramCardToExcel(){
     ["الجهات المنفذة للمشاريع المرتبطة بالبرنامج التنفيذي", fieldsData.executingEntities||""]
   ];
 
-  const aoa = [["إسم البرنامج التنفيذي: " + program.name]];
-  rows.forEach(([label,val])=> aoa.push([label, val]));
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("بطاقة تعريف البرنامج", { views:[{ rightToLeft:true }] });
+  ws.columns = [{width:38},{width:65}];
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:1} }];
-  ws["!cols"] = [{wch:38},{wch:60}];
+  ws.mergeCells(1,1,1,2);
+  const titleCell = ws.getCell(1,1);
+  titleCell.value = "إسم البرنامج التنفيذي: " + program.name;
+  titleCell.font = { bold:true, size:15, color:{argb:XL_WHITE} };
+  titleCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_NAVY} };
+  titleCell.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+  ws.getRow(1).height = 30;
 
-  const wb = XLSX.utils.book_new();
-  wb.Workbook = { Views: [{ RTL: true }] };
-  XLSX.utils.book_append_sheet(wb, ws, "بطاقة تعريف البرنامج");
+  rows.forEach(([label,val], idx)=>{
+    const r = idx+2;
+    const labelCell = ws.getCell(r,1);
+    labelCell.value = label;
+    labelCell.font = { bold:true, size:11.5, color:{argb:XL_NAVY} };
+    labelCell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_GOLD} };
+    labelCell.alignment = { horizontal:"right", vertical:"middle", wrapText:true };
+    const valCell = ws.getCell(r,2);
+    valCell.value = val;
+    valCell.font = { size:11.5 };
+    valCell.alignment = { horizontal:"right", vertical:"middle", wrapText:true };
+    ws.getRow(r).height = 26;
+  });
+  xlApplyBorders(ws, 1,1,rows.length+1,2);
+
   const safeName = program.name.replace(/[\\/:*?"<>|]/g,"_").slice(0,40);
-  XLSX.writeFile(wb, `بطاقة_تعريف_${safeName}.xlsx`);
+  await downloadWorkbook(wb, `بطاقة_تعريف_${safeName}.xlsx`);
 }
 
 /* ---------------- Init ---------------- */
@@ -1689,6 +2136,9 @@ listenToProgramCards(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
+});
+listenToManagerAuth(()=>{
+  if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
 });
 if(!firebaseReady){
   console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
