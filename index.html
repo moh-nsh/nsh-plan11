@@ -189,6 +189,15 @@ input,select{font-family:inherit;}
   padding:5px 12px;border-radius:14px;white-space:nowrap;flex-shrink:0;
 }
 .locked-badge.rejected-badge{background:#FDEAEA;color:#B3202E;}
+.locked-badge.admin-lock-badge{background:var(--navy);color:#fff;}
+.project-row.admin-locked-row{background:#F3F4F6;border-color:#C7CBD3;}
+.lock-toggle-btn{
+  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:14px;
+  background:#F1F2F5;color:var(--text-muted);
+}
+.lock-toggle-btn:hover{background:#e2e5ea;}
+.lock-toggle-btn.is-locked{background:var(--navy);color:#fff;}
+.lock-toggle-btn.is-locked:hover{background:var(--navy-light);}
 .edit-fields{display:flex;gap:8px;flex-wrap:wrap;}
 .edit-fields input{
   flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;
@@ -352,6 +361,9 @@ table.meeting-table td{
 .mt-reject-btn.is-active{background:#B3202E;color:#fff;}
 .mt-note-btn{background:#EEF0F3;color:#8a6d1f;}
 .mt-note-btn:hover{background:#f5edd6;}
+.mt-lock-btn{background:#EEF0F3;color:var(--navy);}
+.mt-lock-btn:hover{background:#e2e5ea;}
+.mt-lock-btn.is-active{background:var(--navy);color:#fff;}
 
 tr.rejected-row td{background:#FDF6F6;}
 
@@ -530,6 +542,11 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="pendingChips"></div>
     </div>
 
+    <div class="pending-list">
+      <h3>متابعة الخطط التفصيلية للمشاريع المُدخلة</h3>
+      <div id="detailCoverageChips"></div>
+    </div>
+
     <div class="filters-bar">
       <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
       <select id="filterProgram"><option value="">كل البرامج التنفيذية</option></select>
@@ -557,6 +574,7 @@ tr.rejected-row td{background:#FDF6F6;}
           <th>ملاحظات</th>
           <th>السنة</th>
           <th>قرار المدير العام</th>
+          <th>القفل النهائي</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
@@ -624,6 +642,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="detail-modal-body" id="cardModalBody"></div>
     <div class="detail-modal-footer">
       <button class="btn-secondary" id="cardCancelBtn">إغلاق بدون حفظ</button>
+      <button class="export-btn" id="cardExportBtn">📊 تصدير Excel</button>
       <button class="add-btn" id="cardSaveBtn">💾 حفظ البطاقة</button>
     </div>
   </div>
@@ -737,6 +756,10 @@ function setProjectStatus(id, status){
     approvedAt: status==="approved" ? now : null,
     rejectedAt: status==="rejected" ? now : null
   });
+}
+// قفل نهائي من قسم التخطيط والدراسات: يمنع مدير البرنامج من التعديل أو الحذف حتى يُفتح مجددًا
+function setProjectLocked(id, locked){
+  updateProject(id, { locked: !!locked });
 }
 
 /* ---------------- الخطة التفصيلية لكل مشروع ---------------- */
@@ -897,7 +920,7 @@ function renderYearPanel(panelEl, program){
     html += `<div class="empty-note">لا توجد مشاريع مدخلة لسنة ${y} بعد.</div>`;
   }else{
     items.forEach((it,i)=>{
-      if(editingProjectId === it.id){
+      if(editingProjectId === it.id && !it.locked){
         html += `
         <div class="project-row edit-mode">
           <div class="idx">${i+1}</div>
@@ -910,27 +933,43 @@ function renderYearPanel(panelEl, program){
           <button class="cancel-btn" title="إلغاء">✕</button>
         </div>`;
       }else{
-        const rowClass = it.approved ? "approved-open-row" : (it.rejected ? "rejected-open-row" : "");
-        const badge = it.approved
-          ? `<span class="locked-badge" style="margin-inline-end:6px;">✓ معتمد</span>`
-          : (it.rejected ? `<span class="locked-badge rejected-badge" style="margin-inline-end:6px;">✕ مرفوض</span>` : "");
         const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===it.id);
         const detailBtn = detailRec
           ? `<button class="detail-btn has-detail" data-id="${it.id}" title="الخطة التفصيلية">📋 ${computeOverallPct(detailRec)}%</button>`
           : `<button class="detail-btn" data-id="${it.id}" title="إضافة خطة تفصيلية">📋 خطة تفصيلية</button>`;
-        html += `
-        <div class="project-row ${rowClass}">
-          <div class="idx">${i+1}</div>
-          <div class="info">
-            <div class="pname2">${escapeHtml(it.projectName)}</div>
-            ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
-            ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
-          </div>
-          ${badge}
-          ${detailBtn}
-          <button class="edit-btn" data-id="${it.id}" title="تعديل">✎</button>
-          <button class="del-btn" data-id="${it.id}" title="حذف">✕</button>
-        </div>`;
+
+        if(it.locked){
+          html += `
+          <div class="project-row locked-row admin-locked-row">
+            <div class="idx">${i+1}</div>
+            <div class="info">
+              <div class="pname2">${escapeHtml(it.projectName)}</div>
+              ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+              ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
+            </div>
+            ${it.approved ? `<span class="locked-badge" style="margin-inline-end:6px;">✓ معتمد</span>` : (it.rejected ? `<span class="locked-badge rejected-badge" style="margin-inline-end:6px;">✕ مرفوض</span>` : "")}
+            <span class="locked-badge admin-lock-badge" title="مقفل من قسم التخطيط والدراسات - لا يمكن التعديل أو الحذف إلا بإذن">🔒 مقفل من الإدارة</span>
+            ${detailBtn}
+          </div>`;
+        }else{
+          const rowClass = it.approved ? "approved-open-row" : (it.rejected ? "rejected-open-row" : "");
+          const badge = it.approved
+            ? `<span class="locked-badge" style="margin-inline-end:6px;">✓ معتمد</span>`
+            : (it.rejected ? `<span class="locked-badge rejected-badge" style="margin-inline-end:6px;">✕ مرفوض</span>` : "");
+          html += `
+          <div class="project-row ${rowClass}">
+            <div class="idx">${i+1}</div>
+            <div class="info">
+              <div class="pname2">${escapeHtml(it.projectName)}</div>
+              ${it.projectOwner ? `<div class="powner">مالك المشروع: ${escapeHtml(it.projectOwner)}</div>` : ""}
+              ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
+            </div>
+            ${badge}
+            ${detailBtn}
+            <button class="edit-btn" data-id="${it.id}" title="تعديل">✎</button>
+            <button class="del-btn" data-id="${it.id}" title="حذف">✕</button>
+          </div>`;
+        }
       }
     });
   }
@@ -1072,6 +1111,7 @@ function renderMeetingView(){
                   <button class="mt-act-btn mt-approve-btn ${status==='approved'?'is-active':''}" data-id="${it.id}" data-action="approved" title="اعتماد">✓</button>
                   <button class="mt-act-btn mt-reject-btn ${status==='rejected'?'is-active':''}" data-id="${it.id}" data-action="rejected" title="رفض">✕</button>
                   <button class="mt-act-btn mt-note-btn" data-id="${it.id}" title="إضافة / تعديل ملاحظة">📝</button>
+                  <button class="mt-act-btn mt-lock-btn ${it.locked?'is-active':''}" data-id="${it.id}" title="${it.locked ? 'مقفل - اضغط للفتح' : 'قفل نهائي'}">${it.locked ? "🔒" : "🔓"}</button>
                   <button class="detail-btn ${detailRec?'has-detail':''}" data-id="${it.id}" style="width:auto;height:auto;padding:2px 6px;font-size:10px;" title="الخطة التفصيلية">${detailBtnLabel}</button>
                 </span>
               </div>`;
@@ -1095,6 +1135,9 @@ function renderMeetingView(){
   });
   container.querySelectorAll(".mt-note-btn").forEach(btn=>{
     btn.onclick = ()=>{ editingNoteId = btn.dataset.id; renderMeetingView(); };
+  });
+  container.querySelectorAll(".mt-lock-btn").forEach(btn=>{
+    btn.onclick = ()=>{ setProjectLocked(btn.dataset.id, !btn.classList.contains("is-active")); };
   });
   container.querySelectorAll(".mt-note-cancel").forEach(btn=>{
     btn.onclick = ()=>{ editingNoteId = null; renderMeetingView(); };
@@ -1134,12 +1177,14 @@ function renderAdmin(){
   const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
   const approvedCount = ALL_PROJECTS.filter(p=>p.approved).length;
   const rejectedCount = ALL_PROJECTS.filter(p=>p.rejected).length;
+  const withDetailCount = ALL_PROJECTS.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id)).length;
   const summary = document.getElementById("summaryGrid");
   summary.innerHTML = `
     <div class="summary-card"><div class="num">${totalProjects}</div><div class="lbl">إجمالي المشاريع المدخلة</div></div>
     <div class="summary-card"><div class="num">${programsWithData} / 36</div><div class="lbl">برامج بدأت الإدخال</div></div>
     <div class="summary-card"><div class="num">${approvedCount}</div><div class="lbl">مشاريع معتمدة</div></div>
     <div class="summary-card"><div class="num">${rejectedCount}</div><div class="lbl">مشاريع مرفوضة</div></div>
+    <div class="summary-card"><div class="num">${withDetailCount} / ${totalProjects}</div><div class="lbl">مشاريع لديها خطة تفصيلية</div></div>
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
   `;
 
@@ -1149,6 +1194,20 @@ function renderAdmin(){
     const has = ALL_PROJECTS.some(pr=>pr.programCode===p.code);
     return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
   }).join("");
+
+  // detail-plan coverage chips (per submitted project)
+  const detailChips = document.getElementById("detailCoverageChips");
+  if(ALL_PROJECTS.length===0){
+    detailChips.innerHTML = `<span class="empty-note">لا توجد مشاريع مُدخلة بعد.</span>`;
+  }else{
+    detailChips.innerHTML = [...ALL_PROJECTS].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year).map(pr=>{
+      const rec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+      const label = `${pr.programCode} (${pr.year}) — ${pr.projectName}`;
+      return rec
+        ? `<span class="ok-chip" title="نسبة الإنجاز: ${computeOverallPct(rec)}%">✅ ${label} — ${computeOverallPct(rec)}%</span>`
+        : `<span class="pending-chip" title="لم تُدخل الخطة التفصيلية بعد">❌ ${label}</span>`;
+    }).join("");
+  }
 
   // table
   const g = document.getElementById("filterGoal").value;
@@ -1172,7 +1231,7 @@ function renderAdmin(){
 
   const tbody = document.getElementById("resultsBody");
   if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
   }else{
     tbody.innerHTML = rows.map(r=>{
       const status = r.approved ? "approved" : (r.rejected ? "rejected" : "pending");
@@ -1193,6 +1252,7 @@ function renderAdmin(){
           <button class="approve-btn ${status==='approved'?'is-approved':'is-pending'}" data-id="${r.id}" data-action="approved">${status==='approved' ? "✓ معتمد" : "اعتماد"}</button>
           <button class="approve-btn reject-variant ${status==='rejected'?'is-rejected':'is-pending'}" data-id="${r.id}" data-action="rejected">${status==='rejected' ? "✕ مرفوض" : "رفض"}</button>
         </td>
+        <td><button class="lock-toggle-btn ${r.locked?'is-locked':''}" data-id="${r.id}">${r.locked ? "🔒 مقفل" : "🔓 فتح"}</button></td>
       </tr>`;
     }).join("");
     tbody.querySelectorAll(".approve-btn").forEach(btn=>{
@@ -1203,12 +1263,25 @@ function renderAdmin(){
         setProjectStatus(id, isActive ? "pending" : action);
       };
     });
+    tbody.querySelectorAll(".lock-toggle-btn").forEach(btn=>{
+      btn.onclick = ()=>{
+        setProjectLocked(btn.dataset.id, !btn.classList.contains("is-locked"));
+      };
+    });
   }
 }
 
 function exportCsv(){
-  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام"]];
-  ALL_PROJECTS.forEach(r=> rows.push([r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.notes||"",r.year, r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار")]));
+  const rows = [["الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","الخطة التفصيلية"]];
+  ALL_PROJECTS.forEach(r=>{
+    const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===r.id);
+    rows.push([
+      r.goalName,r.programCode,r.programName,r.govManager,r.projectName,r.projectOwner||"",r.notes||"",r.year,
+      r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار"),
+      r.locked?"مقفل":"مفتوح",
+      detailRec ? computeOverallPct(detailRec)+"%" : "غير مُدخلة"
+    ]);
+  });
   const csv = "\uFEFF" + rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const link = document.createElement("a");
@@ -1555,10 +1628,47 @@ function wireProgramCardEvents(){
     });
     saveProgramCard(programCode, data).then(ok=>{ if(ok) closeCardModal(); });
   };
+  document.getElementById("cardExportBtn").onclick = exportProgramCardToExcel;
   document.body.addEventListener("click", e=>{
     const btn = e.target.closest(".card-btn");
     if(btn) openProgramCardForm(btn.dataset.code);
   });
+}
+
+function exportProgramCardToExcel(){
+  if(typeof XLSX === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
+  const programCode = document.getElementById("cardModalOverlay").dataset.programCode;
+  const program = PROGRAMS.find(p=>p.code===programCode);
+  if(!program) return;
+  const goal = STRATEGIC_GOALS.find(g=>g.id===program.goalId);
+
+  const fieldsData = {};
+  document.querySelectorAll("#cardModalBody [data-key]").forEach(el=>{ fieldsData[el.dataset.key] = el.value.trim(); });
+
+  const rows = [
+    ["البرنامج الإستراتيجي المرتبط به", goal.name],
+    ["وصف البرنامج التنفيذي", fieldsData.description||""],
+    ["التكلفة الإجمالية للبرنامج", fieldsData.totalCost||""],
+    ["مدير البرنامج التنفيذي", fieldsData.programManager||""],
+    ["تاريخ البدء", fieldsData.startDate||""],
+    ["تاريخ الانتهاء", fieldsData.endDate||""],
+    ["مستهدفات البرنامج التنفيذي", fieldsData.targets||""],
+    ["المشاريع المرتبطة بالبرنامج التنفيذي", fieldsData.relatedProjects||""],
+    ["الجهات المنفذة للمشاريع المرتبطة بالبرنامج التنفيذي", fieldsData.executingEntities||""]
+  ];
+
+  const aoa = [["إسم البرنامج التنفيذي: " + program.name]];
+  rows.forEach(([label,val])=> aoa.push([label, val]));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:1} }];
+  ws["!cols"] = [{wch:38},{wch:60}];
+
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, "بطاقة تعريف البرنامج");
+  const safeName = program.name.replace(/[\\/:*?"<>|]/g,"_").slice(0,40);
+  XLSX.writeFile(wb, `بطاقة_تعريف_${safeName}.xlsx`);
 }
 
 /* ---------------- Init ---------------- */
