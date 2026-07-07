@@ -40,10 +40,10 @@ const PROGRAMS = [
   { code: "3.4", goalId: 3, name: "برنامج تنظيم وتخطيط الموارد البشرية", govManager: "أحمد سالم الحجري", central: { name: "بدرية البلوشي", title: "رئيس قسم تخطيط الاحتياج", phone: "96626612", email: "badriya.ali@moh.gov.om" } },
 
   // 4. حوكمة القطاع الصحي
-  { code: "4.1", goalId: 4, name: "برنامج التشريعات والسياسات المعنية بالصحة", govManager: "عائشة الحارثية - الجودة", central: { name: "د. ناهدة اللواتي", title: "قسم السياسات الصحية ودعم القرارات", phone: "99346944", email: "Nahida.allawati@moh.gov.om" } },
-  { code: "4.2", goalId: 4, name: "برنامج الجودة والاعتماد", govManager: "عائشة الحارثية - الجودة", central: { name: "سامية البلوشي", title: "مديرة دائرة اعتماد المؤسسات الصحية", phone: "95223440", email: "samiyatr@gmail.com" } },
-  { code: "4.3", goalId: 4, name: "برنامج تعزيز منظومة اللامركزية", govManager: "عائشة الحارثية - الجودة", central: { name: "د. يوسف الحسني", title: "قسم تطوير الحوكمة", phone: "96200850", email: "Yousufmh.alhasani@moh.gov.om" } },
-  { code: "4.4", goalId: 4, name: "برنامج منظومة الرقابة والتقييم", govManager: "عائشة الحارثية - الجودة", central: { name: "د. منى اللواتيا", title: "مديرة دائرة تقويم الأداء الإكلينيكي", phone: "99467686", email: "ddc-dgqac@moh.gov.om" } },
+  { code: "4.1", goalId: 4, name: "برنامج التشريعات والسياسات المعنية بالصحة", govManager: "عائشة الحارثية", central: { name: "د. ناهدة اللواتي", title: "قسم السياسات الصحية ودعم القرارات", phone: "99346944", email: "Nahida.allawati@moh.gov.om" } },
+  { code: "4.2", goalId: 4, name: "برنامج الجودة والاعتماد", govManager: "عائشة الحارثية", central: { name: "سامية البلوشي", title: "مديرة دائرة اعتماد المؤسسات الصحية", phone: "95223440", email: "samiyatr@gmail.com" } },
+  { code: "4.3", goalId: 4, name: "برنامج تعزيز منظومة اللامركزية", govManager: "عائشة الحارثية", central: { name: "د. يوسف الحسني", title: "قسم تطوير الحوكمة", phone: "96200850", email: "Yousufmh.alhasani@moh.gov.om" } },
+  { code: "4.4", goalId: 4, name: "برنامج منظومة الرقابة والتقييم", govManager: "عائشة الحارثية", central: { name: "د. منى اللواتيا", title: "مديرة دائرة تقويم الأداء الإكلينيكي", phone: "99467686", email: "ddc-dgqac@moh.gov.om" } },
 
   // 5. تعزيز اقتصاد الدواء والأمن الدوائي
   { code: "5.2", goalId: 5, name: "برنامج تعزيز الرعاية الصيدلانية", govManager: "أحمد الجفيلي", central: { name: "الصيدلانية إسراء بنت ألطاف حسين اللواتي", title: "رئيسة قسم خدمات الرعاية الصيدلانية - المديرية العامة للتموين الطبي", phone: "92538528", email: "isra.allawatia@moh.gov.om" } },
