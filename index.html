@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>خطة التنمية الخمسية الحادية عشرة 2026-2030</title>
+<title>رصد | خطة التنمية الخمسية الحادية عشرة 2026-2030</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
 :root{
   --navy:#1B2A3A;
@@ -54,48 +55,40 @@ input,select{font-family:inherit;}
 .logout-btn:hover{background:#a80d25;}
 
 /* ===== Login screen ===== */
-.login-wrap{
-  max-width:1000px;margin:0 auto;padding:40px 20px 60px;text-align:center;
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,#0F1B28 0%,#1B2A3A 55%,#2A3F55 100%);
 }
-.login-logos{display:flex;justify-content:center;align-items:center;gap:30px;margin-bottom:10px;}
-.login-logos img{height:90px;}
-.login-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:26px;color:var(--navy);margin-top:14px;}
-.login-sub{color:var(--text-muted);font-size:14px;margin-top:6px;margin-bottom:36px;}
-.gold-rule{width:70px;height:4px;background:var(--gold);margin:16px auto 30px;border-radius:2px;}
+.login-card{
+  background:#fff;border-radius:22px;padding:44px 38px;max-width:440px;width:100%;
+  text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.4);
+}
+.login-logos{display:flex;justify-content:center;align-items:center;gap:26px;margin-bottom:6px;}
+.login-logos img{height:78px;}
+.org-context{color:var(--text-muted);font-size:11.5px;margin-top:10px;line-height:1.6;}
+.platform-name{
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:42px;color:var(--navy);
+  margin-top:8px;letter-spacing:1px;
+  background:linear-gradient(90deg,var(--navy),var(--navy-light));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.platform-tagline{color:var(--gold);font-size:13px;font-weight:700;margin-top:2px;margin-bottom:16px;}
+.login-title{font-family:'Tajawal',sans-serif;font-weight:700;font-size:13px;color:var(--text-muted);margin-top:0;line-height:1.4;}
+.gold-rule{width:60px;height:4px;background:var(--gold);margin:16px auto 26px;border-radius:2px;}
 
-.manager-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:16px;
-  text-align:right;
+.login-form{text-align:right;}
+.login-form label{display:block;font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.login-form select,.login-form input{
+  width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:inherit;margin-bottom:18px;background:#FAFAFB;
 }
-.manager-card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-right:5px solid var(--gold);
-  border-radius:12px;
-  padding:18px 20px;
-  transition:.15s;
-  box-shadow:0 1px 4px rgba(0,0,0,.04);
+.login-form select:focus,.login-form input:focus{outline:none;border-color:var(--gold);background:#fff;}
+.login-submit-btn{
+  width:100%;padding:13px;background:var(--navy);color:#fff;font-weight:700;font-size:14.5px;
+  border-radius:10px;margin-top:4px;box-shadow:0 6px 18px rgba(27,42,58,.3);
 }
-.manager-card:hover{
-  transform:translateY(-3px);
-  box-shadow:0 8px 20px rgba(27,42,58,.12);
-  border-right-color:var(--red);
-}
-.manager-card .name{font-family:'Cairo',sans-serif;font-weight:700;font-size:15px;color:var(--navy);}
-.manager-card .count{font-size:12px;color:var(--text-muted);margin-top:6px;}
-
-.admin-card{
-  margin-top:34px;
-  display:inline-flex;align-items:center;gap:10px;
-  background:var(--navy);color:#fff;
-  padding:12px 26px;border-radius:10px;
-  font-weight:700;font-size:14px;
-  box-shadow:0 4px 14px rgba(27,42,58,.25);
-}
-.admin-card:hover{background:var(--navy-light);}
-.admin-card svg{width:18px;height:18px;}
+.login-submit-btn:hover{background:var(--navy-light);}
+#loginError{text-align:center;margin-bottom:10px;}
 
 /* ===== Modal ===== */
 .modal-overlay{
@@ -327,6 +320,9 @@ tr.approved-row td{background:#FAFDFB;}
   background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:22px;
 }
 .pending-list h3{font-family:'Cairo',sans-serif;font-size:14px;margin-bottom:10px;color:var(--navy);}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.chart-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;height:280px;}
+@media (max-width:760px){ .charts-grid{grid-template-columns:1fr;} }
 .pending-chip{
   display:inline-block;background:#FDEAEA;color:var(--red);font-size:11.5px;
   padding:4px 10px;border-radius:14px;margin:3px;
@@ -459,6 +455,19 @@ tr.rejected-row td{background:#FDF6F6;}
 .detail-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px;}
 .detail-field{display:flex;flex-direction:column;gap:5px;}
 .detail-field.wide{grid-column:1 / -1;}
+.daterange-row{display:flex;gap:12px;}
+.daterange-row .detail-field{flex:1;}
+.list-builder{display:flex;flex-direction:column;gap:6px;}
+.list-item-row{display:flex;gap:8px;align-items:center;}
+.list-item-input{flex:1;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;}
+.list-item-input:focus{outline:none;border-color:var(--gold);}
+.list-item-remove{background:#FDEAEA;color:var(--red);width:30px;height:30px;border-radius:7px;font-size:13px;flex-shrink:0;}
+.list-item-remove:hover{background:#f9d3d7;}
+.list-add-btn{
+  align-self:flex-start;background:#EEF0F3;color:var(--navy);font-weight:700;font-size:12px;
+  padding:7px 16px;border-radius:8px;margin-top:2px;
+}
+.list-add-btn:hover{background:#e2e5ea;}
 .detail-field label{font-size:12px;font-weight:700;color:var(--navy);}
 .detail-field input,.detail-field select,.detail-field textarea{
   padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;
@@ -478,16 +487,20 @@ tr.rejected-row td{background:#FDF6F6;}
 .phase-steps{padding:0 12px;}
 .step-row{
   display:grid;grid-template-columns:1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
-  gap:6px;align-items:center;padding:5px 0;border-top:1px dashed var(--border);
+  gap:6px;align-items:start;padding:6px 0;border-top:1px dashed var(--border);
 }
 .step-row:first-child{border-top:none;}
 .step-row input,.step-row select{
   padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;width:100%;font-family:inherit;
 }
-.step-row input:focus,.step-row select:focus{outline:none;border-color:var(--gold);}
+.step-row textarea{
+  padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;width:100%;font-family:inherit;
+  resize:vertical;min-height:36px;max-height:90px;overflow-y:auto;line-height:1.35;white-space:pre-wrap;
+}
+.step-row input:focus,.step-row select:focus,.step-row textarea:focus{outline:none;border-color:var(--gold);}
 .step-duration[readonly]{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
-.step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;}
-.step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;}
+.step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
+.step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;margin-top:2px;}
 .step-remove-btn:hover{background:#f9d3d7;}
 .add-step-btn{
   display:block;margin:8px 12px 12px;background:#EEF0F3;color:var(--navy);font-weight:700;font-size:12px;
@@ -514,33 +527,25 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== LOGIN SCREEN ===================== -->
 <div id="loginScreen">
-  <div class="login-wrap">
+  <div class="login-card">
     <div class="login-logos">
       <img src="moh-logo.png" alt="وزارة الصحة">
       <img src="plan-logo.png" alt="خطة التنمية الخمسية الحادية عشرة">
     </div>
+    <div class="org-context">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية<br>دائرة التخطيط والتنظيم الصحي</div>
+    <div class="platform-name">رصد</div>
+    <div class="platform-tagline">نرصد لنُنجز</div>
     <div class="login-title">خطة التنمية الخمسية الحادية عشرة 2026 - 2030</div>
-    <div class="login-sub">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | تجميع مشاريع ومبادرات البرامج التنفيذية</div>
     <div class="gold-rule"></div>
-    <div id="managerGrid" class="manager-grid"></div>
-    <div id="adminCardWrap">
-      <div class="admin-card" id="adminCardBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-        <span id="adminLabel">قسم التخطيط والدراسات</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===================== PASSWORD MODAL (يُستخدم لدخول الإدارة ودخول المدراء) ===================== -->
-<div id="pwModal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <h3 id="pwModalTitle">دخول قسم التخطيط والدراسات</h3>
-    <input type="password" id="pwInput" placeholder="الرقم السري" maxlength="30">
-    <div class="modal-error" id="pwError"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="pwCancel">إلغاء</button>
-      <button class="btn-primary" id="pwSubmit">دخول</button>
+    <div class="login-form">
+      <label>المستخدم</label>
+      <select id="loginUserSelect">
+        <option value="">-- اختر المستخدم --</option>
+      </select>
+      <label>كلمة المرور</label>
+      <input type="password" id="loginPasswordInput" placeholder="كلمة المرور" maxlength="30">
+      <div class="modal-error" id="loginError"></div>
+      <button id="loginSubmitBtn" class="login-submit-btn">تسجيل الدخول</button>
     </div>
   </div>
 </div>
@@ -593,7 +598,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="left">
       <img src="moh-logo.png" alt="">
       <div>
-        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
         <div class="subtitle">إدخال مشاريع البرامج التنفيذية</div>
       </div>
     </div>
@@ -618,6 +623,14 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل الخطط التفصيلية</div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
+    <div class="meeting-filters" style="margin-bottom:18px;">
+      <select id="mgrOverviewProgramFilter"><option value="">كل برامجي</option></select>
+      <select id="mgrOverviewSort">
+        <option value="year">فرز حسب السنة</option>
+        <option value="owner">فرز حسب مالك المشروع</option>
+      </select>
+    </div>
+    <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
     <div id="mgrOverviewContent"></div>
   </div>
 </div>
@@ -628,12 +641,13 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="left">
       <img src="moh-logo.png" alt="">
       <div>
-        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
         <div class="subtitle">قسم التخطيط والدراسات - لوحة التجميع والاستعراض</div>
       </div>
     </div>
     <div class="actions">
       <button class="meeting-btn" id="openMeetingBtn">📋 الخطة المفصلة</button>
+      <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
@@ -644,6 +658,14 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="summaryGrid" class="summary-grid"></div>
 
     <div class="pending-list">
+      <h3>📊 المؤشرات البصرية</h3>
+      <div class="charts-grid">
+        <div class="chart-box"><canvas id="adminStatusChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminGoalChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="pending-list">
       <h3>حالة الإدخال حسب البرنامج التنفيذي (36 برنامج)</h3>
       <div id="pendingChips"></div>
     </div>
@@ -651,12 +673,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="pending-list">
       <h3>متابعة الخطط التفصيلية للمشاريع المُدخلة</h3>
       <div id="detailCoverageChips"></div>
-    </div>
-
-    <div class="pending-list">
-      <h3>🔑 إدارة كلمات مرور مدراء البرامج</h3>
-      <div class="section-desc" style="margin-bottom:14px;">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت (مثلاً لو نسيها أو للحفاظ على المدخلات)</div>
-      <div id="managerAuthList"></div>
     </div>
 
     <div class="filters-bar">
@@ -701,7 +717,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="left">
       <img src="moh-logo.png" alt="">
       <div>
-        <div class="title">خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
         <div class="subtitle">الخطة المفصلة - المشاريع والمبادرات حسب البرنامج الاستراتيجي</div>
       </div>
     </div>
@@ -716,6 +732,27 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="meetingProgramFilter" disabled><option value="">اختر الهدف الاستراتيجي أولاً</option></select>
     </div>
     <div id="meetingContent"></div>
+  </div>
+</div>
+
+<!-- ===================== PASSWORDS SCREEN (منفصلة عن لوحة الإدارة الرئيسية) ===================== -->
+<div id="passwordsScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">🔑 إدارة كلمات مرور مدراء البرامج التنفيذية</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="passwordsBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">كلمات مرور المدراء</div>
+    <div class="section-desc">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت (مثلاً لو نسيها أو للحفاظ على المدخلات)</div>
+    <div id="managerAuthList"></div>
   </div>
 </div>
 
@@ -798,15 +835,14 @@ const DETAIL_FIELD_DEFS = [
   { key:"totalCost", label:"التكلفة الإجمالية للمشروع", placeholder:"التكلفة المعتمدة من وزارة الاقتصاد والمالية" },
   { key:"currentSpending", label:"مستوى الصرف الحالي", placeholder:"المبلغ المصروف حتى الآن" },
   { key:"budgetType", label:"نوع الميزانية", select:["إنمائية","جارية"] },
-  { key:"startDate", label:"تاريخ البدء", type:"date" },
-  { key:"endDate", label:"تاريخ الانتهاء", type:"date" },
+  { type:"daterange", keys:["startDate","endDate"], labels:["تاريخ البدء","تاريخ الانتهاء"] },
   { key:"owningEntity", label:"الجهة", placeholder:"الجهة المالكة للمشروع" },
-  { key:"supportingEntities", label:"الجهات المساندة", placeholder:"الجهات المساندة في تنفيذ المشروع" },
+  { key:"supportingEntities", label:"الجهات المساندة", list:true, placeholder:"اسم جهة مساندة" },
   { key:"sector", label:"القطاع", placeholder:"تحديد القطاع" },
   { key:"location", label:"موقع المشروع", placeholder:"تحديد الولاية" },
   { key:"priority", label:"الأولوية", placeholder:"حسب وثيقة الرؤية" },
   { key:"projectManager", label:"مدير المشروع" },
-  { key:"teamMembers", label:"أعضاء فريق المشروع", textarea:true }
+  { key:"teamMembers", label:"أعضاء فريق المشروع", list:true, placeholder:"اسم عضو الفريق" }
 ];
 
 // بطاقة تعريف البرنامج التنفيذي (تُعبّأ مرة واحدة لكل برنامج تنفيذي، وليس لكل مشروع)
@@ -815,11 +851,10 @@ const PROGRAM_CARD_FIELD_DEFS = [
   { key:"description", label:"وصف البرنامج التنفيذي", textarea:true },
   { key:"totalCost", label:"التكلفة الإجمالية للبرنامج" },
   { key:"programManager", label:"مدير البرنامج التنفيذي" },
-  { key:"startDate", label:"تاريخ البدء", type:"date" },
-  { key:"endDate", label:"تاريخ الانتهاء", type:"date" },
-  { key:"targets", label:"مستهدفات البرنامج التنفيذي", placeholder:"من العناصر الأساسية للبرنامج الاستراتيجي", textarea:true },
-  { key:"relatedProjects", label:"المشاريع المرتبطة بالبرنامج التنفيذي", textarea:true },
-  { key:"executingEntities", label:"الجهات المنفذة للمشاريع المرتبطة بالبرنامج", textarea:true }
+  { type:"daterange", keys:["startDate","endDate"], labels:["تاريخ البدء","تاريخ الانتهاء"] },
+  { key:"targets", label:"مستهدفات البرنامج التنفيذي", list:true, placeholder:"مستهدف من العناصر الأساسية للبرنامج الاستراتيجي" },
+  { key:"relatedProjects", label:"المشاريع المرتبطة بالبرنامج التنفيذي", list:true, placeholder:"اسم مشروع مرتبط" },
+  { key:"executingEntities", label:"الجهات المنفذة للمشاريع المرتبطة بالبرنامج", list:true, placeholder:"اسم جهة منفذة" }
 ];
 
 // ألوان تصدير Excel (مطابقة لهوية المنصة البصرية)
@@ -996,56 +1031,47 @@ function setManagerPassword(name, newPassword){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
 
 /* ---------------- Login screen build ---------------- */
 function buildLogin(){
-  const grid = document.getElementById("managerGrid");
-  grid.innerHTML = "";
-  GOV_MANAGERS.forEach(name=>{
-    const count = PROGRAMS.filter(p=>p.govManager===name).length;
-    const card = document.createElement("div");
-    card.className = "manager-card";
-    card.style.cursor="pointer";
-    card.innerHTML = `<div class="name">🔒 ${name}</div><div class="count">${count} برنامج تنفيذي</div>`;
-    card.onclick = ()=> openLoginPrompt(name);
-    grid.appendChild(card);
-  });
-  document.getElementById("adminLabel").textContent = ADMIN_NAME;
+  const sel = document.getElementById("loginUserSelect");
+  sel.innerHTML = `<option value="">-- اختر المستخدم --</option>
+    <option value="__admin__">🔒 ${ADMIN_NAME}</option>
+    ${GOV_MANAGERS.map(name=>`<option value="${escapeAttr(name)}">${name}</option>`).join("")}`;
 }
 
-function openLoginPrompt(managerName){
-  pendingLoginManager = managerName; // null = دخول الإدارة
-  document.getElementById("pwModalTitle").textContent = managerName ? ("دخول: " + managerName) : "دخول قسم التخطيط والدراسات";
-  document.getElementById("pwInput").value="";
-  document.getElementById("pwError").textContent="";
-  document.getElementById("pwModal").classList.remove("hidden");
-  setTimeout(()=>document.getElementById("pwInput").focus(),50);
-}
-document.getElementById("adminCardBtn").onclick = ()=> openLoginPrompt(null);
-document.getElementById("pwCancel").onclick = ()=> document.getElementById("pwModal").classList.add("hidden");
-document.getElementById("pwSubmit").onclick = submitPw;
-document.getElementById("pwInput").addEventListener("keydown", e=>{ if(e.key==="Enter") submitPw(); });
-function submitPw(){
-  const val = document.getElementById("pwInput").value;
-  if(pendingLoginManager === null){
-    if(val === ADMIN_PASSWORD){
-      document.getElementById("pwModal").classList.add("hidden");
+document.getElementById("loginSubmitBtn").onclick = submitLoginForm;
+document.getElementById("loginPasswordInput").addEventListener("keydown", e=>{ if(e.key==="Enter") submitLoginForm(); });
+function submitLoginForm(){
+  const sel = document.getElementById("loginUserSelect").value;
+  const pw = document.getElementById("loginPasswordInput").value;
+  const errEl = document.getElementById("loginError");
+  if(!sel){ errEl.textContent = "الرجاء اختيار المستخدم"; return; }
+  if(sel === "__admin__"){
+    if(pw === ADMIN_PASSWORD){
+      errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterAdmin();
     }else{
-      document.getElementById("pwError").textContent = "الرقم السري غير صحيح";
+      errEl.textContent = "الرقم السري غير صحيح";
     }
   }else{
-    if(val === getManagerPassword(pendingLoginManager)){
-      document.getElementById("pwModal").classList.add("hidden");
-      enterManager(pendingLoginManager);
+    if(pw === getManagerPassword(sel)){
+      errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
+      enterManager(sel);
     }else{
-      document.getElementById("pwError").textContent = "كلمة المرور غير صحيحة";
+      errEl.textContent = "كلمة المرور غير صحيحة";
     }
   }
+}
+
+function resetLoginForm(){
+  document.getElementById("loginUserSelect").value = "";
+  document.getElementById("loginPasswordInput").value = "";
+  document.getElementById("loginError").textContent = "";
 }
 
 /* ---------------- Manager dashboard ---------------- */
@@ -1056,7 +1082,7 @@ function enterManager(name){
   switchMgrTab("input");
   renderManagerPrograms();
 }
-document.getElementById("mgrLogout").onclick = ()=>{ currentManager=null; showScreen("loginScreen"); };
+document.getElementById("mgrLogout").onclick = ()=>{ currentManager=null; resetLoginForm(); showScreen("loginScreen"); };
 
 /* ---- تبويبات صفحة المدير: إدخال المشاريع / لوحة المتابعة ---- */
 function switchMgrTab(tab){
@@ -1065,7 +1091,7 @@ function switchMgrTab(tab){
   document.getElementById("mgrTabOverview").classList.toggle("active", !isInput);
   document.getElementById("mgrInputView").classList.toggle("hidden", !isInput);
   document.getElementById("mgrOverviewView").classList.toggle("hidden", isInput);
-  if(!isInput) renderManagerOverview();
+  if(!isInput){ buildManagerOverviewFilters(); renderManagerOverview(); }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
@@ -1092,8 +1118,24 @@ document.getElementById("changePwSubmit").onclick = ()=>{
   });
 };
 
+let mgrOverviewChartInstance = null;
+
+function buildManagerOverviewFilters(){
+  const myPrograms = PROGRAMS.filter(p=>p.govManager===currentManager);
+  const sel = document.getElementById("mgrOverviewProgramFilter");
+  sel.innerHTML = "<option value=''>كل برامجي</option>" +
+    myPrograms.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  sel.onchange = renderManagerOverview;
+  document.getElementById("mgrOverviewSort").onchange = renderManagerOverview;
+}
+
 function renderManagerOverview(){
-  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  const progFilter = document.getElementById("mgrOverviewProgramFilter").value;
+  const sortBy = document.getElementById("mgrOverviewSort").value;
+
+  let myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  if(progFilter) myProjects = myProjects.filter(p=>p.programCode===progFilter);
+
   const withDetail = myProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
   const avgPct = withDetail.length
     ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
@@ -1101,18 +1143,39 @@ function renderManagerOverview(){
   const closedCount = myProjects.filter(p=>p.closed).length;
 
   document.getElementById("mgrOverviewSummary").innerHTML = `
-    <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي مشاريعي</div></div>
+    <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي المشاريع</div></div>
     <div class="summary-card"><div class="num">${withDetail.length} / ${myProjects.length}</div><div class="lbl">لديها خطة تفصيلية</div></div>
     <div class="summary-card"><div class="num">${avgPct}%</div><div class="lbl">متوسط نسبة الإنجاز</div></div>
     <div class="summary-card"><div class="num">${closedCount}</div><div class="lbl">مشاريع مغلقة ومكتملة</div></div>
   `;
+
+  // رسم بياني: توزيع حالات القرار
+  const approvedN = myProjects.filter(p=>p.approved).length;
+  const rejectedN = myProjects.filter(p=>p.rejected).length;
+  const pendingN = myProjects.length - approvedN - rejectedN;
+  const chartCanvas = document.getElementById("mgrOverviewChart");
+  if(mgrOverviewChartInstance) mgrOverviewChartInstance.destroy();
+  if(typeof Chart !== "undefined" && myProjects.length>0){
+    mgrOverviewChartInstance = new Chart(chartCanvas, {
+      type: "pie",
+      data: {
+        labels: ["معتمدة","مرفوضة","قيد الانتظار"],
+        datasets: [{ data:[approvedN,rejectedN,pendingN], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }]
+      },
+      options: { plugins:{ legend:{ position:"bottom", labels:{ font:{ family:"Tajawal" } } }, title:{ display:true, text:"توزيع حالات المشاريع", font:{ size:14 } } } }
+    });
+  }
 
   const container = document.getElementById("mgrOverviewContent");
   if(myProjects.length===0){
     container.innerHTML = `<div class="empty-note">لا توجد مشاريع مُدخلة بعد.</div>`;
     return;
   }
-  container.innerHTML = [...myProjects].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year).map(pr=>{
+  const sorted = [...myProjects].sort((a,b)=>{
+    if(sortBy==="owner") return (a.projectOwner||"").localeCompare(b.projectOwner||"") || a.year-b.year;
+    return a.year-b.year || a.programCode.localeCompare(b.programCode);
+  });
+  container.innerHTML = sorted.map(pr=>{
     const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
     const pct = detailRec ? computeOverallPct(detailRec) : 0;
     let phaseHtml = `<div class="ov-no-detail">لم تُدخل الخطة التفصيلية لهذا المشروع بعد.</div>`;
@@ -1136,7 +1199,7 @@ function renderManagerOverview(){
         <div class="ov-project-head">
           <div>
             <div class="ov-project-name">${escapeHtml(pr.projectName)}</div>
-            <div class="ov-project-meta">${pr.programCode} — ${pr.programName} | سنة ${pr.year} ${statusBadges}</div>
+            <div class="ov-project-meta">${pr.programCode} — ${pr.programName} | سنة ${pr.year}${pr.projectOwner ? " | مالك المشروع: "+escapeHtml(pr.projectOwner) : ""} ${statusBadges}</div>
           </div>
           <div class="ov-pct-badge">${detailRec ? pct+"%" : "—"}</div>
         </div>
@@ -1321,10 +1384,37 @@ function enterAdmin(){
   buildFilters();
   renderAdmin();
 }
-document.getElementById("adminLogout").onclick = ()=> showScreen("loginScreen");
+document.getElementById("adminLogout").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
 document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
 document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
+document.getElementById("openPasswordsBtn").onclick = ()=>{ showScreen("passwordsScreen"); renderPasswordsScreen(); };
+document.getElementById("passwordsBackBtn").onclick = ()=> showScreen("adminScreen");
+
+function renderPasswordsScreen(){
+  const authList = document.getElementById("managerAuthList");
+  authList.innerHTML = GOV_MANAGERS.map(name=>{
+    const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+    const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
+    return `
+      <div class="mgr-auth-row">
+        <div>
+          <div class="mname">${name}</div>
+          <div class="mupdated">${statusText}</div>
+        </div>
+        <button class="reset-pw-btn" data-name="${escapeAttr(name)}">إعادة تعيين</button>
+      </div>`;
+  }).join("");
+  authList.querySelectorAll(".reset-pw-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      pendingResetManager = btn.dataset.name;
+      document.getElementById("resetPwTitle").textContent = "إعادة تعيين كلمة مرور: " + pendingResetManager;
+      document.getElementById("resetPwNew").value = "";
+      document.getElementById("resetPwError").textContent = "";
+      document.getElementById("resetPwModal").classList.remove("hidden");
+    };
+  });
+}
 document.getElementById("resetPwCancel").onclick = ()=> document.getElementById("resetPwModal").classList.add("hidden");
 document.getElementById("resetPwSubmit").onclick = ()=>{
   const nw = document.getElementById("resetPwNew").value;
@@ -1480,17 +1570,60 @@ function buildFilters(){
   fg.innerHTML = "<option value=''>كل البرامج الاستراتيجية</option>" +
     STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
   const fp = document.getElementById("filterProgram");
-  fp.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" +
+  fp.innerHTML = "<option value=''>اختر الهدف الاستراتيجي أولاً (أو اتركه لعرض الكل)</option>" +
     PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  fg.onchange = ()=>{
+    if(fg.value===""){
+      fp.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" +
+        PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    }else{
+      const progs = PROGRAMS.filter(p=>p.goalId===Number(fg.value));
+      fp.innerHTML = "<option value=''>كل برامج هذا الهدف</option>" +
+        progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    }
+    renderAdmin();
+  };
   const fy = document.getElementById("filterYear");
   fy.innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
   const fm = document.getElementById("filterManager");
   fm.innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${m}">${m}</option>`).join("");
   const fa = document.getElementById("filterApproval");
-  [fg,fp,fy,fm,fa].forEach(el=> el.onchange = renderAdmin);
+  [fp,fy,fm,fa].forEach(el=> el.onchange = renderAdmin);
   document.getElementById("filterSearch").oninput = renderAdmin;
   document.getElementById("exportBtn").onclick = exportCsv;
   document.getElementById("printBtn").onclick = ()=> window.print();
+}
+
+let adminStatusChartInstance = null;
+let adminGoalChartInstance = null;
+function renderAdminCharts(approvedN, rejectedN, pendingN){
+  if(typeof Chart === "undefined") return;
+  const statusCanvas = document.getElementById("adminStatusChart");
+  if(adminStatusChartInstance) adminStatusChartInstance.destroy();
+  adminStatusChartInstance = new Chart(statusCanvas, {
+    type: "pie",
+    data: {
+      labels: ["معتمدة","مرفوضة","قيد الانتظار"],
+      datasets: [{ data:[approvedN,rejectedN,pendingN], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }]
+    },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:{ font:{ family:"Tajawal" } } }, title:{ display:true, text:"توزيع حالات قرار المشاريع", font:{ size:13 } } } }
+  });
+
+  const goalCanvas = document.getElementById("adminGoalChart");
+  if(adminGoalChartInstance) adminGoalChartInstance.destroy();
+  const goalCounts = STRATEGIC_GOALS.map(g=> ALL_PROJECTS.filter(p=>p.goalId===g.id).length);
+  adminGoalChartInstance = new Chart(goalCanvas, {
+    type: "bar",
+    data: {
+      labels: STRATEGIC_GOALS.map(g=>String(g.id)),
+      datasets: [{ label:"عدد المشاريع", data: goalCounts, backgroundColor:"#1B2A3A" }]
+    },
+    options: {
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي (1-8)", font:{ size:13 } } },
+      scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+    }
+  });
 }
 
 function renderAdmin(){
@@ -1510,6 +1643,8 @@ function renderAdmin(){
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
   `;
 
+  renderAdminCharts(approvedCount, rejectedCount, totalProjects-approvedCount-rejectedCount);
+
   // pending chips
   const chips = document.getElementById("pendingChips");
   chips.innerHTML = PROGRAMS.map(p=>{
@@ -1517,12 +1652,28 @@ function renderAdmin(){
     return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
   }).join("");
 
-  // detail-plan coverage chips (per submitted project)
+  // قراءة الفلاتر (تُستخدم في الجدول الرئيسي وخانة متابعة الخطط التفصيلية معًا)
+  const g = document.getElementById("filterGoal").value;
+  const prog = document.getElementById("filterProgram").value;
+  const yr = document.getElementById("filterYear").value;
+  const mgr = document.getElementById("filterManager").value;
+  const ap = document.getElementById("filterApproval").value;
+  const q = document.getElementById("filterSearch").value.trim().toLowerCase();
+
+  const filteredProjects = ALL_PROJECTS.filter(pr=>{
+    if(g && String(pr.goalId)!==g) return false;
+    if(prog && pr.programCode!==prog) return false;
+    if(yr && String(pr.year)!==yr) return false;
+    if(mgr && pr.govManager!==mgr) return false;
+    return true;
+  });
+
+  // detail-plan coverage chips (تعكس نفس فلتر الهدف/البرنامج المختار أعلاه)
   const detailChips = document.getElementById("detailCoverageChips");
-  if(ALL_PROJECTS.length===0){
-    detailChips.innerHTML = `<span class="empty-note">لا توجد مشاريع مُدخلة بعد.</span>`;
+  if(filteredProjects.length===0){
+    detailChips.innerHTML = `<span class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</span>`;
   }else{
-    detailChips.innerHTML = [...ALL_PROJECTS].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year).map(pr=>{
+    detailChips.innerHTML = [...filteredProjects].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year).map(pr=>{
       const rec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
       const label = `${pr.programCode} (${pr.year}) — ${pr.projectName}`;
       return rec
@@ -1531,39 +1682,8 @@ function renderAdmin(){
     }).join("");
   }
 
-  // manager password management list
-  const authList = document.getElementById("managerAuthList");
-  authList.innerHTML = GOV_MANAGERS.map(name=>{
-    const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
-    const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
-    return `
-      <div class="mgr-auth-row">
-        <div>
-          <div class="mname">${name}</div>
-          <div class="mupdated">${statusText}</div>
-        </div>
-        <button class="reset-pw-btn" data-name="${escapeAttr(name)}">إعادة تعيين</button>
-      </div>`;
-  }).join("");
-  authList.querySelectorAll(".reset-pw-btn").forEach(btn=>{
-    btn.onclick = ()=>{
-      pendingResetManager = btn.dataset.name;
-      document.getElementById("resetPwTitle").textContent = "إعادة تعيين كلمة مرور: " + pendingResetManager;
-      document.getElementById("resetPwNew").value = "";
-      document.getElementById("resetPwError").textContent = "";
-      document.getElementById("resetPwModal").classList.remove("hidden");
-    };
-  });
-
   // table
-  const g = document.getElementById("filterGoal").value;
-  const prog = document.getElementById("filterProgram").value;
-  const yr = document.getElementById("filterYear").value;
-  const mgr = document.getElementById("filterManager").value;
-  const ap = document.getElementById("filterApproval").value;
-  const q = document.getElementById("filterSearch").value.trim().toLowerCase();
-
-  let rows = ALL_PROJECTS.filter(pr=>{
+  let rows = filteredProjects.filter(pr=>{
     if(g && String(pr.goalId)!==g) return false;
     if(prog && pr.programCode!==prog) return false;
     if(yr && String(pr.year)!==yr) return false;
@@ -1656,6 +1776,33 @@ function escapeAttr(str){
 
 /* ==================== نموذج الخطة التفصيلية للمشروع ==================== */
 function detailFieldHTML(f, data){
+  if(f.type==="daterange"){
+    const v1 = data[f.keys[0]] || "";
+    const v2 = data[f.keys[1]] || "";
+    return `<div class="detail-field wide">
+      <div class="daterange-row">
+        <div class="detail-field"><label>${f.labels[0]}</label><input type="date" data-key="${f.keys[0]}" value="${escapeAttr(v1)}"></div>
+        <div class="detail-field"><label>${f.labels[1]}</label><input type="date" data-key="${f.keys[1]}" value="${escapeAttr(v2)}"></div>
+      </div>
+    </div>`;
+  }
+  if(f.list){
+    let items = data[f.key];
+    if(typeof items === "string") items = items.split("\n").map(s=>s.trim()).filter(Boolean);
+    if(!Array.isArray(items) || items.length===0) items = [""];
+    const rows = items.map(v=>`
+      <div class="list-item-row">
+        <input type="text" class="list-item-input" placeholder="${escapeAttr(f.placeholder||"")}" value="${escapeAttr(v)}">
+        <button class="list-item-remove" title="حذف">✕</button>
+      </div>`).join("");
+    return `<div class="detail-field wide">
+      <label>${f.label}</label>
+      <div class="list-builder" data-listkey="${f.key}">
+        <div class="list-items">${rows}</div>
+        <button class="list-add-btn">+ إضافة</button>
+      </div>
+    </div>`;
+  }
   const val = data[f.key] || "";
   if(f.select){
     return `<div class="detail-field"><label>${f.label}</label><select data-key="${f.key}">
@@ -1673,8 +1820,8 @@ function stepRowHTML(step){
   step = step || {};
   return `
     <div class="step-row">
-      <input type="text" class="step-name" placeholder="اسم خطوة العمل" value="${escapeAttr(step.name||"")}">
-      <input type="text" class="step-docs" placeholder="الوثائق الداعمة" value="${escapeAttr(step.docs||"")}">
+      <textarea class="step-name" placeholder="اسم خطوة العمل" rows="2">${escapeHtml(step.name||"")}</textarea>
+      <textarea class="step-docs" placeholder="الوثائق الداعمة" rows="2">${escapeHtml(step.docs||"")}</textarea>
       <input type="date" class="step-start" value="${step.startDate||""}">
       <input type="date" class="step-end" value="${step.endDate||""}">
       <input type="number" min="0" class="step-duration" placeholder="أسابيع" value="${step.durationWeeks!=null?step.durationWeeks:""}" readonly title="تُحسب تلقائيًا من الفرق بين تاريخ البدء والانتهاء">
@@ -1771,6 +1918,20 @@ function calcWeeksBetween(startStr, endStr){
   return Math.ceil(diffMs / (7*24*60*60*1000));
 }
 
+// قارئ عام لخانات "القوائم القابلة للإضافة" (مستهدفات، جهات مساندة، أعضاء فريق...)
+function readListBuilders(scopeSelector){
+  const data = {};
+  document.querySelectorAll(`${scopeSelector} [data-listkey]`).forEach(container=>{
+    const key = container.dataset.listkey;
+    const vals = [...container.querySelectorAll(".list-item-input")].map(i=>i.value.trim()).filter(Boolean);
+    data[key] = vals;
+  });
+  return data;
+}
+function listValueHTML(v){
+  return v && v.length ? v.map(x=>`• ${x}`).join("\n") : "";
+}
+
 function wireDetailModalStaticEvents(){
   const body = document.getElementById("detailModalBody");
   body.addEventListener("input", e=>{
@@ -1819,6 +1980,7 @@ function wireDetailModalStaticEvents(){
     document.querySelectorAll("#detailModalBody [data-key]").forEach(el=>{
       data[el.dataset.key] = el.value.trim();
     });
+    Object.assign(data, readListBuilders("#detailModalBody"));
     data.phases = DETAIL_PHASES_DEF.map((def,pi)=>{
       const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
       const rows = [...container.querySelectorAll(".step-row")];
@@ -1847,6 +2009,33 @@ function wireDetailModalStaticEvents(){
     if(btn) openProjectDetailForm(btn.dataset.id);
   });
   document.getElementById("detailExportBtn").onclick = exportProjectDetailToExcel;
+
+  // أزرار "+ إضافة" و"✕" لخانات القوائم القابلة للإضافة (تعمل داخل أي من النافذتين)
+  document.body.addEventListener("click", e=>{
+    if(e.target.classList.contains("list-add-btn")){
+      const builder = e.target.closest(".list-builder");
+      const itemsContainer = builder.querySelector(".list-items");
+      const ph = builder.querySelector(".list-item-input")?.placeholder || "";
+      itemsContainer.insertAdjacentHTML("beforeend", `
+        <div class="list-item-row">
+          <input type="text" class="list-item-input" placeholder="${escapeAttr(ph)}">
+          <button class="list-item-remove" title="حذف">✕</button>
+        </div>`);
+    }
+    if(e.target.classList.contains("list-item-remove")){
+      const row = e.target.closest(".list-item-row");
+      const itemsContainer = row.parentElement;
+      const ph = row.querySelector(".list-item-input")?.placeholder || "";
+      row.remove();
+      if(itemsContainer.children.length===0){
+        itemsContainer.insertAdjacentHTML("beforeend", `
+          <div class="list-item-row">
+            <input type="text" class="list-item-input" placeholder="${escapeAttr(ph)}">
+            <button class="list-item-remove" title="حذف">✕</button>
+          </div>`);
+      }
+    }
+  });
 }
 
 async function exportProjectDetailToExcel(){
@@ -1858,6 +2047,7 @@ async function exportProjectDetailToExcel(){
 
   const fieldsData = {};
   document.querySelectorAll("#detailModalBody [data-key]").forEach(el=>{ fieldsData[el.dataset.key] = el.value.trim(); });
+  Object.assign(fieldsData, readListBuilders("#detailModalBody"));
 
   const phases = DETAIL_PHASES_DEF.map((def,pi)=>{
     const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
@@ -1886,12 +2076,12 @@ async function exportProjectDetailToExcel(){
     ["تاريخ البدء", fieldsData.startDate||""],
     ["تاريخ الانتهاء", fieldsData.endDate||""],
     ["الجهة", fieldsData.owningEntity||""],
-    ["الجهات المساندة", fieldsData.supportingEntities||""],
+    ["الجهات المساندة", listValueHTML(fieldsData.supportingEntities)],
     ["القطاع", fieldsData.sector||""],
     ["موقع المشروع", fieldsData.location||""],
     ["الأولوية", fieldsData.priority||""],
     ["مدير المشروع", fieldsData.projectManager||""],
-    ["أعضاء فريق المشروع", fieldsData.teamMembers||""]
+    ["أعضاء فريق المشروع", listValueHTML(fieldsData.teamMembers)]
   ];
 
   const wb = new ExcelJS.Workbook();
@@ -2056,6 +2246,7 @@ function wireProgramCardEvents(){
     document.querySelectorAll("#cardModalBody [data-key]").forEach(el=>{
       data[el.dataset.key] = el.value.trim();
     });
+    Object.assign(data, readListBuilders("#cardModalBody"));
     saveProgramCard(programCode, data).then(ok=>{ if(ok) closeCardModal(); });
   };
   document.getElementById("cardExportBtn").onclick = exportProgramCardToExcel;
@@ -2074,6 +2265,7 @@ async function exportProgramCardToExcel(){
 
   const fieldsData = {};
   document.querySelectorAll("#cardModalBody [data-key]").forEach(el=>{ fieldsData[el.dataset.key] = el.value.trim(); });
+  Object.assign(fieldsData, readListBuilders("#cardModalBody"));
 
   const rows = [
     ["البرنامج الإستراتيجي المرتبط به", goal.name],
@@ -2082,9 +2274,9 @@ async function exportProgramCardToExcel(){
     ["مدير البرنامج التنفيذي", fieldsData.programManager||""],
     ["تاريخ البدء", fieldsData.startDate||""],
     ["تاريخ الانتهاء", fieldsData.endDate||""],
-    ["مستهدفات البرنامج التنفيذي", fieldsData.targets||""],
-    ["المشاريع المرتبطة بالبرنامج التنفيذي", fieldsData.relatedProjects||""],
-    ["الجهات المنفذة للمشاريع المرتبطة بالبرنامج التنفيذي", fieldsData.executingEntities||""]
+    ["مستهدفات البرنامج التنفيذي", listValueHTML(fieldsData.targets)],
+    ["المشاريع المرتبطة بالبرنامج التنفيذي", listValueHTML(fieldsData.relatedProjects)],
+    ["الجهات المنفذة للمشاريع المرتبطة بالبرنامج التنفيذي", listValueHTML(fieldsData.executingEntities)]
   ];
 
   const wb = new ExcelJS.Workbook();
@@ -2139,6 +2331,7 @@ listenToProgramCards(()=>{
 });
 listenToManagerAuth(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
+  if(!document.getElementById("passwordsScreen").classList.contains("hidden")) renderPasswordsScreen();
 });
 if(!firebaseReady){
   console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
