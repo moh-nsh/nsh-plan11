@@ -320,9 +320,10 @@ tr.approved-row td{background:#FAFDFB;}
   background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:22px;
 }
 .pending-list h3{font-family:'Cairo',sans-serif;font-size:14px;margin-bottom:10px;color:var(--navy);}
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.chart-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;height:280px;}
-@media (max-width:760px){ .charts-grid{grid-template-columns:1fr;} }
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.chart-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;height:230px;}
+@media (max-width:1000px){ .charts-grid{grid-template-columns:1fr 1fr;} }
+@media (max-width:640px){ .charts-grid{grid-template-columns:1fr;} }
 .pending-chip{
   display:inline-block;background:#FDEAEA;color:var(--red);font-size:11.5px;
   padding:4px 10px;border-radius:14px;margin:3px;
@@ -647,6 +648,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="actions">
       <button class="meeting-btn" id="openMeetingBtn">📋 الخطة المفصلة</button>
       <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
+      <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
@@ -657,21 +659,15 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="summaryGrid" class="summary-grid"></div>
 
     <div class="pending-list">
-      <h3>📊 المؤشرات البصرية</h3>
+      <h3>📊 المؤشرات البصرية <span style="font-weight:400;font-size:11.5px;color:var(--text-muted);">(تتفاعل مع الفلاتر أدناه)</span></h3>
       <div class="charts-grid">
         <div class="chart-box"><canvas id="adminStatusChart"></canvas></div>
         <div class="chart-box"><canvas id="adminGoalChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminYearChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminDetailChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminClosureChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
       </div>
-    </div>
-
-    <div class="pending-list">
-      <h3>حالة الإدخال حسب البرنامج التنفيذي (36 برنامج)</h3>
-      <div id="pendingChips"></div>
-    </div>
-
-    <div class="pending-list">
-      <h3>متابعة الخطط التفصيلية للمشاريع المُدخلة</h3>
-      <div id="detailCoverageChips"></div>
     </div>
 
     <div class="filters-bar">
@@ -688,6 +684,16 @@ tr.rejected-row td{background:#FDF6F6;}
       <input type="text" id="filterSearch" placeholder="بحث باسم المشروع...">
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
       <button class="print-btn" id="printBtn">طباعة</button>
+    </div>
+
+    <div class="pending-list">
+      <h3>حالة الإدخال حسب البرنامج التنفيذي (36 برنامج)</h3>
+      <div id="pendingChips"></div>
+    </div>
+
+    <div class="pending-list">
+      <h3>متابعة الخطط التفصيلية للمشاريع المُدخلة</h3>
+      <div id="detailCoverageChips"></div>
     </div>
 
     <table class="results">
@@ -755,6 +761,47 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== ACTIVITY LOG SCREEN ===================== -->
+<div id="activityScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">📜 سجل نشاط مدراء البرامج التنفيذية</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="activityBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">من يستخدم المنصة بفعالية؟</div>
+    <div class="section-desc">آخر نشاط لكل مدير، وسجل كامل لعمليات الدخول والخروج وإضافة المشاريع</div>
+    <div id="activitySummaryGrid" class="summary-grid" style="margin-bottom:22px;"></div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="activityManagerFilter"><option value="">كل المدراء</option></select>
+      <select id="activityActionFilter">
+        <option value="">كل الإجراءات</option>
+        <option value="login">تسجيل دخول</option>
+        <option value="logout">تسجيل خروج</option>
+        <option value="add_project">إضافة مشروع</option>
+      </select>
+    </div>
+    <table class="results">
+      <thead>
+        <tr>
+          <th>التاريخ والوقت</th>
+          <th>المدير</th>
+          <th>الإجراء</th>
+          <th>التفاصيل</th>
+        </tr>
+      </thead>
+      <tbody id="activityLogBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
@@ -816,6 +863,7 @@ const FIREBASE_CONFIG = {
 const COLLECTION_NAME = "nsh_plan11_projects"; // مجموعة بيانات جديدة ومستقلة
 const DETAILS_COLLECTION = "nsh_plan11_project_details"; // الخطط التفصيلية لكل مشروع
 const MANAGER_AUTH_COLLECTION = "nsh_plan11_manager_auth"; // كلمات مرور مدراء البرامج
+const ACTIVITY_LOG_COLLECTION = "nsh_plan11_activity_log"; // سجل الدخول/الخروج/الإضافات لمدراء البرامج
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
 
@@ -885,6 +933,7 @@ let ALL_PROJECTS = []; // كاش محلي من Firestore
 let ALL_PROJECT_DETAILS = []; // كاش محلي للخطط التفصيلية
 let ALL_PROGRAM_CARDS = []; // كاش محلي لبطاقات تعريف البرامج التنفيذية
 let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدراء
+let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
 let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
 let pendingResetManager = null; // اسم المدير الذي يعيد الإدارة تعيين كلمة مروره حاليًا
 let pendingCloseProjectId = null; // معرّف المشروع الجاري إغلاقه حاليًا
@@ -907,6 +956,7 @@ function addProject(data){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد. راجع إعداد Firebase في أعلى الملف."); return; }
   data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
   db.collection(COLLECTION_NAME).add(data);
+  logActivity(data.govManager, "add_project", `${data.programCode} — ${data.projectName} (سنة ${data.year})`);
 }
 function deleteProject(id){
   if(!firebaseReady) return;
@@ -1028,9 +1078,29 @@ function setManagerPassword(name, newPassword){
   });
 }
 
+/* ---------------- سجل نشاط المدراء (دخول/خروج/إضافة مشاريع) ---------------- */
+function listenToActivityLog(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(ACTIVITY_LOG_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    ALL_ACTIVITY_LOG = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function logActivity(managerName, action, detail){
+  if(!firebaseReady) return;
+  db.collection(ACTIVITY_LOG_COLLECTION).add({
+    managerName: managerName,
+    action: action, // 'login' | 'logout' | 'add_project'
+    detail: detail || "",
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(err=> console.error("logActivity error", err));
+}
+
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -1080,8 +1150,12 @@ function enterManager(name){
   showScreen("managerScreen");
   switchMgrTab("input");
   renderManagerPrograms();
+  logActivity(name, "login", "");
 }
-document.getElementById("mgrLogout").onclick = ()=>{ currentManager=null; resetLoginForm(); showScreen("loginScreen"); };
+document.getElementById("mgrLogout").onclick = ()=>{
+  if(currentManager) logActivity(currentManager, "logout", "");
+  currentManager=null; resetLoginForm(); showScreen("loginScreen");
+};
 
 /* ---- تبويبات صفحة المدير: إدخال المشاريع / لوحة المتابعة ---- */
 function switchMgrTab(tab){
@@ -1391,6 +1465,8 @@ document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
 document.getElementById("openPasswordsBtn").onclick = ()=>{ showScreen("passwordsScreen"); renderPasswordsScreen(); };
 document.getElementById("passwordsBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
+document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
 
 function renderPasswordsScreen(){
   const authList = document.getElementById("managerAuthList");
@@ -1415,6 +1491,60 @@ function renderPasswordsScreen(){
       document.getElementById("resetPwModal").classList.remove("hidden");
     };
   });
+}
+
+function buildActivityFilters(){
+  const fm = document.getElementById("activityManagerFilter");
+  fm.innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}">${m}</option>`).join("");
+  fm.onchange = renderActivityScreen;
+  document.getElementById("activityActionFilter").onchange = renderActivityScreen;
+}
+
+const ACTION_LABELS = { login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع" };
+
+function renderActivityScreen(){
+  // ملخص آخر نشاط وعدد مرات الدخول/الإضافات لكل مدير
+  const summary = document.getElementById("activitySummaryGrid");
+  const totalLogins = ALL_ACTIVITY_LOG.filter(a=>a.action==="login").length;
+  const totalAdds = ALL_ACTIVITY_LOG.filter(a=>a.action==="add_project").length;
+  const activeManagers = new Set(ALL_ACTIVITY_LOG.map(a=>a.managerName)).size;
+  summary.innerHTML = `
+    <div class="summary-card"><div class="num">${ALL_ACTIVITY_LOG.length}</div><div class="lbl">إجمالي الأحداث المسجّلة</div></div>
+    <div class="summary-card"><div class="num">${totalLogins}</div><div class="lbl">إجمالي مرات الدخول</div></div>
+    <div class="summary-card"><div class="num">${totalAdds}</div><div class="lbl">إجمالي المشاريع المُضافة</div></div>
+    <div class="summary-card"><div class="num">${activeManagers} / ${GOV_MANAGERS.length}</div><div class="lbl">مدراء لديهم نشاط مسجّل</div></div>
+  `;
+
+  const mgrFilter = document.getElementById("activityManagerFilter").value;
+  const actionFilter = document.getElementById("activityActionFilter").value;
+  let rows = ALL_ACTIVITY_LOG.filter(a=>{
+    if(mgrFilter && a.managerName!==mgrFilter) return false;
+    if(actionFilter && a.action!==actionFilter) return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    const ta = a.timestamp && a.timestamp.toMillis ? a.timestamp.toMillis() : 0;
+    const tb = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
+    return tb - ta;
+  });
+  rows = rows.slice(0, 300);
+
+  const tbody = document.getElementById("activityLogBody");
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#6B7688;padding:20px;">لا توجد أحداث مسجّلة بعد</td></tr>`;
+  }else{
+    tbody.innerHTML = rows.map(a=>{
+      const d = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : null;
+      const dateStr = d ? d.toLocaleString("ar-OM", { dateStyle:"medium", timeStyle:"short" }) : "—";
+      return `
+        <tr>
+          <td>${dateStr}</td>
+          <td>${escapeHtml(a.managerName||"")}</td>
+          <td>${ACTION_LABELS[a.action] || a.action}</td>
+          <td>${escapeHtml(a.detail||"—")}</td>
+        </tr>`;
+    }).join("");
+  }
 }
 document.getElementById("resetPwCancel").onclick = ()=> document.getElementById("resetPwModal").classList.add("hidden");
 document.getElementById("resetPwSubmit").onclick = ()=>{
@@ -1595,39 +1725,76 @@ function buildFilters(){
   document.getElementById("printBtn").onclick = ()=> window.print();
 }
 
-let adminStatusChartInstance = null;
-let adminGoalChartInstance = null;
-function renderAdminCharts(approvedN, rejectedN, pendingN){
+let adminChartInstances = {};
+function destroyAdminChart(key){
+  if(adminChartInstances[key]){ adminChartInstances[key].destroy(); adminChartInstances[key] = null; }
+}
+function renderAdminCharts(filteredProjects){
+  const ids = ["adminStatusChart","adminGoalChart","adminYearChart","adminDetailChart","adminClosureChart","adminManagerChart"];
   if(typeof Chart === "undefined"){
     const msg = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12.5px;text-align:center;padding:10px;">تعذر تحميل مكتبة الرسوم البيانية.<br>تأكد من اتصال الإنترنت وأعد تحميل الصفحة (Ctrl+F5).</div>`;
-    document.getElementById("adminStatusChart").closest(".chart-box").innerHTML = msg;
-    document.getElementById("adminGoalChart").closest(".chart-box").innerHTML = msg;
+    ids.forEach(id=> document.getElementById(id).closest(".chart-box").innerHTML = msg);
     return;
   }
-  const statusCanvas = document.getElementById("adminStatusChart");
-  if(adminStatusChartInstance) adminStatusChartInstance.destroy();
-  adminStatusChartInstance = new Chart(statusCanvas, {
+  const commonFont = { font:{ family:"Tajawal", size:11 } };
+
+  // 1) توزيع حالات القرار
+  const approvedN = filteredProjects.filter(p=>p.approved).length;
+  const rejectedN = filteredProjects.filter(p=>p.rejected).length;
+  const pendingN = filteredProjects.length - approvedN - rejectedN;
+  destroyAdminChart("status");
+  adminChartInstances.status = new Chart(document.getElementById("adminStatusChart"), {
     type: "pie",
-    data: {
-      labels: ["معتمدة","مرفوضة","قيد الانتظار"],
-      datasets: [{ data:[approvedN,rejectedN,pendingN], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }]
-    },
-    options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:{ font:{ family:"Tajawal" } } }, title:{ display:true, text:"توزيع حالات قرار المشاريع", font:{ size:13 } } } }
+    data: { labels:["معتمدة","مرفوضة","قيد الانتظار"], datasets:[{ data:[approvedN,rejectedN,pendingN], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:commonFont }, title:{ display:true, text:"توزيع حالات القرار", font:{ size:13 } } } }
   });
 
-  const goalCanvas = document.getElementById("adminGoalChart");
-  if(adminGoalChartInstance) adminGoalChartInstance.destroy();
-  const goalCounts = STRATEGIC_GOALS.map(g=> ALL_PROJECTS.filter(p=>p.goalId===g.id).length);
-  adminGoalChartInstance = new Chart(goalCanvas, {
+  // 2) عدد المشاريع حسب الهدف الاستراتيجي
+  destroyAdminChart("goal");
+  const goalCounts = STRATEGIC_GOALS.map(g=> filteredProjects.filter(p=>p.goalId===g.id).length);
+  adminChartInstances.goal = new Chart(document.getElementById("adminGoalChart"), {
     type: "bar",
-    data: {
-      labels: STRATEGIC_GOALS.map(g=>String(g.id)),
-      datasets: [{ label:"عدد المشاريع", data: goalCounts, backgroundColor:"#1B2A3A" }]
-    },
+    data: { labels: STRATEGIC_GOALS.map(g=>String(g.id)), datasets:[{ label:"عدد المشاريع", data: goalCounts, backgroundColor:"#1B2A3A" }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  // 3) عدد المشاريع حسب السنة
+  destroyAdminChart("year");
+  const yearCounts = YEARS.map(y=> filteredProjects.filter(p=>p.year===y).length);
+  adminChartInstances.year = new Chart(document.getElementById("adminYearChart"), {
+    type: "bar",
+    data: { labels: YEARS.map(String), datasets:[{ label:"عدد المشاريع", data: yearCounts, backgroundColor:"#C9962E" }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب السنة", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  // 4) حالة الخطة التفصيلية
+  destroyAdminChart("detail");
+  const withDetailN = filteredProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id)).length;
+  adminChartInstances.detail = new Chart(document.getElementById("adminDetailChart"), {
+    type: "doughnut",
+    data: { labels:["لديها خطة تفصيلية","بدون خطة تفصيلية"], datasets:[{ data:[withDetailN, filteredProjects.length-withDetailN], backgroundColor:["#1E4E8C","#EEF0F3"] }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:commonFont }, title:{ display:true, text:"حالة الخطة التفصيلية", font:{ size:13 } } } }
+  });
+
+  // 5) حالة الإغلاق
+  destroyAdminChart("closure");
+  const closedN = filteredProjects.filter(p=>p.closed).length;
+  adminChartInstances.closure = new Chart(document.getElementById("adminClosureChart"), {
+    type: "doughnut",
+    data: { labels:["مغلق ومكتمل","مستمر"], datasets:[{ data:[closedN, filteredProjects.length-closedN], backgroundColor:["#5B3EAF","#EEF0F3"] }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:commonFont }, title:{ display:true, text:"حالة إغلاق المشاريع", font:{ size:13 } } } }
+  });
+
+  // 6) عدد المشاريع حسب مدير المحافظة
+  destroyAdminChart("manager");
+  const managerCounts = GOV_MANAGERS.map(m=> filteredProjects.filter(p=>p.govManager===m).length);
+  adminChartInstances.manager = new Chart(document.getElementById("adminManagerChart"), {
+    type: "bar",
+    data: { labels: GOV_MANAGERS, datasets:[{ label:"عدد المشاريع", data: managerCounts, backgroundColor:"#1B2A3A" }] },
     options: {
-      maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي (1-8)", font:{ size:13 } } },
-      scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+      indexAxis:"y", maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب مدير المحافظة", font:{ size:13 } } },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } }, y:{ ticks:{ font:{ size:9 } } } }
     }
   });
 }
@@ -1649,16 +1816,7 @@ function renderAdmin(){
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
   `;
 
-  renderAdminCharts(approvedCount, rejectedCount, totalProjects-approvedCount-rejectedCount);
-
-  // pending chips
-  const chips = document.getElementById("pendingChips");
-  chips.innerHTML = PROGRAMS.map(p=>{
-    const has = ALL_PROJECTS.some(pr=>pr.programCode===p.code);
-    return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
-  }).join("");
-
-  // قراءة الفلاتر (تُستخدم في الجدول الرئيسي وخانة متابعة الخطط التفصيلية معًا)
+  // قراءة الفلاتر (تُستخدم في الرسوم البيانية والجدول وخانة متابعة الخطط التفصيلية معًا)
   const g = document.getElementById("filterGoal").value;
   const prog = document.getElementById("filterProgram").value;
   const yr = document.getElementById("filterYear").value;
@@ -1673,6 +1831,15 @@ function renderAdmin(){
     if(mgr && pr.govManager!==mgr) return false;
     return true;
   });
+
+  renderAdminCharts(filteredProjects);
+
+  // pending chips
+  const chips = document.getElementById("pendingChips");
+  chips.innerHTML = PROGRAMS.map(p=>{
+    const has = ALL_PROJECTS.some(pr=>pr.programCode===p.code);
+    return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
+  }).join("");
 
   // detail-plan coverage chips (تعكس نفس فلتر الهدف/البرنامج المختار أعلاه)
   const detailChips = document.getElementById("detailCoverageChips");
@@ -2338,6 +2505,9 @@ listenToProgramCards(()=>{
 listenToManagerAuth(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("passwordsScreen").classList.contains("hidden")) renderPasswordsScreen();
+});
+listenToActivityLog(()=>{
+  if(!document.getElementById("activityScreen").classList.contains("hidden")) renderActivityScreen();
 });
 if(!firebaseReady){
   console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
