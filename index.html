@@ -1154,7 +1154,9 @@ function renderManagerOverview(){
   const pendingN = myProjects.length - approvedN - rejectedN;
   const chartCanvas = document.getElementById("mgrOverviewChart");
   if(mgrOverviewChartInstance) mgrOverviewChartInstance.destroy();
-  if(typeof Chart !== "undefined" && myProjects.length>0){
+  if(typeof Chart === "undefined"){
+    chartCanvas.parentElement.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12.5px;">تعذر تحميل مكتبة الرسوم البيانية. تأكد من اتصال الإنترنت وأعد تحميل الصفحة (Ctrl+F5).</div>`;
+  }else if(myProjects.length>0){
     mgrOverviewChartInstance = new Chart(chartCanvas, {
       type: "pie",
       data: {
@@ -1596,7 +1598,12 @@ function buildFilters(){
 let adminStatusChartInstance = null;
 let adminGoalChartInstance = null;
 function renderAdminCharts(approvedN, rejectedN, pendingN){
-  if(typeof Chart === "undefined") return;
+  if(typeof Chart === "undefined"){
+    const msg = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12.5px;text-align:center;padding:10px;">تعذر تحميل مكتبة الرسوم البيانية.<br>تأكد من اتصال الإنترنت وأعد تحميل الصفحة (Ctrl+F5).</div>`;
+    document.getElementById("adminStatusChart").closest(".chart-box").innerHTML = msg;
+    document.getElementById("adminGoalChart").closest(".chart-box").innerHTML = msg;
+    return;
+  }
   const statusCanvas = document.getElementById("adminStatusChart");
   if(adminStatusChartInstance) adminStatusChartInstance.destroy();
   adminStatusChartInstance = new Chart(statusCanvas, {
