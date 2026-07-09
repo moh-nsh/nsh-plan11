@@ -151,6 +151,19 @@ input,select{font-family:inherit;}
   background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;flex-shrink:0;
 }
 .reset-pw-btn:hover{background:var(--navy-light);}
+
+.late-proj-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;border:1px solid #F3D6D9;border-radius:10px;margin-bottom:8px;background:#FDF8F8;
+}
+.late-proj-info .lp-name{font-weight:700;font-size:13px;color:var(--navy);}
+.late-proj-info .lp-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.late-proj-info .lp-steps{font-size:11.5px;color:var(--red);margin-top:4px;}
+.remind-btn{
+  background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;flex-shrink:0;
+}
+.remind-btn:hover{background:#a80d25;}
+.remind-btn:disabled{background:#D8C7C9;cursor:not-allowed;}
 .section-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);margin-bottom:4px;}
 .section-desc{color:var(--text-muted);font-size:13px;margin-bottom:22px;}
 
@@ -578,6 +591,19 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== EDIT MANAGER EMAIL MODAL ===================== -->
+<div id="editEmailModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="editEmailTitle">تحديث البريد الإلكتروني</h3>
+    <input type="email" id="editEmailInput" placeholder="البريد الإلكتروني" maxlength="100">
+    <div class="modal-error" id="editEmailError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="editEmailCancel">إلغاء</button>
+      <button class="btn-primary" id="editEmailSubmit">حفظ</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== CLOSE PROJECT MODAL ===================== -->
 <div id="closeProjectModal" class="modal-overlay hidden">
   <div class="modal-box" style="width:400px;">
@@ -696,6 +722,12 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="detailCoverageChips"></div>
     </div>
 
+    <div class="pending-list">
+      <h3>⏰ المشاريع المتأخرة عن جدولها الزمني</h3>
+      <div class="section-desc" style="margin-bottom:14px;">مشاريع فيها بند أو خطوة تجاوزت تاريخ انتهائها المستهدف دون اكتمال — يمكنك إرسال تذكير بالبريد مباشرة لمدير البرنامج</div>
+      <div id="lateProjectsList"></div>
+    </div>
+
     <table class="results">
       <thead>
         <tr>
@@ -786,6 +818,13 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="login">تسجيل دخول</option>
         <option value="logout">تسجيل خروج</option>
         <option value="add_project">إضافة مشروع</option>
+        <option value="edit_project">تعديل مشروع</option>
+        <option value="delete_project">حذف مشروع</option>
+        <option value="view_overview">متابعة (لوحة التقدم)</option>
+        <option value="fill_project_detail">تعبئة خطة تفصيلية</option>
+        <option value="fill_program_card">تعبئة بطاقة برنامج</option>
+        <option value="change_password">تغيير كلمة المرور</option>
+        <option value="send_reminder">إرسال تذكير تأخر</option>
       </select>
     </div>
     <table class="results">
@@ -936,6 +975,7 @@ let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدرا
 let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
 let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
 let pendingResetManager = null; // اسم المدير الذي يعيد الإدارة تعيين كلمة مروره حاليًا
+let pendingEmailManager = null; // اسم المدير الذي يُحدَّث بريده الإلكتروني حاليًا
 let pendingCloseProjectId = null; // معرّف المشروع الجاري إغلاقه حاليًا
 let currentManager = null;
 let activeYearByProgram = {};
@@ -1030,6 +1070,48 @@ function computeOverallPct(detailData){
   return Math.round(total*100);
 }
 
+// يكتشف خطوات العمل التي تجاوزت تاريخ انتهائها المستهدف دون اكتمال (لأغراض التذكير بالبريد)
+function findLateSteps(project){
+  const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
+  if(!detailRec || !Array.isArray(detailRec.phases)) return [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const late = [];
+  detailRec.phases.forEach(ph=>{
+    (ph.steps||[]).forEach(st=>{
+      if(st.endDate && st.status!=="مكتمل"){
+        const end = new Date(st.endDate);
+        if(!isNaN(end) && end < today){
+          const daysLate = Math.round((today-end)/(1000*60*60*24));
+          late.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", endDate: st.endDate, daysLate, status: st.status });
+        }
+      }
+    });
+  });
+  return late;
+}
+
+function sendDelayReminder(projectId){
+  const project = ALL_PROJECTS.find(p=>p.id===projectId);
+  if(!project) return;
+  const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
+  if(!authRec || !authRec.email){ alert("لا يوجد بريد إلكتروني مسجَّل لهذا المدير. أضفه من صفحة كلمات المرور."); return; }
+  const lateSteps = findLateSteps(project);
+  if(lateSteps.length===0){ alert("لا توجد بنود متأخرة حاليًا لهذا المشروع."); return; }
+
+  const subject = `تذكير: تأخر في تنفيذ مشروع "${project.projectName}" — ${project.programCode}`;
+  let body = `عزيزي/عزيزتي ${project.govManager}،\n\n`;
+  body += `نود تذكيركم بوجود تأخر في تنفيذ البند/البنود التالية ضمن المشروع "${project.projectName}" (${project.programCode} — ${project.programName}) للسنة ${project.year}:\n\n`;
+  lateSteps.forEach((s,i)=>{
+    body += `${i+1}. المرحلة: ${s.phaseName}\n   البند/النشاط: ${s.stepName}\n   تاريخ الانتهاء المستهدف: ${s.endDate}\n   عدد أيام التأخير: ${s.daysLate} يوم\n   الحالة الحالية: ${s.status}\n\n`;
+  });
+  body += `يُرجى تحديث حالة التنفيذ على منصة "رصد" في أقرب وقت ممكن، أو التواصل مع قسم التخطيط والدراسات في حال وجود أي معوقات.\n\n`;
+  body += `مع الشكر،\nقسم التخطيط والدراسات\nدائرة التخطيط والتنظيم الصحي\nالمديرية العامة للخدمات الصحية - محافظة شمال الشرقية`;
+
+  const mailtoLink = `mailto:${encodeURIComponent(authRec.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailtoLink;
+  logActivity(ADMIN_NAME, "send_reminder", `${project.programCode} — ${project.projectName} (${lateSteps.length} بند متأخر)`);
+}
+
 /* ---------------- بطاقة تعريف البرنامج التنفيذي ---------------- */
 function listenToProgramCards(cb){
   if(!firebaseReady){ cb([]); return; }
@@ -1071,9 +1153,20 @@ function setManagerPassword(name, newPassword){
   return db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({
     password: newPassword,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=> true).catch(err=>{
+  }, { merge:true }).then(()=> true).catch(err=>{
     console.error(err);
     alert("تعذّر حفظ كلمة المرور. على الأغلب قواعد الأمان في Firestore لا تسمح بالوصول لمجموعة \"" + MANAGER_AUTH_COLLECTION + "\". راجع مع قسم التخطيط لإضافتها. تفاصيل الخطأ: " + err.message);
+    return false;
+  });
+}
+function setManagerEmail(name, email){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  return db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({
+    email: email,
+    emailUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge:true }).then(()=> true).catch(err=>{
+    console.error(err);
+    alert("تعذّر حفظ البريد الإلكتروني. تفاصيل الخطأ: " + err.message);
     return false;
   });
 }
@@ -1164,7 +1257,7 @@ function switchMgrTab(tab){
   document.getElementById("mgrTabOverview").classList.toggle("active", !isInput);
   document.getElementById("mgrInputView").classList.toggle("hidden", !isInput);
   document.getElementById("mgrOverviewView").classList.toggle("hidden", isInput);
-  if(!isInput){ buildManagerOverviewFilters(); renderManagerOverview(); }
+  if(!isInput){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
@@ -1187,7 +1280,11 @@ document.getElementById("changePwSubmit").onclick = ()=>{
   if(!nw || nw.length<4){ errEl.textContent = "كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل"; return; }
   if(nw !== conf){ errEl.textContent = "كلمة المرور الجديدة وتأكيدها غير متطابقين"; return; }
   setManagerPassword(currentManager, nw).then(ok=>{
-    if(ok){ document.getElementById("changePwModal").classList.add("hidden"); alert("تم تغيير كلمة المرور بنجاح."); }
+    if(ok){
+      document.getElementById("changePwModal").classList.add("hidden");
+      alert("تم تغيير كلمة المرور بنجاح.");
+      logActivity(currentManager, "change_password", "");
+    }
   });
 };
 
@@ -1407,7 +1504,14 @@ function renderYearPanel(panelEl, program){
   panelEl.innerHTML = html;
 
   panelEl.querySelectorAll(".del-btn").forEach(btn=>{
-    btn.onclick = ()=>{ if(confirm("هل تريد حذف هذا المشروع؟")) deleteProject(btn.dataset.id); };
+    btn.onclick = ()=>{
+      if(confirm("هل تريد حذف هذا المشروع؟")){
+        const row = btn.closest(".project-row");
+        const pname = row.querySelector(".pname2") ? row.querySelector(".pname2").textContent : "";
+        deleteProject(btn.dataset.id);
+        logActivity(getActorName(), "delete_project", pname);
+      }
+    };
   });
   panelEl.querySelectorAll(".edit-btn").forEach(btn=>{
     btn.onclick = ()=>{ editingProjectId = btn.dataset.id; renderManagerPrograms(); };
@@ -1423,6 +1527,7 @@ function renderYearPanel(panelEl, program){
       const nt = row.querySelector(".editNotes").value.trim();
       if(!nm){ row.querySelector(".editName").focus(); return; }
       updateProject(btn.dataset.id, { projectName: nm, projectOwner: ow, notes: nt });
+      logActivity(getActorName(), "edit_project", nm);
       editingProjectId = null;
       renderManagerPrograms();
     };
@@ -1473,22 +1578,36 @@ function renderPasswordsScreen(){
   authList.innerHTML = GOV_MANAGERS.map(name=>{
     const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
     const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
+    const emailText = rec && rec.email ? rec.email : "لا يوجد بريد إلكتروني مسجَّل";
     return `
       <div class="mgr-auth-row">
         <div>
           <div class="mname">${name}</div>
-          <div class="mupdated">${statusText}</div>
+          <div class="mupdated">${statusText} | 📧 ${escapeHtml(emailText)}</div>
         </div>
-        <button class="reset-pw-btn" data-name="${escapeAttr(name)}">إعادة تعيين</button>
+        <div style="display:flex;gap:8px;">
+          <button class="reset-pw-btn" data-name="${escapeAttr(name)}" style="background:#1E4E8C;">✎ البريد</button>
+          <button class="reset-pw-btn" data-name="${escapeAttr(name)}" data-action="resetpw">إعادة تعيين</button>
+        </div>
       </div>`;
   }).join("");
-  authList.querySelectorAll(".reset-pw-btn").forEach(btn=>{
+  authList.querySelectorAll(".reset-pw-btn[data-action='resetpw']").forEach(btn=>{
     btn.onclick = ()=>{
       pendingResetManager = btn.dataset.name;
       document.getElementById("resetPwTitle").textContent = "إعادة تعيين كلمة مرور: " + pendingResetManager;
       document.getElementById("resetPwNew").value = "";
       document.getElementById("resetPwError").textContent = "";
       document.getElementById("resetPwModal").classList.remove("hidden");
+    };
+  });
+  authList.querySelectorAll(".reset-pw-btn:not([data-action])").forEach(btn=>{
+    btn.onclick = ()=>{
+      pendingEmailManager = btn.dataset.name;
+      const rec = ALL_MANAGER_AUTH.find(a=>a.id===pendingEmailManager);
+      document.getElementById("editEmailTitle").textContent = "تحديث بريد: " + pendingEmailManager;
+      document.getElementById("editEmailInput").value = (rec && rec.email) || "";
+      document.getElementById("editEmailError").textContent = "";
+      document.getElementById("editEmailModal").classList.remove("hidden");
     };
   });
 }
@@ -1500,7 +1619,13 @@ function buildActivityFilters(){
   document.getElementById("activityActionFilter").onchange = renderActivityScreen;
 }
 
-const ACTION_LABELS = { login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع" };
+const ACTION_LABELS = {
+  login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
+  edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
+  fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
+  send_reminder:"📧 إرسال تذكير تأخر"
+};
+function getActorName(){ return currentManager || ADMIN_NAME; }
 
 function renderActivityScreen(){
   // ملخص آخر نشاط وعدد مرات الدخول/الإضافات لكل مدير
@@ -1553,6 +1678,15 @@ document.getElementById("resetPwSubmit").onclick = ()=>{
   if(!nw || nw.length<4){ errEl.textContent = "كلمة المرور يجب أن تكون 4 أحرف على الأقل"; return; }
   setManagerPassword(pendingResetManager, nw).then(ok=>{
     if(ok){ document.getElementById("resetPwModal").classList.add("hidden"); alert("تم إعادة تعيين كلمة المرور بنجاح."); }
+  });
+};
+document.getElementById("editEmailCancel").onclick = ()=> document.getElementById("editEmailModal").classList.add("hidden");
+document.getElementById("editEmailSubmit").onclick = ()=>{
+  const val = document.getElementById("editEmailInput").value.trim();
+  const errEl = document.getElementById("editEmailError");
+  if(val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){ errEl.textContent = "صيغة البريد الإلكتروني غير صحيحة"; return; }
+  setManagerEmail(pendingEmailManager, val).then(ok=>{
+    if(ok){ document.getElementById("editEmailModal").classList.add("hidden"); }
   });
 };
 function openCloseProjectModal(id){
@@ -1853,6 +1987,33 @@ function renderAdmin(){
         ? `<span class="ok-chip" title="نسبة الإنجاز: ${computeOverallPct(rec)}%">✅ ${label} — ${computeOverallPct(rec)}%</span>`
         : `<span class="pending-chip" title="لم تُدخل الخطة التفصيلية بعد">❌ ${label}</span>`;
     }).join("");
+  }
+
+  // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد
+  const lateList = document.getElementById("lateProjectsList");
+  const lateEntries = filteredProjects
+    .map(pr=> ({ project: pr, lateSteps: findLateSteps(pr) }))
+    .filter(e=> e.lateSteps.length>0);
+  if(lateEntries.length===0){
+    lateList.innerHTML = `<div class="empty-note">لا توجد مشاريع متأخرة عن جدولها حاليًا ضمن هذا الاختيار. ✅</div>`;
+  }else{
+    lateList.innerHTML = lateEntries.map(({project, lateSteps})=>{
+      const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
+      const hasEmail = authRec && authRec.email;
+      const stepsText = lateSteps.map(s=> `${s.phaseName} — ${s.stepName} (متأخر ${s.daysLate} يوم عن ${s.endDate})`).join(" | ");
+      return `
+        <div class="late-proj-row">
+          <div class="late-proj-info">
+            <div class="lp-name">${escapeHtml(project.projectName)} <span style="font-weight:400;color:var(--text-muted);">— ${project.programCode} — ${escapeHtml(project.govManager)}</span></div>
+            <div class="lp-meta">سنة ${project.year} | ${lateSteps.length} بند/خطوة متأخرة</div>
+            <div class="lp-steps">⏰ ${escapeHtml(stepsText)}</div>
+          </div>
+          <button class="remind-btn" data-id="${project.id}" ${hasEmail?'':'disabled title="لا يوجد بريد إلكتروني مسجَّل لهذا المدير - أضفه من صفحة كلمات المرور"'}>📧 إرسال تذكير</button>
+        </div>`;
+    }).join("");
+    lateList.querySelectorAll(".remind-btn").forEach(btn=>{
+      btn.onclick = ()=> sendDelayReminder(btn.dataset.id);
+    });
   }
 
   // table
@@ -2170,7 +2331,13 @@ function wireDetailModalStaticEvents(){
         })).filter(s=> s.name || s.docs || s.durationWeeks)
       };
     });
-    saveProjectDetail(projectId, data).then(ok=>{ if(ok) closeDetailModal(); });
+    saveProjectDetail(projectId, data).then(ok=>{
+      if(ok){
+        closeDetailModal();
+        const proj = ALL_PROJECTS.find(p=>p.id===projectId);
+        logActivity(getActorName(), "fill_project_detail", proj ? proj.projectName : "");
+      }
+    });
   };
   // إغلاق عند الضغط خارج صندوق النموذج
   document.getElementById("detailModalOverlay").addEventListener("click", e=>{
@@ -2420,7 +2587,13 @@ function wireProgramCardEvents(){
       data[el.dataset.key] = el.value.trim();
     });
     Object.assign(data, readListBuilders("#cardModalBody"));
-    saveProgramCard(programCode, data).then(ok=>{ if(ok) closeCardModal(); });
+    saveProgramCard(programCode, data).then(ok=>{
+      if(ok){
+        closeCardModal();
+        const prog = PROGRAMS.find(p=>p.code===programCode);
+        logActivity(getActorName(), "fill_program_card", prog ? `${prog.code} ${prog.name}` : programCode);
+      }
+    });
   };
   document.getElementById("cardExportBtn").onclick = exportProgramCardToExcel;
   document.body.addEventListener("click", e=>{
