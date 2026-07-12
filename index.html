@@ -521,6 +521,7 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .step-row input:focus,.step-row select:focus,.step-row textarea:focus{outline:none;border-color:var(--gold);}
 .step-duration[readonly]{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
+.step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
 .step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;margin-top:2px;}
 .step-remove-btn:hover{background:#f9d3d7;}
@@ -529,6 +530,28 @@ tr.rejected-row td{background:#FDF6F6;}
   padding:8px 14px;border-radius:8px;
 }
 .add-step-btn:hover{background:#e2e5ea;}
+
+.gantt-section{margin-top:10px;}
+.gantt-section h4{font-family:'Cairo',sans-serif;font-size:14px;color:var(--navy);margin-bottom:10px;}
+.gantt-rows{display:flex;flex-direction:column;gap:6px;}
+.gantt-row{display:flex;align-items:center;gap:10px;}
+.gantt-label{width:160px;flex-shrink:0;font-size:11px;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gantt-track{flex:1;height:16px;background:#F1F2F5;border-radius:5px;position:relative;}
+.gantt-bar{position:absolute;top:0;height:100%;border-radius:5px;min-width:6px;}
+.gantt-legend{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-muted);margin-top:8px;padding:0 170px 0 0;}
+
+.exec-header{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--gold);}
+.exec-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);}
+.exec-sub{font-size:12.5px;color:var(--text-muted);margin-top:6px;}
+.exec-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+.exec-stat{background:#fff;border:1px solid var(--border);border-right:4px solid var(--gold);border-radius:10px;padding:16px;text-align:center;}
+.exec-num{font-family:'Cairo',sans-serif;font-weight:800;font-size:26px;color:var(--navy);}
+.exec-lbl{font-size:11.5px;color:var(--text-muted);margin-top:6px;}
+@media (max-width:900px){ .exec-stats-grid{grid-template-columns:repeat(2,1fr);} }
+@media print{
+  #execSummaryScreen .chart-box{height:260px;page-break-inside:avoid;}
+  #execSummaryScreen{max-width:100%;}
+}
 
 @media (max-width:760px){
   .detail-field-grid{grid-template-columns:1fr;}
@@ -684,6 +707,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
       <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
       <button class="meeting-btn" id="openBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
+      <button class="meeting-btn" id="openExecSummaryBtn" style="background:#C9962E;color:var(--navy);">🖨️ لمحة تنفيذية</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
@@ -716,7 +740,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="rejected">المرفوضة فقط</option>
         <option value="pending">قيد الانتظار (بدون قرار)</option>
       </select>
-      <input type="text" id="filterSearch" placeholder="بحث باسم المشروع...">
+      <input type="text" id="filterSearch" placeholder="بحث شامل (المشروع، المالك، المدير، الملاحظات، خطوات الخطة)...">
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
       <button class="print-btn" id="printBtn">طباعة</button>
     </div>
@@ -875,18 +899,33 @@ tr.rejected-row td{background:#FDF6F6;}
         <button class="btn-secondary" id="backupSelectNone" style="padding:8px 18px;border-radius:8px;">إلغاء التحديد</button>
       </div>
       <div class="backup-checklist">
-        <label class="backup-check-item"><input type="checkbox" value="projects" checked> المشاريع والمبادرات المُدخلة</label>
-        <label class="backup-check-item"><input type="checkbox" value="reference" checked> البيانات المرجعية (البرامج الاستراتيجية والتنفيذية)</label>
-        <label class="backup-check-item"><input type="checkbox" value="detailInfo" checked> الخطط التفصيلية - البيانات الأساسية للمشاريع</label>
-        <label class="backup-check-item"><input type="checkbox" value="detailSteps" checked> الخطط التفصيلية - خطوات مراحل التنفيذ</label>
-        <label class="backup-check-item"><input type="checkbox" value="programCards" checked> بطاقات تعريف البرامج التنفيذية</label>
+        <label class="backup-check-item"><input type="checkbox" value="perProgram" checked> تفاصيل كل برنامج تنفيذي (36 ورقة: بطاقة البرنامج + مشاريعه + خططه التفصيلية)</label>
+        <label class="backup-check-item"><input type="checkbox" value="reference" checked> البيانات المرجعية العامة (ملخص كل الأهداف والبرامج في ورقة واحدة)</label>
         <label class="backup-check-item"><input type="checkbox" value="managerEmails" checked> بيانات مدراء البرامج (الأسماء والبريد الإلكتروني فقط - بدون كلمات المرور)</label>
-        <label class="backup-check-item"><input type="checkbox" value="activityLog" checked> سجل نشاط المدراء الكامل</label>
       </div>
+      <div class="section-desc" style="margin-top:10px;">💡 كل برنامج تنفيذي يُصدَّر في ورقة مستقلة تحتوي على: بطاقة تعريف البرنامج، جميع مشاريعه عبر كل السنوات، وخطوات مراحل التنفيذ لكل مشروع فيه.</div>
     </div>
 
     <button class="add-btn" id="exportBackupBtn" style="font-size:15px;padding:14px 30px;">📥 تصدير النسخة الاحتياطية (Excel)</button>
   </div>
+</div>
+
+<!-- ===================== EXECUTIVE SUMMARY (ONE-PAGER) SCREEN ===================== -->
+<div id="execSummaryScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">🖨️ لمحة تنفيذية</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="print-btn" id="execPrintBtn">طباعة</button>
+      <button class="logout-btn" id="execBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap" id="execSummaryContent"></div>
 </div>
 
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
@@ -1119,6 +1158,20 @@ function computeOverallPct(detailData){
 }
 
 // يكتشف خطوات العمل التي تجاوزت تاريخ انتهائها المستهدف دون اكتمال (لأغراض التذكير بالبريد)
+// بحث شامل: اسم المشروع، مالك المشروع، ملاحظات، البرنامج، المدير، وحتى أسماء خطوات الخطة التفصيلية
+function projectMatchesSearch(project, q){
+  const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
+  const stepNames = detailRec && Array.isArray(detailRec.phases)
+    ? detailRec.phases.flatMap(ph=>(ph.steps||[]).map(s=>s.name||"")).join(" ")
+    : "";
+  const haystack = [
+    project.projectName, project.projectOwner, project.notes,
+    project.programName, project.programCode, project.govManager,
+    stepNames
+  ].filter(Boolean).join(" ").toLowerCase();
+  return haystack.includes(q);
+}
+
 function findLateSteps(project){
   const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
   if(!detailRec || !Array.isArray(detailRec.phases)) return [];
@@ -1241,7 +1294,7 @@ function logActivity(managerName, action, detail){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -1607,7 +1660,15 @@ function renderYearPanel(panelEl, program){
 }
 
 /* ---------------- Admin dashboard ---------------- */
+const LAST_VISIT_KEY = "rasd_admin_last_visit";
+let sessionNewSinceLastVisit = 0;
 function enterAdmin(){
+  const lastVisit = Number(localStorage.getItem(LAST_VISIT_KEY)) || 0;
+  sessionNewSinceLastVisit = ALL_PROJECTS.filter(p=>{
+    const t = p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0;
+    return t > lastVisit;
+  }).length;
+  localStorage.setItem(LAST_VISIT_KEY, String(Date.now()));
   showScreen("adminScreen");
   buildFilters();
   renderAdmin();
@@ -1622,6 +1683,9 @@ document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityS
 document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openBackupBtn").onclick = ()=> showScreen("backupScreen");
 document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); renderExecSummary(); };
+document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("execPrintBtn").onclick = ()=> window.print();
 document.getElementById("backupSelectAll").onclick = ()=>{
   document.querySelectorAll(".backup-check-item input").forEach(cb=> cb.checked = true);
 };
@@ -1920,6 +1984,59 @@ let adminChartInstances = {};
 function destroyAdminChart(key){
   if(adminChartInstances[key]){ adminChartInstances[key].destroy(); adminChartInstances[key] = null; }
 }
+let execChartInstance = null;
+function renderExecSummary(){
+  const totalProjects = ALL_PROJECTS.length;
+  const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
+  const approvedCount = ALL_PROJECTS.filter(p=>p.approved).length;
+  const rejectedCount = ALL_PROJECTS.filter(p=>p.rejected).length;
+  const closedCount = ALL_PROJECTS.filter(p=>p.closed).length;
+  const withDetail = ALL_PROJECTS.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const avgPct = withDetail.length
+    ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
+    : 0;
+  const lateCount = ALL_PROJECTS.filter(p=> findLateSteps(p).length>0).length;
+  const today = new Date().toLocaleDateString("ar-OM", { year:"numeric", month:"long", day:"numeric" });
+
+  const html = `
+    <div class="exec-header">
+      <div class="exec-title">لمحة تنفيذية — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+      <div class="exec-sub">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | تاريخ الإصدار: ${today}</div>
+    </div>
+    <div class="exec-stats-grid">
+      <div class="exec-stat"><div class="exec-num">${totalProjects}</div><div class="exec-lbl">إجمالي المشاريع</div></div>
+      <div class="exec-stat"><div class="exec-num">${programsWithData}/36</div><div class="exec-lbl">برامج بدأت الإدخال</div></div>
+      <div class="exec-stat"><div class="exec-num">${approvedCount}</div><div class="exec-lbl">مشاريع معتمدة</div></div>
+      <div class="exec-stat"><div class="exec-num">${rejectedCount}</div><div class="exec-lbl">مشاريع مرفوضة</div></div>
+      <div class="exec-stat"><div class="exec-num">${avgPct}%</div><div class="exec-lbl">متوسط نسبة الإنجاز</div></div>
+      <div class="exec-stat"><div class="exec-num">${closedCount}</div><div class="exec-lbl">مشاريع مغلقة ومكتملة</div></div>
+      <div class="exec-stat" style="border-right-color:var(--red);"><div class="exec-num">${lateCount}</div><div class="exec-lbl">مشاريع متأخرة عن جدولها</div></div>
+      <div class="exec-stat"><div class="exec-num">${GOV_MANAGERS.length}</div><div class="exec-lbl">مدراء برامج بالمحافظة</div></div>
+    </div>
+    <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="chart-box"><canvas id="execStatusChart"></canvas></div>
+      <div class="chart-box"><canvas id="execGoalChart"></canvas></div>
+    </div>
+  `;
+  document.getElementById("execSummaryContent").innerHTML = html;
+
+  if(typeof Chart !== "undefined"){
+    if(execChartInstance){ execChartInstance.forEach(c=>c.destroy()); }
+    const c1 = new Chart(document.getElementById("execStatusChart"), {
+      type:"pie",
+      data:{ labels:["معتمدة","مرفوضة","قيد الانتظار"], datasets:[{ data:[approvedCount,rejectedCount,totalProjects-approvedCount-rejectedCount], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" }, title:{ display:true, text:"توزيع حالات القرار" } } }
+    });
+    const goalCounts = STRATEGIC_GOALS.map(g=> ALL_PROJECTS.filter(p=>p.goalId===g.id).length);
+    const c2 = new Chart(document.getElementById("execGoalChart"), {
+      type:"bar",
+      data:{ labels:STRATEGIC_GOALS.map(g=>String(g.id)), datasets:[{ label:"عدد المشاريع", data:goalCounts, backgroundColor:"#1B2A3A" }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي" } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+    });
+    execChartInstance = [c1,c2];
+  }
+}
+
 function renderAdminCharts(filteredProjects){
   const ids = ["adminStatusChart","adminGoalChart","adminYearChart","adminDetailChart","adminClosureChart","adminManagerChart"];
   if(typeof Chart === "undefined"){
@@ -2005,6 +2122,7 @@ function renderAdmin(){
     <div class="summary-card"><div class="num">${rejectedCount}</div><div class="lbl">مشاريع مرفوضة</div></div>
     <div class="summary-card"><div class="num">${withDetailCount} / ${totalProjects}</div><div class="lbl">مشاريع لديها خطة تفصيلية</div></div>
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
+    <div class="summary-card" style="border-right-color:var(--red);"><div class="num">🆕 ${sessionNewSinceLastVisit}</div><div class="lbl">مشاريع جديدة منذ آخر زيارة لك</div></div>
   `;
 
   // قراءة الفلاتر (تُستخدم في الرسوم البيانية والجدول وخانة متابعة الخطط التفصيلية معًا)
@@ -2082,7 +2200,7 @@ function renderAdmin(){
     if(ap==="approved" && !pr.approved) return false;
     if(ap==="rejected" && !pr.rejected) return false;
     if(ap==="pending" && (pr.approved || pr.rejected)) return false;
-    if(q && !(pr.projectName||"").toLowerCase().includes(q)) return false;
+    if(q && !projectMatchesSearch(pr, q)) return false;
     return true;
   }).sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
 
@@ -2176,6 +2294,134 @@ function addBackupSheet(wb, name, headers, rows){
   ws.columns.forEach(col=>{ col.width = 24; });
 }
 
+function addProgramBackupSheet(wb, program){
+  const goal = STRATEGIC_GOALS.find(g=>g.id===program.goalId);
+  const sheetName = `${program.code} ${program.name}`.slice(0,31);
+  const ws = wb.addWorksheet(sheetName, { views:[{ rightToLeft:true }] });
+  ws.columns = [{width:22},{width:20},{width:20},{width:16},{width:16},{width:14},{width:14},{width:12},{width:14}];
+  let r = 1;
+
+  function sectionTitle(text, fill){
+    ws.mergeCells(r,1,r,9);
+    const cell = ws.getCell(r,1);
+    cell.value = text;
+    cell.font = { bold:true, size:12, color:{argb:XL_WHITE} };
+    cell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:fill} };
+    cell.alignment = { horizontal:"center", vertical:"middle" };
+    ws.getRow(r).height = 22;
+    r++;
+  }
+  function labelValueRow(label, val){
+    ws.getCell(r,1).value = label;
+    ws.getCell(r,1).font = { bold:true, color:{argb:XL_NAVY} };
+    ws.getCell(r,1).fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_LIGHTGRAY} };
+    ws.mergeCells(r,2,r,9);
+    const vc = ws.getCell(r,2);
+    vc.value = val || "";
+    vc.alignment = { horizontal:"right", vertical:"middle", wrapText:true };
+    r++;
+  }
+
+  // عنوان البرنامج
+  ws.mergeCells(r,1,r,9);
+  const title = ws.getCell(r,1);
+  title.value = `${program.code} — ${program.name}`;
+  title.font = { bold:true, size:15, color:{argb:XL_WHITE} };
+  title.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_NAVY} };
+  title.alignment = { horizontal:"center", vertical:"middle" };
+  ws.getRow(r).height = 28;
+  r += 2;
+
+  // بيانات مرجعية للبرنامج
+  labelValueRow("الهدف الاستراتيجي", goal ? goal.name : "");
+  labelValueRow("مدير البرنامج بالمحافظة", program.govManager);
+  labelValueRow("المدير المركزي", program.central.name);
+  labelValueRow("وظيفة المدير المركزي", program.central.title);
+  labelValueRow("هاتف المدير المركزي", program.central.phone);
+  labelValueRow("بريد المدير المركزي", program.central.email);
+  r++;
+
+  // بطاقة تعريف البرنامج
+  sectionTitle("بطاقة تعريف البرنامج التنفيذي", XL_GOLD);
+  const card = ALL_PROGRAM_CARDS.find(c=>c.id===program.code);
+  if(card){
+    labelValueRow("الوصف", card.description);
+    labelValueRow("التكلفة الإجمالية", card.totalCost);
+    labelValueRow("مدير البرنامج (من البطاقة)", card.programManager);
+    labelValueRow("تاريخ البدء", card.startDate);
+    labelValueRow("تاريخ الانتهاء", card.endDate);
+    labelValueRow("المستهدفات", listValueHTML(card.targets));
+    labelValueRow("المشاريع المرتبطة (نصيًا)", listValueHTML(card.relatedProjects));
+    labelValueRow("الجهات المنفذة", listValueHTML(card.executingEntities));
+  }else{
+    ws.mergeCells(r,1,r,9);
+    ws.getCell(r,1).value = "لم تُعبَّأ بطاقة تعريف لهذا البرنامج بعد.";
+    ws.getCell(r,1).font = { italic:true, color:{argb:XL_MUTED} };
+    r++;
+  }
+  r++;
+
+  // المشاريع والمبادرات
+  sectionTitle("المشاريع والمبادرات (كل السنوات)", XL_NAVY);
+  const projHeaders = ["اسم المشروع","مالك المشروع","السنة","ملاحظات","القرار","القفل","الإغلاق","نسبة الإنجاز"];
+  projHeaders.forEach((h,i)=>{
+    const c = ws.getCell(r,i+1);
+    c.value = h; c.font = { bold:true, color:{argb:XL_WHITE}, size:10.5 };
+    c.fill = { type:"pattern", pattern:"solid", fgColor:{argb:"FF2A3F55"} };
+    c.alignment = { horizontal:"center", wrapText:true };
+  });
+  r++;
+  const projects = ALL_PROJECTS.filter(p=>p.programCode===program.code).sort((a,b)=> a.year-b.year);
+  projects.forEach(pr=>{
+    const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const vals = [
+      pr.projectName, pr.projectOwner||"", pr.year, pr.notes||"",
+      pr.approved?"معتمد":(pr.rejected?"مرفوض":"قيد الانتظار"),
+      pr.locked?"مقفل":"مفتوح", pr.closed?"مغلق ومكتمل":"مستمر",
+      detailRec ? computeOverallPct(detailRec)+"%" : "—"
+    ];
+    vals.forEach((v,i)=>{ const c=ws.getCell(r,i+1); c.value=v; c.alignment={horizontal:"right", wrapText:true}; });
+    r++;
+  });
+  if(projects.length===0){
+    ws.mergeCells(r,1,r,9);
+    ws.getCell(r,1).value = "لا توجد مشاريع مُدخلة لهذا البرنامج بعد.";
+    ws.getCell(r,1).font = { italic:true, color:{argb:XL_MUTED} };
+    r++;
+  }
+  r++;
+
+  // خطوات مراحل التنفيذ لكل مشروع
+  sectionTitle("خطوات مراحل التنفيذ لكل مشروع", XL_NAVY);
+  const stepHeaders = ["اسم المشروع","السنة","المرحلة","اسم الخطوة","الوثائق الداعمة","تاريخ البدء","تاريخ الانتهاء","المدة (أسابيع)","الحالة"];
+  stepHeaders.forEach((h,i)=>{
+    const c = ws.getCell(r,i+1);
+    c.value = h; c.font = { bold:true, color:{argb:XL_WHITE}, size:10 };
+    c.fill = { type:"pattern", pattern:"solid", fgColor:{argb:"FF2A3F55"} };
+    c.alignment = { horizontal:"center", wrapText:true };
+  });
+  r++;
+  let anySteps = false;
+  projects.forEach(pr=>{
+    const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detailRec || !Array.isArray(detailRec.phases)) return;
+    detailRec.phases.forEach(ph=>{
+      (ph.steps||[]).forEach(st=>{
+        if(!st.name && !st.docs && !st.durationWeeks) return;
+        anySteps = true;
+        const vals = [pr.projectName, pr.year, ph.name, st.name||"", st.docs||"", st.startDate||"", st.endDate||"", st.durationWeeks||0, st.status||""];
+        vals.forEach((v,i)=>{ const c=ws.getCell(r,i+1); c.value=v; c.alignment={horizontal:"right", wrapText:true}; });
+        r++;
+      });
+    });
+  });
+  if(!anySteps){
+    ws.mergeCells(r,1,r,9);
+    ws.getCell(r,1).value = "لا توجد خطط تفصيلية مُدخلة بعد لمشاريع هذا البرنامج.";
+    ws.getCell(r,1).font = { italic:true, color:{argb:XL_MUTED} };
+  }
+}
+
 async function exportBackupExcel(){
   const btn = document.getElementById("exportBackupBtn");
   try{
@@ -2190,100 +2436,32 @@ async function exportBackupExcel(){
     wb.creator = "منصة رصد";
     let sheetCount = 0;
 
-    if(checked("projects")){
-    sheetCount++;
-    addBackupSheet(wb, "المشاريع", [
-      "الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","حالة الإغلاق","ملاحظة الإغلاق"
-    ], ALL_PROJECTS.map(r=>[
-      r.goalName, r.programCode, r.programName, r.govManager, r.projectName, r.projectOwner||"", r.notes||"", r.year,
-      r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار"),
-      r.locked?"مقفل":"مفتوح", r.closed?"مغلق ومكتمل":"مستمر", r.closedNote||""
-    ]));
-  }
-
-  if(checked("reference")){
-    sheetCount++;
-    addBackupSheet(wb, "البيانات المرجعية", [
-      "رمز البرنامج","البرنامج التنفيذي","الهدف الاستراتيجي","مدير المحافظة","المدير المركزي","وظيفة المدير المركزي","هاتف المدير المركزي","بريد المدير المركزي"
-    ], PROGRAMS.map(p=>{
-      const goal = STRATEGIC_GOALS.find(g=>g.id===p.goalId);
-      return [p.code, p.name, goal?goal.name:"", p.govManager, p.central.name, p.central.title, p.central.phone, p.central.email];
-    }));
-  }
-
-  if(checked("detailInfo")){
-    sheetCount++;
-    addBackupSheet(wb, "تفاصيل المشاريع - بيانات أساسية", [
-      "اسم المشروع","البرنامج","الهدف-المؤشر","وصف المشروع","الهدف المنشود","التكلفة الإجمالية","مستوى الصرف الحالي","نوع الميزانية","تاريخ البدء","تاريخ الانتهاء","الجهة","الجهات المساندة","القطاع","الموقع","الأولوية","مدير المشروع","أعضاء الفريق","نسبة الإنجاز"
-    ], ALL_PROJECT_DETAILS.map(d=>{
-      const proj = ALL_PROJECTS.find(p=>p.id===d.id);
-      return [
-        proj?proj.projectName:d.id, proj?(proj.programCode+" - "+proj.programName):"",
-        d.goalIndicator||"", d.description||"", d.desiredOutcome||"", d.totalCost||"", d.currentSpending||"", d.budgetType||"",
-        d.startDate||"", d.endDate||"", d.owningEntity||"", listValueHTML(d.supportingEntities), d.sector||"", d.location||"", d.priority||"",
-        d.projectManager||"", listValueHTML(d.teamMembers), computeOverallPct(d)+"%"
-      ];
-    }));
-  }
-
-  if(checked("detailSteps")){
-    sheetCount++;
-    const stepRows = [];
-    ALL_PROJECT_DETAILS.forEach(d=>{
-      const proj = ALL_PROJECTS.find(p=>p.id===d.id);
-      (d.phases||[]).forEach(ph=>{
-        (ph.steps||[]).forEach(st=>{
-          stepRows.push([
-            proj?proj.projectName:d.id, ph.name, Math.round((ph.weight||0)*100)+"%",
-            st.name||"", st.docs||"", st.startDate||"", st.endDate||"", st.durationWeeks||0, st.status||""
-          ]);
-        });
+    if(checked("perProgram")){
+      PROGRAMS.forEach(program=>{
+        addProgramBackupSheet(wb, program);
+        sheetCount++;
       });
-    });
-    addBackupSheet(wb, "خطوات مراحل التنفيذ", [
-      "اسم المشروع","المرحلة","وزن المرحلة","اسم الخطوة","الوثائق الداعمة","تاريخ البدء","تاريخ الانتهاء","المدة (أسابيع)","الحالة"
-    ], stepRows);
-  }
+    }
 
-  if(checked("programCards")){
-    sheetCount++;
-    addBackupSheet(wb, "بطاقات تعريف البرامج", [
-      "رمز البرنامج","اسم البرنامج","الوصف","التكلفة الإجمالية","مدير البرنامج","تاريخ البدء","تاريخ الانتهاء","المستهدفات","المشاريع المرتبطة","الجهات المنفذة"
-    ], ALL_PROGRAM_CARDS.map(c=>{
-      const prog = PROGRAMS.find(p=>p.code===c.id);
-      return [
-        c.id, prog?prog.name:"", c.description||"", c.totalCost||"", c.programManager||"", c.startDate||"", c.endDate||"",
-        listValueHTML(c.targets), listValueHTML(c.relatedProjects), listValueHTML(c.executingEntities)
-      ];
-    }));
-  }
+    if(checked("reference")){
+      sheetCount++;
+      addBackupSheet(wb, "البيانات المرجعية", [
+        "رمز البرنامج","البرنامج التنفيذي","الهدف الاستراتيجي","مدير المحافظة","المدير المركزي","وظيفة المدير المركزي","هاتف المدير المركزي","بريد المدير المركزي"
+      ], PROGRAMS.map(p=>{
+        const goal = STRATEGIC_GOALS.find(g=>g.id===p.goalId);
+        return [p.code, p.name, goal?goal.name:"", p.govManager, p.central.name, p.central.title, p.central.phone, p.central.email];
+      }));
+    }
 
-  if(checked("managerEmails")){
-    sheetCount++;
-    addBackupSheet(wb, "مدراء البرامج", ["اسم المدير","البريد الإلكتروني"],
-      GOV_MANAGERS.map(name=>{
-        const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
-        return [name, (rec && rec.email) || ""];
-      })
-    );
-  }
-
-  if(checked("activityLog")){
-    sheetCount++;
-    addBackupSheet(wb, "سجل النشاط", ["التاريخ والوقت","المدير","الإجراء","التفاصيل"],
-      [...ALL_ACTIVITY_LOG].sort((a,b)=>{
-        const ta = a.timestamp && a.timestamp.toMillis ? a.timestamp.toMillis() : 0;
-        const tb = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
-        return tb - ta;
-      }).map(a=>{
-        const d = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : null;
-        return [
-          d ? d.toLocaleString("ar-OM", { dateStyle:"medium", timeStyle:"short" }) : "—",
-          a.managerName||"", ACTION_LABELS[a.action]||a.action, a.detail||""
-        ];
-      })
-    );
-  }
+    if(checked("managerEmails")){
+      sheetCount++;
+      addBackupSheet(wb, "مدراء البرامج", ["اسم المدير","البريد الإلكتروني"],
+        GOV_MANAGERS.map(name=>{
+          const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+          return [name, (rec && rec.email) || ""];
+        })
+      );
+    }
 
     if(sheetCount===0){ alert("الرجاء تحديد بند واحد على الأقل قبل التصدير."); return; }
 
@@ -2391,11 +2569,17 @@ function openProjectDetailForm(projectId){
     const phaseData = existing.phases && existing.phases[pi];
     bodyHtml += phaseBlockHTML(def, pi, phaseData ? phaseData.steps : null);
   });
+  bodyHtml += `
+    <div class="gantt-section">
+      <h4>📊 الخط الزمني للمشروع</h4>
+      <div id="ganttContainer"></div>
+    </div>`;
   document.getElementById("detailModalBody").innerHTML = bodyHtml;
   const overlay = document.getElementById("detailModalOverlay");
   overlay.dataset.projectId = projectId;
   overlay.classList.remove("hidden");
   recalcAllPhasesAndOverall();
+  renderGanttPreview();
 }
 
 function recalcPhase(phaseIdx){
@@ -2410,6 +2594,7 @@ function recalcPhase(phaseIdx){
     r.querySelector(".step-pct").textContent = pct.toFixed(1)+"%";
   });
   recalcOverallOnly();
+  renderGanttPreview();
 }
 
 function recalcOverallOnly(){
@@ -2434,6 +2619,49 @@ function recalcOverallOnly(){
 
 function recalcAllPhasesAndOverall(){
   DETAIL_PHASES_DEF.forEach((_,pi)=> recalcPhase(pi));
+}
+
+function renderGanttPreview(){
+  const container = document.getElementById("ganttContainer");
+  if(!container) return;
+  const phaseColors = ["#1E7A3D","#1E4E8C","#C9962E","#5B3EAF"];
+  const allSteps = [];
+  DETAIL_PHASES_DEF.forEach((def,pi)=>{
+    const stepsContainer = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
+    if(!stepsContainer) return;
+    [...stepsContainer.querySelectorAll(".step-row")].forEach(row=>{
+      const name = row.querySelector(".step-name").value.trim();
+      const start = row.querySelector(".step-start").value;
+      const end = row.querySelector(".step-end").value;
+      const status = row.querySelector(".step-status").value;
+      if(start && end && new Date(end) >= new Date(start)){
+        allSteps.push({ name: name || "(بدون اسم)", start, end, status, phaseIdx: pi });
+      }
+    });
+  });
+  if(allSteps.length===0){
+    container.innerHTML = `<div class="empty-note">أضف تاريخ بدء وانتهاء صحيحَين لخطوة واحدة على الأقل لعرض الخط الزمني.</div>`;
+    return;
+  }
+  const minDate = new Date(Math.min(...allSteps.map(s=>new Date(s.start))));
+  const maxDate = new Date(Math.max(...allSteps.map(s=>new Date(s.end))));
+  const totalMs = (maxDate - minDate) || 1;
+  let html = `<div class="gantt-rows">`;
+  allSteps.forEach(s=>{
+    const startOffset = ((new Date(s.start)-minDate)/totalMs)*100;
+    const width = Math.max(((new Date(s.end)-new Date(s.start))/totalMs)*100, 1.5);
+    const color = phaseColors[s.phaseIdx % phaseColors.length];
+    const opacity = s.status==="مكتمل" ? 1 : (s.status==="قيد التنفيذ" ? 0.65 : 0.3);
+    html += `
+      <div class="gantt-row">
+        <div class="gantt-label" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
+        <div class="gantt-track">
+          <div class="gantt-bar" style="right:${startOffset}%;width:${width}%;background:${color};opacity:${opacity};" title="${escapeAttr(s.start)} → ${escapeAttr(s.end)} (${s.status})"></div>
+        </div>
+      </div>`;
+  });
+  html += `</div><div class="gantt-legend"><span>${minDate.toLocaleDateString("ar-OM")}</span><span>${maxDate.toLocaleDateString("ar-OM")}</span></div>`;
+  container.innerHTML = html;
 }
 
 function closeDetailModal(){
@@ -2461,7 +2689,10 @@ function readListBuilders(scopeSelector){
   return data;
 }
 function listValueHTML(v){
-  return v && v.length ? v.map(x=>`• ${x}`).join("\n") : "";
+  if(!v) return "";
+  if(Array.isArray(v)) return v.length ? v.map(x=>`• ${x}`).join("\n") : "";
+  // بيانات قديمة محفوظة كنص عادي قبل تحويل هذه الخانة إلى قائمة قابلة للإضافة
+  return String(v).trim();
 }
 
 function wireDetailModalStaticEvents(){
@@ -2476,8 +2707,21 @@ function wireDetailModalStaticEvents(){
     if(e.target.classList.contains("step-status")) recalcOverallOnly();
     if(e.target.classList.contains("step-start") || e.target.classList.contains("step-end")){
       const row = e.target.closest(".step-row");
-      const startVal = row.querySelector(".step-start").value;
-      const endVal = row.querySelector(".step-end").value;
+      const startInput = row.querySelector(".step-start");
+      const endInput = row.querySelector(".step-end");
+      const startVal = startInput.value;
+      const endVal = endInput.value;
+      if(startVal && endVal && new Date(endVal) < new Date(startVal)){
+        endInput.classList.add("date-invalid");
+        endInput.title = "تاريخ الانتهاء أسبق من تاريخ البدء! الرجاء تصحيح التاريخ.";
+        startInput.classList.add("date-invalid");
+        startInput.title = "تاريخ الانتهاء أسبق من تاريخ البدء! الرجاء تصحيح التاريخ.";
+      }else{
+        endInput.classList.remove("date-invalid");
+        endInput.title = "";
+        startInput.classList.remove("date-invalid");
+        startInput.title = "";
+      }
       const weeks = calcWeeksBetween(startVal, endVal);
       if(weeks !== null){
         row.querySelector(".step-duration").value = weeks;
