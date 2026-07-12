@@ -2177,13 +2177,20 @@ function addBackupSheet(wb, name, headers, rows){
 }
 
 async function exportBackupExcel(){
-  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
-  const checked = key => document.querySelector(`.backup-check-item input[value="${key}"]`).checked;
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "منصة رصد";
-  let sheetCount = 0;
+  const btn = document.getElementById("exportBackupBtn");
+  try{
+    if(typeof ExcelJS === "undefined"){
+      alert("تعذّر تحميل مكتبة تصدير Excel (exceljs.min.js). تأكد من رفع هذا الملف على GitHub بجانب index.html، ثم أعد تحميل الصفحة بـ Ctrl+F5.");
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري التصدير...";
+    const checked = key => document.querySelector(`.backup-check-item input[value="${key}"]`).checked;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "منصة رصد";
+    let sheetCount = 0;
 
-  if(checked("projects")){
+    if(checked("projects")){
     sheetCount++;
     addBackupSheet(wb, "المشاريع", [
       "الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","حالة الإغلاق","ملاحظة الإغلاق"
@@ -2278,11 +2285,18 @@ async function exportBackupExcel(){
     );
   }
 
-  if(sheetCount===0){ alert("الرجاء تحديد بند واحد على الأقل قبل التصدير."); return; }
+    if(sheetCount===0){ alert("الرجاء تحديد بند واحد على الأقل قبل التصدير."); return; }
 
-  const dateStr = new Date().toISOString().slice(0,10);
-  await downloadWorkbook(wb, `نسخة_احتياطية_رصد_${dateStr}.xlsx`);
-  logActivity(ADMIN_NAME, "backup_export", `${sheetCount} ورقة مُصدَّرة`);
+    const dateStr = new Date().toISOString().slice(0,10);
+    await downloadWorkbook(wb, `نسخة_احتياطية_رصد_${dateStr}.xlsx`);
+    logActivity(ADMIN_NAME, "backup_export", `${sheetCount} ورقة مُصدَّرة`);
+  }catch(err){
+    console.error("exportBackupExcel error:", err);
+    alert("حدث خطأ أثناء إنشاء النسخة الاحتياطية:\n" + err.message + "\n\nراجع الكونسول (F12) لمزيد من التفاصيل.");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "📥 تصدير النسخة الاحتياطية (Excel)";
+  }
 }
 
 function escapeHtml(str){
