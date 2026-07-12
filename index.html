@@ -164,6 +164,14 @@ input,select{font-family:inherit;}
 }
 .remind-btn:hover{background:#a80d25;}
 .remind-btn:disabled{background:#D8C7C9;cursor:not-allowed;}
+
+.backup-checklist{display:flex;flex-direction:column;gap:10px;}
+.backup-check-item{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid var(--border);
+  border-radius:10px;background:#FCFCFD;font-size:13.5px;font-weight:700;color:var(--navy);cursor:pointer;
+}
+.backup-check-item:hover{background:#F5F6F8;}
+.backup-check-item input{width:18px;height:18px;cursor:pointer;accent-color:var(--gold);}
 .section-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);margin-bottom:4px;}
 .section-desc{color:var(--text-muted);font-size:13px;margin-bottom:22px;}
 
@@ -675,6 +683,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="meeting-btn" id="openMeetingBtn">📋 الخطة المفصلة</button>
       <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
       <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
+      <button class="meeting-btn" id="openBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
@@ -825,6 +834,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="fill_program_card">تعبئة بطاقة برنامج</option>
         <option value="change_password">تغيير كلمة المرور</option>
         <option value="send_reminder">إرسال تذكير تأخر</option>
+        <option value="backup_export">تصدير نسخة احتياطية</option>
       </select>
     </div>
     <table class="results">
@@ -838,6 +848,44 @@ tr.rejected-row td{background:#FDF6F6;}
       </thead>
       <tbody id="activityLogBody"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- ===================== BACKUP / EXPORT SCREEN ===================== -->
+<div id="backupScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">💾 نسخة احتياطية شاملة</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="backupBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">تصدير نسخة احتياطية من بيانات المنصة</div>
+    <div class="section-desc">اختر البيانات التي تريد تضمينها، ثم اضغط تصدير — سيُنشأ ملف Excel واحد بورقة منفصلة لكل بند مُحدَّد.</div>
+
+    <div class="pending-list">
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button class="btn-secondary" id="backupSelectAll" style="padding:8px 18px;border-radius:8px;">تحديد الكل</button>
+        <button class="btn-secondary" id="backupSelectNone" style="padding:8px 18px;border-radius:8px;">إلغاء التحديد</button>
+      </div>
+      <div class="backup-checklist">
+        <label class="backup-check-item"><input type="checkbox" value="projects" checked> المشاريع والمبادرات المُدخلة</label>
+        <label class="backup-check-item"><input type="checkbox" value="reference" checked> البيانات المرجعية (البرامج الاستراتيجية والتنفيذية)</label>
+        <label class="backup-check-item"><input type="checkbox" value="detailInfo" checked> الخطط التفصيلية - البيانات الأساسية للمشاريع</label>
+        <label class="backup-check-item"><input type="checkbox" value="detailSteps" checked> الخطط التفصيلية - خطوات مراحل التنفيذ</label>
+        <label class="backup-check-item"><input type="checkbox" value="programCards" checked> بطاقات تعريف البرامج التنفيذية</label>
+        <label class="backup-check-item"><input type="checkbox" value="managerEmails" checked> بيانات مدراء البرامج (الأسماء والبريد الإلكتروني فقط - بدون كلمات المرور)</label>
+        <label class="backup-check-item"><input type="checkbox" value="activityLog" checked> سجل نشاط المدراء الكامل</label>
+      </div>
+    </div>
+
+    <button class="add-btn" id="exportBackupBtn" style="font-size:15px;padding:14px 30px;">📥 تصدير النسخة الاحتياطية (Excel)</button>
   </div>
 </div>
 
@@ -1193,7 +1241,7 @@ function logActivity(managerName, action, detail){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -1572,6 +1620,15 @@ document.getElementById("openPasswordsBtn").onclick = ()=>{ showScreen("password
 document.getElementById("passwordsBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
 document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("openBackupBtn").onclick = ()=> showScreen("backupScreen");
+document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("backupSelectAll").onclick = ()=>{
+  document.querySelectorAll(".backup-check-item input").forEach(cb=> cb.checked = true);
+};
+document.getElementById("backupSelectNone").onclick = ()=>{
+  document.querySelectorAll(".backup-check-item input").forEach(cb=> cb.checked = false);
+};
+document.getElementById("exportBackupBtn").onclick = exportBackupExcel;
 
 function renderPasswordsScreen(){
   const authList = document.getElementById("managerAuthList");
@@ -1623,7 +1680,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -2099,6 +2156,133 @@ function exportCsv(){
   link.href = URL.createObjectURL(blob);
   link.download = "مشاريع_الخطة_الخمسية_11.csv";
   link.click();
+}
+
+/* ==================== النسخة الاحتياطية الشاملة ==================== */
+function addBackupSheet(wb, name, headers, rows){
+  const ws = wb.addWorksheet(name.slice(0,31), { views:[{ rightToLeft:true }] });
+  ws.addRow(headers);
+  const headerRow = ws.getRow(1);
+  headerRow.eachCell(cell=>{
+    cell.font = { bold:true, color:{argb:XL_WHITE}, size:11 };
+    cell.fill = { type:"pattern", pattern:"solid", fgColor:{argb:XL_NAVY} };
+    cell.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+  });
+  headerRow.height = 26;
+  rows.forEach(r=>{
+    const row = ws.addRow(r);
+    row.eachCell(cell=>{ cell.alignment = { horizontal:"right", vertical:"middle", wrapText:true }; });
+  });
+  ws.columns.forEach(col=>{ col.width = 24; });
+}
+
+async function exportBackupExcel(){
+  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
+  const checked = key => document.querySelector(`.backup-check-item input[value="${key}"]`).checked;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "منصة رصد";
+  let sheetCount = 0;
+
+  if(checked("projects")){
+    sheetCount++;
+    addBackupSheet(wb, "المشاريع", [
+      "الهدف الاستراتيجي","رمز البرنامج","البرنامج التنفيذي","مدير المحافظة","اسم المشروع","مالك المشروع","ملاحظات","السنة","قرار المدير العام","القفل النهائي","حالة الإغلاق","ملاحظة الإغلاق"
+    ], ALL_PROJECTS.map(r=>[
+      r.goalName, r.programCode, r.programName, r.govManager, r.projectName, r.projectOwner||"", r.notes||"", r.year,
+      r.approved?"معتمد":(r.rejected?"مرفوض":"قيد الانتظار"),
+      r.locked?"مقفل":"مفتوح", r.closed?"مغلق ومكتمل":"مستمر", r.closedNote||""
+    ]));
+  }
+
+  if(checked("reference")){
+    sheetCount++;
+    addBackupSheet(wb, "البيانات المرجعية", [
+      "رمز البرنامج","البرنامج التنفيذي","الهدف الاستراتيجي","مدير المحافظة","المدير المركزي","وظيفة المدير المركزي","هاتف المدير المركزي","بريد المدير المركزي"
+    ], PROGRAMS.map(p=>{
+      const goal = STRATEGIC_GOALS.find(g=>g.id===p.goalId);
+      return [p.code, p.name, goal?goal.name:"", p.govManager, p.central.name, p.central.title, p.central.phone, p.central.email];
+    }));
+  }
+
+  if(checked("detailInfo")){
+    sheetCount++;
+    addBackupSheet(wb, "تفاصيل المشاريع - بيانات أساسية", [
+      "اسم المشروع","البرنامج","الهدف-المؤشر","وصف المشروع","الهدف المنشود","التكلفة الإجمالية","مستوى الصرف الحالي","نوع الميزانية","تاريخ البدء","تاريخ الانتهاء","الجهة","الجهات المساندة","القطاع","الموقع","الأولوية","مدير المشروع","أعضاء الفريق","نسبة الإنجاز"
+    ], ALL_PROJECT_DETAILS.map(d=>{
+      const proj = ALL_PROJECTS.find(p=>p.id===d.id);
+      return [
+        proj?proj.projectName:d.id, proj?(proj.programCode+" - "+proj.programName):"",
+        d.goalIndicator||"", d.description||"", d.desiredOutcome||"", d.totalCost||"", d.currentSpending||"", d.budgetType||"",
+        d.startDate||"", d.endDate||"", d.owningEntity||"", listValueHTML(d.supportingEntities), d.sector||"", d.location||"", d.priority||"",
+        d.projectManager||"", listValueHTML(d.teamMembers), computeOverallPct(d)+"%"
+      ];
+    }));
+  }
+
+  if(checked("detailSteps")){
+    sheetCount++;
+    const stepRows = [];
+    ALL_PROJECT_DETAILS.forEach(d=>{
+      const proj = ALL_PROJECTS.find(p=>p.id===d.id);
+      (d.phases||[]).forEach(ph=>{
+        (ph.steps||[]).forEach(st=>{
+          stepRows.push([
+            proj?proj.projectName:d.id, ph.name, Math.round((ph.weight||0)*100)+"%",
+            st.name||"", st.docs||"", st.startDate||"", st.endDate||"", st.durationWeeks||0, st.status||""
+          ]);
+        });
+      });
+    });
+    addBackupSheet(wb, "خطوات مراحل التنفيذ", [
+      "اسم المشروع","المرحلة","وزن المرحلة","اسم الخطوة","الوثائق الداعمة","تاريخ البدء","تاريخ الانتهاء","المدة (أسابيع)","الحالة"
+    ], stepRows);
+  }
+
+  if(checked("programCards")){
+    sheetCount++;
+    addBackupSheet(wb, "بطاقات تعريف البرامج", [
+      "رمز البرنامج","اسم البرنامج","الوصف","التكلفة الإجمالية","مدير البرنامج","تاريخ البدء","تاريخ الانتهاء","المستهدفات","المشاريع المرتبطة","الجهات المنفذة"
+    ], ALL_PROGRAM_CARDS.map(c=>{
+      const prog = PROGRAMS.find(p=>p.code===c.id);
+      return [
+        c.id, prog?prog.name:"", c.description||"", c.totalCost||"", c.programManager||"", c.startDate||"", c.endDate||"",
+        listValueHTML(c.targets), listValueHTML(c.relatedProjects), listValueHTML(c.executingEntities)
+      ];
+    }));
+  }
+
+  if(checked("managerEmails")){
+    sheetCount++;
+    addBackupSheet(wb, "مدراء البرامج", ["اسم المدير","البريد الإلكتروني"],
+      GOV_MANAGERS.map(name=>{
+        const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+        return [name, (rec && rec.email) || ""];
+      })
+    );
+  }
+
+  if(checked("activityLog")){
+    sheetCount++;
+    addBackupSheet(wb, "سجل النشاط", ["التاريخ والوقت","المدير","الإجراء","التفاصيل"],
+      [...ALL_ACTIVITY_LOG].sort((a,b)=>{
+        const ta = a.timestamp && a.timestamp.toMillis ? a.timestamp.toMillis() : 0;
+        const tb = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
+        return tb - ta;
+      }).map(a=>{
+        const d = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : null;
+        return [
+          d ? d.toLocaleString("ar-OM", { dateStyle:"medium", timeStyle:"short" }) : "—",
+          a.managerName||"", ACTION_LABELS[a.action]||a.action, a.detail||""
+        ];
+      })
+    );
+  }
+
+  if(sheetCount===0){ alert("الرجاء تحديد بند واحد على الأقل قبل التصدير."); return; }
+
+  const dateStr = new Date().toISOString().slice(0,10);
+  await downloadWorkbook(wb, `نسخة_احتياطية_رصد_${dateStr}.xlsx`);
+  logActivity(ADMIN_NAME, "backup_export", `${sheetCount} ورقة مُصدَّرة`);
 }
 
 function escapeHtml(str){
