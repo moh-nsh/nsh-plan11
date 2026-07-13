@@ -521,6 +521,7 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .step-row input:focus,.step-row select:focus,.step-row textarea:focus{outline:none;border-color:var(--gold);}
 .step-duration[readonly]{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
+.computed-date{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
 .step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
 .step-field{display:flex;flex-direction:column;gap:3px;min-width:0;}
@@ -726,18 +727,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
     <div id="summaryGrid" class="summary-grid"></div>
 
-    <div class="pending-list">
-      <h3>📊 المؤشرات البصرية <span style="font-weight:400;font-size:11.5px;color:var(--text-muted);">(تتفاعل مع الفلاتر أدناه)</span></h3>
-      <div class="charts-grid">
-        <div class="chart-box"><canvas id="adminStatusChart"></canvas></div>
-        <div class="chart-box"><canvas id="adminGoalChart"></canvas></div>
-        <div class="chart-box"><canvas id="adminYearChart"></canvas></div>
-        <div class="chart-box"><canvas id="adminDetailChart"></canvas></div>
-        <div class="chart-box"><canvas id="adminClosureChart"></canvas></div>
-        <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
-      </div>
-    </div>
-
     <div class="filters-bar">
       <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
       <select id="filterProgram"><option value="">كل البرامج التنفيذية</option></select>
@@ -752,6 +741,18 @@ tr.rejected-row td{background:#FDF6F6;}
       <input type="text" id="filterSearch" placeholder="بحث شامل (المشروع، المالك، المدير، الملاحظات، خطوات الخطة)...">
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
       <button class="print-btn" id="printBtn">طباعة</button>
+    </div>
+
+    <div class="pending-list">
+      <h3>📊 المؤشرات البصرية <span style="font-weight:400;font-size:11.5px;color:var(--text-muted);">(تتفاعل مع الفلاتر أعلاه)</span></h3>
+      <div class="charts-grid">
+        <div class="chart-box"><canvas id="adminStatusChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminGoalChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminYearChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminDetailChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminClosureChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
+      </div>
     </div>
 
     <div class="pending-list">
@@ -934,7 +935,12 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="logout-btn" id="execBackBtn">رجوع</button>
     </div>
   </div>
-  <div class="dash-wrap" id="execSummaryContent"></div>
+  <div class="dash-wrap">
+    <div class="filters-bar" style="margin-bottom:20px;">
+      <select id="execYearFilter"><option value="">كل السنوات (2026-2030)</option></select>
+    </div>
+    <div id="execSummaryContent"></div>
+  </div>
 </div>
 
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
@@ -1017,7 +1023,7 @@ const DETAIL_FIELD_DEFS = [
   { key:"totalCost", label:"التكلفة الإجمالية للمشروع", placeholder:"التكلفة المعتمدة من وزارة الاقتصاد والمالية" },
   { key:"currentSpending", label:"مستوى الصرف الحالي", placeholder:"المبلغ المصروف حتى الآن" },
   { key:"budgetType", label:"نوع الميزانية", select:["إنمائية","جارية"] },
-  { type:"daterange", keys:["startDate","endDate"], labels:["تاريخ البدء","تاريخ الانتهاء"] },
+  { type:"daterange", keys:["startDate","endDate"], labels:["تاريخ البدء (تلقائي من المراحل)","تاريخ الانتهاء (تلقائي من المراحل)"], computed:true },
   { key:"owningEntity", label:"الجهة", placeholder:"الجهة المالكة للمشروع" },
   { key:"supportingEntities", label:"الجهات المساندة", list:true, placeholder:"اسم جهة مساندة" },
   { key:"sector", label:"القطاع", placeholder:"تحديد القطاع" },
@@ -1692,7 +1698,7 @@ document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityS
 document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openBackupBtn").onclick = ()=> showScreen("backupScreen");
 document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); renderExecSummary(); };
+document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); buildExecYearFilter(); renderExecSummary(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("execPrintBtn").onclick = ()=> window.print();
 document.getElementById("backupSelectAll").onclick = ()=>{
@@ -1994,23 +2000,32 @@ function destroyAdminChart(key){
   if(adminChartInstances[key]){ adminChartInstances[key].destroy(); adminChartInstances[key] = null; }
 }
 let execChartInstance = null;
+function buildExecYearFilter(){
+  const sel = document.getElementById("execYearFilter");
+  sel.innerHTML = "<option value=''>كل السنوات (2026-2030)</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  sel.onchange = renderExecSummary;
+}
 function renderExecSummary(){
-  const totalProjects = ALL_PROJECTS.length;
-  const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
-  const approvedCount = ALL_PROJECTS.filter(p=>p.approved).length;
-  const rejectedCount = ALL_PROJECTS.filter(p=>p.rejected).length;
-  const closedCount = ALL_PROJECTS.filter(p=>p.closed).length;
-  const withDetail = ALL_PROJECTS.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const selectedYear = document.getElementById("execYearFilter").value;
+  const projects = selectedYear ? ALL_PROJECTS.filter(p=> String(p.year)===selectedYear) : ALL_PROJECTS;
+
+  const totalProjects = projects.length;
+  const programsWithData = new Set(projects.map(p=>p.programCode)).size;
+  const approvedCount = projects.filter(p=>p.approved).length;
+  const rejectedCount = projects.filter(p=>p.rejected).length;
+  const closedCount = projects.filter(p=>p.closed).length;
+  const withDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
   const avgPct = withDetail.length
     ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
     : 0;
-  const lateCount = ALL_PROJECTS.filter(p=> findLateSteps(p).length>0).length;
+  const lateCount = projects.filter(p=> findLateSteps(p).length>0).length;
   const today = new Date().toLocaleDateString("ar-OM", { year:"numeric", month:"long", day:"numeric" });
+  const yearLabel = selectedYear ? `سنة ${selectedYear}` : "كل السنوات (2026-2030)";
 
   const html = `
     <div class="exec-header">
       <div class="exec-title">لمحة تنفيذية — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-      <div class="exec-sub">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | تاريخ الإصدار: ${today}</div>
+      <div class="exec-sub">المديرية العامة للخدمات الصحية - محافظة شمال الشرقية | النطاق: ${yearLabel} | تاريخ الإصدار: ${today}</div>
     </div>
     <div class="exec-stats-grid">
       <div class="exec-stat"><div class="exec-num">${totalProjects}</div><div class="exec-lbl">إجمالي المشاريع</div></div>
@@ -2034,15 +2049,16 @@ function renderExecSummary(){
     const c1 = new Chart(document.getElementById("execStatusChart"), {
       type:"pie",
       data:{ labels:["معتمدة","مرفوضة","قيد الانتظار"], datasets:[{ data:[approvedCount,rejectedCount,totalProjects-approvedCount-rejectedCount], backgroundColor:["#1E7A3D","#B3202E","#C9962E"] }] },
-      options:{ maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" }, title:{ display:true, text:"توزيع حالات القرار" } } }
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" }, title:{ display:true, text:`توزيع حالات القرار — ${yearLabel}` } } }
     });
-    const goalCounts = STRATEGIC_GOALS.map(g=> ALL_PROJECTS.filter(p=>p.goalId===g.id).length);
+    const goalCounts = STRATEGIC_GOALS.map(g=> projects.filter(p=>p.goalId===g.id).length);
     const c2 = new Chart(document.getElementById("execGoalChart"), {
       type:"bar",
       data:{ labels:STRATEGIC_GOALS.map(g=>String(g.id)), datasets:[{ label:"عدد المشاريع", data:goalCounts, backgroundColor:"#1B2A3A" }] },
-      options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي" } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:`عدد المشاريع حسب الهدف الاستراتيجي — ${yearLabel}` } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
     });
     execChartInstance = [c1,c2];
+
   }
 }
 
@@ -2498,10 +2514,12 @@ function detailFieldHTML(f, data){
   if(f.type==="daterange"){
     const v1 = data[f.keys[0]] || "";
     const v2 = data[f.keys[1]] || "";
+    const ro = f.computed ? `readonly title="يُحسب تلقائيًا من أقدم تاريخ بدء وأحدث تاريخ انتهاء بين كل خطوات مراحل التنفيذ"` : "";
+    const roClass = f.computed ? "computed-date" : "";
     return `<div class="detail-field wide">
       <div class="daterange-row">
-        <div class="detail-field"><label>${f.labels[0]}</label><input type="date" data-key="${f.keys[0]}" value="${escapeAttr(v1)}"></div>
-        <div class="detail-field"><label>${f.labels[1]}</label><input type="date" data-key="${f.keys[1]}" value="${escapeAttr(v2)}"></div>
+        <div class="detail-field"><label>${f.labels[0]}</label><input type="date" class="${roClass}" data-key="${f.keys[0]}" value="${escapeAttr(v1)}" ${ro}></div>
+        <div class="detail-field"><label>${f.labels[1]}</label><input type="date" class="${roClass}" data-key="${f.keys[1]}" value="${escapeAttr(v2)}" ${ro}></div>
       </div>
     </div>`;
   }
@@ -2625,6 +2643,25 @@ function recalcPhase(phaseIdx){
   });
   recalcOverallOnly();
   renderGanttPreview();
+  updateProjectDateRangeFromSteps();
+}
+
+// يحسب تاريخ بدء وانتهاء المشروع تلقائيًا من أقدم/أحدث تاريخ بين كل خطوات كل المراحل
+function updateProjectDateRangeFromSteps(){
+  const startInput = document.querySelector('.computed-date[data-key="startDate"]');
+  const endInput = document.querySelector('.computed-date[data-key="endDate"]');
+  if(!startInput || !endInput) return;
+  const allDates = [];
+  document.querySelectorAll(".step-row").forEach(row=>{
+    const s = row.querySelector(".step-start")?.value;
+    const e = row.querySelector(".step-end")?.value;
+    if(s) allDates.push({ type:"start", val:s });
+    if(e) allDates.push({ type:"end", val:e });
+  });
+  const starts = allDates.filter(d=>d.type==="start").map(d=>d.val);
+  const ends = allDates.filter(d=>d.type==="end").map(d=>d.val);
+  startInput.value = starts.length ? starts.reduce((a,b)=> a<b?a:b) : "";
+  endInput.value = ends.length ? ends.reduce((a,b)=> a>b?a:b) : "";
 }
 
 function recalcOverallOnly(){
