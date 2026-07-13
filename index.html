@@ -523,6 +523,8 @@ tr.rejected-row td{background:#FDF6F6;}
 .step-duration[readonly]{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
 .step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
+.step-field{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.step-field-label{display:none;}
 .step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;margin-top:2px;}
 .step-remove-btn:hover{background:#f9d3d7;}
 .add-step-btn{
@@ -556,8 +558,15 @@ tr.rejected-row td{background:#FDF6F6;}
 @media (max-width:760px){
   .detail-field-grid{grid-template-columns:1fr;}
   .step-header-row{display:none;}
-  .step-row{grid-template-columns:1fr;gap:4px;padding:10px 0;}
-  .step-remove-btn{justify-self:start;width:auto;padding:4px 12px;}
+  .step-row{
+    grid-template-columns:1fr;gap:0;padding:12px 10px;
+    border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:#FCFCFD;
+  }
+  .step-row:first-child{border-top:1px solid var(--border);}
+  .step-field{margin-bottom:10px;}
+  .step-field-label{display:block;font-size:10.5px;font-weight:700;color:var(--text-muted);margin-bottom:3px;}
+  .step-pct{text-align:right;padding-top:0;font-size:13px;}
+  .step-remove-btn{justify-self:start;width:auto;padding:6px 16px;}
 }
 
 @media print{
@@ -2530,15 +2539,36 @@ function stepRowHTML(step){
   step = step || {};
   return `
     <div class="step-row">
-      <textarea class="step-name" placeholder="اسم خطوة العمل" rows="2">${escapeHtml(step.name||"")}</textarea>
-      <textarea class="step-docs" placeholder="الوثائق الداعمة" rows="2">${escapeHtml(step.docs||"")}</textarea>
-      <input type="date" class="step-start" value="${step.startDate||""}">
-      <input type="date" class="step-end" value="${step.endDate||""}">
-      <input type="number" min="0" class="step-duration" placeholder="أسابيع" value="${step.durationWeeks!=null?step.durationWeeks:""}" readonly title="تُحسب تلقائيًا من الفرق بين تاريخ البدء والانتهاء">
-      <select class="step-status">
-        ${STEP_STATUS_OPTIONS.map(s=>`<option value="${s}" ${step.status===s?"selected":""}>${s}</option>`).join("")}
-      </select>
-      <span class="step-pct">0%</span>
+      <div class="step-field">
+        <span class="step-field-label">اسم الخطوة</span>
+        <textarea class="step-name" placeholder="اسم خطوة العمل" rows="2">${escapeHtml(step.name||"")}</textarea>
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">الوثائق الداعمة</span>
+        <textarea class="step-docs" placeholder="الوثائق الداعمة" rows="2">${escapeHtml(step.docs||"")}</textarea>
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">تاريخ البدء</span>
+        <input type="date" class="step-start" value="${step.startDate||""}">
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">تاريخ الانتهاء</span>
+        <input type="date" class="step-end" value="${step.endDate||""}">
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">المدة بالأسابيع (تلقائي)</span>
+        <input type="number" min="0" class="step-duration" placeholder="أسابيع" value="${step.durationWeeks!=null?step.durationWeeks:""}" readonly title="تُحسب تلقائيًا من الفرق بين تاريخ البدء والانتهاء">
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">الحالة</span>
+        <select class="step-status">
+          ${STEP_STATUS_OPTIONS.map(s=>`<option value="${s}" ${step.status===s?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="step-field">
+        <span class="step-field-label">المستهدف%</span>
+        <span class="step-pct">0%</span>
+      </div>
       <button class="step-remove-btn" title="حذف الخطوة">✕</button>
     </div>`;
 }
