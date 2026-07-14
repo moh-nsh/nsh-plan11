@@ -179,6 +179,9 @@ input,select{font-family:inherit;}
 .late-popup-box{background:#fff;border-radius:16px;padding:26px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;}
 .late-popup-box h3{font-family:'Cairo',sans-serif;font-size:16px;color:var(--red);margin-bottom:6px;}
 .late-popup-box .lp-desc{font-size:12.5px;color:var(--text-muted);margin-bottom:16px;}
+.popup-section-label{font-family:'Cairo',sans-serif;font-weight:800;font-size:12.5px;color:var(--navy);margin-bottom:6px;}
+.phase-alert-row.decision-alert{background:#F1EEFB;border:1px solid #D8CDF0;}
+.phase-alert-badge.decision-alert{background:#5B3EAF;color:#fff;}
 .late-popup-close{width:100%;margin-top:14px;background:var(--navy);color:#fff;padding:11px;border-radius:9px;font-weight:700;}
 
 .backup-checklist{display:flex;flex-direction:column;gap:10px;}
@@ -325,6 +328,46 @@ input,select{font-family:inherit;}
 }
 .summary-card .num{font-family:'Cairo',sans-serif;font-weight:800;font-size:24px;color:var(--navy);}
 .summary-card .lbl{font-size:12px;color:var(--text-muted);margin-top:4px;}
+.new-visit-card{transition:.15s;}
+.new-visit-card:hover{box-shadow:0 4px 14px rgba(200,16,46,.15);transform:translateY(-2px);}
+.new-visit-card.active{background:var(--red);border-color:var(--red);}
+.new-visit-card.active .num,.new-visit-card.active .lbl{color:#fff;}
+
+.health-score-card{
+  display:flex;align-items:center;gap:20px;background:#fff;border:2px solid var(--border);
+  border-radius:14px;padding:18px 24px;margin-bottom:22px;flex-wrap:wrap;
+}
+.health-score-ring{
+  width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.health-score-inner{
+  width:70px;height:70px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);
+}
+.health-score-info{flex:1;min-width:220px;}
+.health-score-label{font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;}
+.health-score-sub{font-size:12px;color:var(--text-muted);margin-top:2px;margin-bottom:8px;}
+.health-score-breakdown{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--navy);font-weight:700;}
+
+.decision-add-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+.decision-add-form select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:220px;}
+.decision-add-form textarea{
+  flex:1;min-width:260px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;
+}
+.decision-row{
+  background:#fff;border:1px solid var(--border);border-right:4px solid var(--gold);border-radius:10px;
+  padding:14px 18px;margin-bottom:10px;
+}
+.decision-row.resolved{border-right-color:#1E7A3D;opacity:.75;}
+.decision-row .dr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.decision-row .dr-program{font-weight:700;font-size:12.5px;color:var(--navy);}
+.decision-row .dr-text{font-size:13.5px;color:#333;margin:6px 0;line-height:1.6;}
+.decision-row .dr-meta{font-size:11px;color:var(--text-muted);}
+.decision-resolve-btn{
+  background:#EEF0F3;color:var(--navy);font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:14px;flex-shrink:0;
+}
+.decision-resolve-btn.is-resolved{background:#1E7A3D;color:#fff;}
+.decision-resolve-btn:hover{opacity:.85;}
 
 table.results{
   width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;
@@ -697,8 +740,8 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== LATE STEPS NOTIFICATION POPUP (يظهر لمدير البرنامج عند الدخول) ===================== -->
 <div id="lateStepsPopupOverlay" class="modal-overlay hidden">
   <div class="late-popup-box">
-    <h3>⏰ تنبيه: مراحل تجاوزت موعدها</h3>
-    <div class="lp-desc">لديك بند أو أكثر تجاوز تاريخ انتهائه المستهدف دون اكتمال. اضغط على أي بند للانتقال إليه مباشرة وتحديث حالته.</div>
+    <h3>⏰ تنبيهات تحتاج متابعتك</h3>
+    <div class="lp-desc">لديك مراحل متأخرة و/أو قرارات جديدة من الاجتماعات لم تُنفَّذ بعد. اضغط على أي بند للانتقال إليه مباشرة.</div>
     <div id="lateStepsPopupList"></div>
     <button class="late-popup-close" id="lateStepsPopupClose">إغلاق</button>
   </div>
@@ -734,6 +777,7 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap hidden" id="mgrOverviewView">
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل الخطط التفصيلية</div>
+    <div id="mgrHealthScoreContainer"></div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <div class="meeting-filters" style="margin-bottom:18px;">
       <select id="mgrOverviewProgramFilter"><option value="">كل برامجي</option></select>
@@ -751,6 +795,10 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="pending-list">
       <h3>🔴 مراحل متأخرة</h3>
       <div id="mgrLateList"></div>
+    </div>
+    <div class="pending-list">
+      <h3>📝 قرارات وملاحظات الاجتماعات الخاصة ببرامجك</h3>
+      <div id="mgrDecisionsList"></div>
     </div>
 
     <div id="mgrOverviewContent"></div>
@@ -773,12 +821,15 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
       <button class="meeting-btn" id="openBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
       <button class="meeting-btn" id="openExecSummaryBtn" style="background:#C9962E;color:var(--navy);">🖨️ لمحة تنفيذية</button>
+      <button class="meeting-btn" id="openDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
   </div>
   <div class="dash-wrap">
     <div class="section-title">استعراض المشاريع المجمّعة</div>
     <div class="section-desc">تصفية وتصدير جميع المشاريع المدخلة من مدراء البرامج التنفيذية بالمحافظة</div>
+
+    <div id="healthScoreContainer"></div>
 
     <div class="filters-bar">
       <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
@@ -798,6 +849,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <div class="charts-grid">
         <div class="chart-box"><canvas id="adminYearChart"></canvas></div>
         <div class="chart-box"><canvas id="adminGoalChart"></canvas></div>
+        <div class="chart-box"><canvas id="adminGoalWeightedChart"></canvas></div>
         <div class="chart-box"><canvas id="adminDetailChart"></canvas></div>
         <div class="chart-box"><canvas id="adminClosureChart"></canvas></div>
         <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
@@ -991,6 +1043,44 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== DECISION LOG SCREEN ===================== -->
+<div id="decisionLogScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">📝 سجل قرارات وملاحظات الاجتماعات الدورية</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="decisionLogBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">تسجيل قرار أو ملاحظة جديدة</div>
+    <div class="section-desc">اختر البرنامج التنفيذي المعني، واكتب القرار أو الملاحظة (مثلاً: طلب المدير العام إضافة كذا) — ستظهر مباشرة لمدير البرنامج المعني لمتابعتها وتنفيذها.</div>
+    <div class="pending-list">
+      <div class="decision-add-form">
+        <select id="decisionProgramSelect"></select>
+        <textarea id="decisionText" rows="2" placeholder="نص القرار أو الملاحظة..."></textarea>
+        <button class="add-btn" id="addDecisionBtn">➕ إضافة للسجل</button>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:28px;">السجل الكامل</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="decisionFilterProgram"><option value="">كل البرامج</option></select>
+      <select id="decisionFilterStatus">
+        <option value="">كل الحالات</option>
+        <option value="open">لم تُنفَّذ بعد</option>
+        <option value="resolved">تم التنفيذ</option>
+      </select>
+    </div>
+    <div id="decisionLogList"></div>
+  </div>
+</div>
+
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
@@ -1055,6 +1145,7 @@ const COLLECTION_NAME = "nsh_plan11_projects"; // مجموعة بيانات جد
 const DETAILS_COLLECTION = "nsh_plan11_project_details"; // الخطط التفصيلية لكل مشروع
 const MANAGER_AUTH_COLLECTION = "nsh_plan11_manager_auth"; // كلمات مرور مدراء البرامج
 const ACTIVITY_LOG_COLLECTION = "nsh_plan11_activity_log"; // سجل الدخول/الخروج/الإضافات لمدراء البرامج
+const DECISION_LOG_COLLECTION = "nsh_plan11_decision_log"; // سجل قرارات وملاحظات الاجتماعات الدورية
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
 
@@ -1125,6 +1216,7 @@ let ALL_PROJECT_DETAILS = []; // كاش محلي للخطط التفصيلية
 let ALL_PROGRAM_CARDS = []; // كاش محلي لبطاقات تعريف البرامج التنفيذية
 let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدراء
 let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
+let ALL_DECISIONS = []; // كاش محلي لسجل قرارات وملاحظات الاجتماعات
 let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
 let pendingResetManager = null; // اسم المدير الذي يعيد الإدارة تعيين كلمة مروره حاليًا
 let pendingEmailManager = null; // اسم المدير الذي يُحدَّث بريده الإلكتروني حاليًا
@@ -1210,6 +1302,46 @@ function computeOverallPct(detailData){
     });
   });
   return Math.round(total*100);
+}
+
+// مؤشر "صحة الخطة" الإجمالي: يجمع أربعة أبعاد بأوزان متساوية (تغطية البرامج، تعبئة الخطط التفصيلية، متوسط الإنجاز، الالتزام بالجدول)
+function computeHealthScore(projects, totalPrograms){
+  if(totalPrograms===0 || projects.length===0){
+    return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0 };
+  }
+  const programsWithData = new Set(projects.map(p=>p.programCode)).size;
+  const coverageScore = totalPrograms>0 ? Math.min(programsWithData/totalPrograms,1) : 0;
+  const withDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const detailScore = projects.length>0 ? withDetail.length/projects.length : 0;
+  const avgCompletion = withDetail.length
+    ? (withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)/100
+    : 0;
+  const lateCount = projects.filter(p=> findLateSteps(p).length>0).length;
+  const onScheduleScore = projects.length>0 ? Math.max(1 - lateCount/projects.length,0) : 1;
+  const overall = Math.round(((coverageScore*0.25)+(detailScore*0.25)+(avgCompletion*0.25)+(onScheduleScore*0.25))*100);
+  let color, label;
+  if(overall>=80){ color="#1E7A3D"; label="🟢 صحة الخطة ممتازة"; }
+  else if(overall>=50){ color="#C9962E"; label="🟡 تحتاج متابعة"; }
+  else { color="#C8102E"; label="🔴 تحتاج تدخّلًا عاجلاً"; }
+  return { score:overall, color, label, coverageScore, detailScore, avgCompletion, onScheduleScore };
+}
+function healthScoreCardHTML(health, subtitle){
+  return `
+    <div class="health-score-card" style="border-color:${health.color};">
+      <div class="health-score-ring" style="background:conic-gradient(${health.color} ${health.score*3.6}deg, #EEF0F3 0deg);">
+        <div class="health-score-inner"><span>${health.score}%</span></div>
+      </div>
+      <div class="health-score-info">
+        <div class="health-score-label" style="color:${health.color};">${health.label}</div>
+        <div class="health-score-sub">${subtitle}</div>
+        <div class="health-score-breakdown">
+          <span>تغطية البرامج: ${Math.round(health.coverageScore*100)}%</span>
+          <span>تعبئة الخطط: ${Math.round(health.detailScore*100)}%</span>
+          <span>متوسط الإنجاز: ${Math.round(health.avgCompletion*100)}%</span>
+          <span>الالتزام بالجدول: ${Math.round(health.onScheduleScore*100)}%</span>
+        </div>
+      </div>
+    </div>`;
 }
 
 // يكتشف خطوات العمل التي تجاوزت تاريخ انتهائها المستهدف دون اكتمال (لأغراض التذكير بالبريد)
@@ -1347,9 +1479,45 @@ function logActivity(managerName, action, detail){
   }).catch(err=> console.error("logActivity error", err));
 }
 
+/* ---------------- سجل قرارات وملاحظات الاجتماعات الدورية ---------------- */
+function listenToDecisions(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(DECISION_LOG_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    ALL_DECISIONS = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function addDecision(programCode, text){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  const program = PROGRAMS.find(p=>p.code===programCode);
+  return db.collection(DECISION_LOG_COLLECTION).add({
+    programCode: programCode,
+    programName: program ? program.name : "",
+    govManager: program ? program.govManager : "",
+    text: text,
+    resolved: false,
+    createdBy: ADMIN_NAME,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=> true).catch(err=>{
+    console.error(err);
+    alert("تعذّر حفظ القرار. على الأغلب قواعد الأمان في Firestore لا تسمح بالوصول لمجموعة \"" + DECISION_LOG_COLLECTION + "\". راجع مع قسم التخطيط لإضافتها. تفاصيل الخطأ: " + err.message);
+    return false;
+  });
+}
+function toggleDecisionResolved(id, resolved, byWhom){
+  if(!firebaseReady) return;
+  db.collection(DECISION_LOG_COLLECTION).doc(id).update({
+    resolved: resolved,
+    resolvedAt: resolved ? firebase.firestore.FieldValue.serverTimestamp() : null,
+    resolvedBy: resolved ? byWhom : null
+  });
+}
+
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -1414,17 +1582,39 @@ function checkAndShowLateStepsPopup(){
   myProjects.forEach(pr=>{
     findLateSteps(pr).forEach(s=> lateEntries.push({ project: pr, step: s }));
   });
-  if(lateEntries.length===0) return;
+  const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
+  const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
+
+  if(lateEntries.length===0 && unresolvedDecisions.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
-  list.innerHTML = lateEntries.map(({project,step})=>`
-    <div class="phase-alert-row late" data-project-id="${project.id}">
-      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
-      <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
-    </div>`).join("");
-  list.querySelectorAll(".phase-alert-row").forEach(row=>{
+  let html = "";
+  if(lateEntries.length>0){
+    html += `<div class="popup-section-label">⏰ مراحل متأخرة (${lateEntries.length})</div>`;
+    html += lateEntries.map(({project,step})=>`
+      <div class="phase-alert-row late" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+        <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
+      </div>`).join("");
+  }
+  if(unresolvedDecisions.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">📝 قرارات وملاحظات لم تُنفَّذ بعد (${unresolvedDecisions.length})</div>`;
+    html += unresolvedDecisions.map(d=>`
+      <div class="phase-alert-row decision-alert" data-decision-id="${d.id}">
+        <div><b>${d.programCode}</b> — ${escapeHtml(d.text)}</div>
+        <span class="phase-alert-badge decision-alert">📝 جديد</span>
+      </div>`).join("");
+  }
+  list.innerHTML = html;
+  list.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
       document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
       openProjectDetailForm(row.dataset.projectId);
+    };
+  });
+  list.querySelectorAll(".phase-alert-row[data-decision-id]").forEach(row=>{
+    row.onclick = ()=>{
+      document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
+      switchMgrTab("overview");
     };
   });
   document.getElementById("lateStepsPopupOverlay").classList.remove("hidden");
@@ -1516,6 +1706,10 @@ function renderManagerOverview(){
     : 0;
   const closedCount = myProjects.filter(p=>p.closed).length;
 
+  const myTotalPrograms = PROGRAMS.filter(p=>p.govManager===currentManager).length;
+  const mgrHealth = computeHealthScore(myProjects, myTotalPrograms);
+  document.getElementById("mgrHealthScoreContainer").innerHTML = healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط");
+
   document.getElementById("mgrOverviewSummary").innerHTML = `
     <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي المشاريع</div></div>
     <div class="summary-card"><div class="num">${withDetail.length} / ${myProjects.length}</div><div class="lbl">لديها خطة تفصيلية</div></div>
@@ -1568,6 +1762,35 @@ function renderManagerOverview(){
   document.querySelectorAll(".phase-alert-row").forEach(row=>{
     row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
   });
+
+  // قرارات وملاحظات الاجتماعات الخاصة ببرامج هذا المدير
+  const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
+  const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
+    .sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  const decisionsBox = document.getElementById("mgrDecisionsList");
+  if(myDecisions.length===0){
+    decisionsBox.innerHTML = `<div class="empty-note">لا توجد قرارات أو ملاحظات مسجّلة لبرامجك حتى الآن.</div>`;
+  }else{
+    decisionsBox.innerHTML = myDecisions.map(d=>{
+      const dt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+      return `
+        <div class="decision-row ${d.resolved?'resolved':''}">
+          <div class="dr-top">
+            <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)}</div>
+            <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+          </div>
+          <div class="dr-text">${escapeHtml(d.text)}</div>
+          <div class="dr-meta">سُجّل بتاريخ ${dt}</div>
+        </div>`;
+    }).join("");
+    decisionsBox.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
+      btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), currentManager);
+    });
+  }
 
   const container = document.getElementById("mgrOverviewContent");
   if(myProjects.length===0){
@@ -1785,12 +2008,17 @@ function renderYearPanel(panelEl, program){
 /* ---------------- Admin dashboard ---------------- */
 const LAST_VISIT_KEY = "rasd_admin_last_visit";
 let sessionNewSinceLastVisit = 0;
+let sessionNewProjectIds = new Set();
+let showOnlyNewProjects = false;
 function enterAdmin(){
   const lastVisit = Number(localStorage.getItem(LAST_VISIT_KEY)) || 0;
-  sessionNewSinceLastVisit = ALL_PROJECTS.filter(p=>{
+  const newOnes = ALL_PROJECTS.filter(p=>{
     const t = p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0;
     return t > lastVisit;
-  }).length;
+  });
+  sessionNewSinceLastVisit = newOnes.length;
+  sessionNewProjectIds = new Set(newOnes.map(p=>p.id));
+  showOnlyNewProjects = false;
   localStorage.setItem(LAST_VISIT_KEY, String(Date.now()));
   showScreen("adminScreen");
   buildFilters();
@@ -1808,6 +2036,65 @@ document.getElementById("openBackupBtn").onclick = ()=> showScreen("backupScreen
 document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); buildExecYearFilter(); renderExecSummary(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("openDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
+document.getElementById("decisionLogBackBtn").onclick = ()=> showScreen("adminScreen");
+
+function buildDecisionLogScreen(){
+  const opts = "<option value=''>-- اختر البرنامج التنفيذي --</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name} (${p.govManager})</option>`).join("");
+  document.getElementById("decisionProgramSelect").innerHTML = opts;
+  document.getElementById("decisionFilterProgram").innerHTML = "<option value=''>كل البرامج</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  document.getElementById("decisionFilterProgram").onchange = renderDecisionLogScreen;
+  document.getElementById("decisionFilterStatus").onchange = renderDecisionLogScreen;
+  document.getElementById("addDecisionBtn").onclick = ()=>{
+    const programCode = document.getElementById("decisionProgramSelect").value;
+    const text = document.getElementById("decisionText").value.trim();
+    if(!programCode){ alert("الرجاء اختيار البرنامج التنفيذي المعني."); return; }
+    if(!text){ alert("الرجاء كتابة نص القرار أو الملاحظة."); return; }
+    addDecision(programCode, text).then(ok=>{
+      if(ok){
+        logActivity(ADMIN_NAME, "add_decision", `${programCode} — ${text.slice(0,60)}`);
+        document.getElementById("decisionProgramSelect").value = "";
+        document.getElementById("decisionText").value = "";
+      }
+    });
+  };
+}
+
+function renderDecisionLogScreen(){
+  const progFilter = document.getElementById("decisionFilterProgram").value;
+  const statusFilter = document.getElementById("decisionFilterStatus").value;
+  let rows = ALL_DECISIONS.filter(d=>{
+    if(progFilter && d.programCode!==progFilter) return false;
+    if(statusFilter==="open" && d.resolved) return false;
+    if(statusFilter==="resolved" && !d.resolved) return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return tb - ta;
+  });
+  const list = document.getElementById("decisionLogList");
+  if(rows.length===0){
+    list.innerHTML = `<div class="empty-note">لا توجد قرارات أو ملاحظات مسجّلة بعد.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(d=>{
+    const dt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+    return `
+      <div class="decision-row ${d.resolved?'resolved':''}">
+        <div class="dr-top">
+          <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)} <span style="color:var(--text-muted);font-weight:400;">(${escapeHtml(d.govManager)})</span></div>
+          <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+        </div>
+        <div class="dr-text">${escapeHtml(d.text)}</div>
+        <div class="dr-meta">سُجّل بتاريخ ${dt}${d.resolved && d.resolvedBy ? ` | نُفّذ بواسطة: ${escapeHtml(d.resolvedBy)}` : ""}</div>
+      </div>`;
+  }).join("");
+  list.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
+    btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), getActorName());
+  });
+}
 document.getElementById("execPrintBtn").onclick = ()=> window.print();
 document.getElementById("backupSelectAll").onclick = ()=>{
   document.querySelectorAll(".backup-check-item input").forEach(cb=> cb.checked = true);
@@ -1867,7 +2154,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -2168,7 +2455,7 @@ function renderExecSummary(){
 }
 
 function renderAdminCharts(filteredProjects){
-  const ids = ["adminYearChart","adminGoalChart","adminDetailChart","adminClosureChart","adminManagerChart"];
+  const ids = ["adminYearChart","adminGoalChart","adminGoalWeightedChart","adminDetailChart","adminClosureChart","adminManagerChart"];
   if(typeof Chart === "undefined"){
     const msg = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12.5px;text-align:center;padding:10px;">تعذر تحميل مكتبة الرسوم البيانية.<br>تأكد من اتصال الإنترنت وأعد تحميل الصفحة (Ctrl+F5).</div>`;
     ids.forEach(id=> document.getElementById(id).closest(".chart-box").innerHTML = msg);
@@ -2183,6 +2470,20 @@ function renderAdminCharts(filteredProjects){
     type: "bar",
     data: { labels: STRATEGIC_GOALS.map(g=>String(g.id)), datasets:[{ label:"عدد المشاريع", data: goalCounts, backgroundColor:"#1B2A3A" }] },
     options: { maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب الهدف الاستراتيجي", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  // 2) متوسط نسبة الإنجاز المرجّح لكل هدف استراتيجي (مجمّع من برامجه ومشاريعه)
+  destroyAdminChart("goalWeighted");
+  const goalWeightedPct = STRATEGIC_GOALS.map(g=>{
+    const goalProjects = filteredProjects.filter(p=>p.goalId===g.id);
+    const withDetail = goalProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+    if(withDetail.length===0) return 0;
+    return Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length);
+  });
+  adminChartInstances.goalWeighted = new Chart(document.getElementById("adminGoalWeightedChart"), {
+    type: "bar",
+    data: { labels: STRATEGIC_GOALS.map(g=>String(g.id)), datasets:[{ label:"متوسط الإنجاز%", data: goalWeightedPct, backgroundColor:"#5B3EAF" }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"🎯 متوسط الإنجاز المرجّح لكل هدف استراتيجي", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+"%" } } } }
   });
 
   // 3) عدد المشاريع حسب السنة
@@ -2242,6 +2543,7 @@ function renderAdmin(){
     if(yr && String(pr.year)!==yr) return false;
     if(mgr && pr.govManager!==mgr) return false;
     if(owner && pr.projectOwner!==owner) return false;
+    if(showOnlyNewProjects && !sessionNewProjectIds.has(pr.id)) return false;
     if(q && !projectMatchesSearch(pr, q)) return false;
     return true;
   }).sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
@@ -2258,8 +2560,21 @@ function renderAdmin(){
     <div class="summary-card"><div class="num">${withDetailCount} / ${totalProjects}</div><div class="lbl">مشاريع لديها خطة تفصيلية</div></div>
     <div class="summary-card"><div class="num">${closedCount}</div><div class="lbl">مشاريع مغلقة ومكتملة</div></div>
     <div class="summary-card"><div class="num">${GOV_MANAGERS.length}</div><div class="lbl">مدراء برامج بالمحافظة</div></div>
-    <div class="summary-card" style="border-right-color:var(--red);"><div class="num">🆕 ${sessionNewSinceLastVisit}</div><div class="lbl">مشاريع جديدة منذ آخر زيارة لك</div></div>
+    <div class="summary-card new-visit-card ${showOnlyNewProjects?'active':''}" id="newVisitCard" style="border-right-color:var(--red);cursor:${sessionNewSinceLastVisit>0?'pointer':'default'};" title="${sessionNewSinceLastVisit>0 ? 'اضغط لعرض هذه المشاريع فقط في الجدول أدناه' : ''}">
+      <div class="num">🆕 ${sessionNewSinceLastVisit}</div>
+      <div class="lbl">${showOnlyNewProjects ? "مُفعَّل — اضغط للإلغاء" : "مشاريع جديدة منذ آخر زيارة لك"}</div>
+    </div>
   `;
+  if(sessionNewSinceLastVisit>0){
+    document.getElementById("newVisitCard").onclick = ()=>{
+      showOnlyNewProjects = !showOnlyNewProjects;
+      renderAdmin();
+      if(showOnlyNewProjects) document.querySelector("table.results").scrollIntoView({behavior:"smooth", block:"start"});
+    };
+  }
+
+  const adminHealth = computeHealthScore(filteredProjects, 36);
+  document.getElementById("healthScoreContainer").innerHTML = healthScoreCardHTML(adminHealth, "مؤشر مركّب يعكس تغطية البرامج، تعبئة الخطط التفصيلية، متوسط الإنجاز، والالتزام بالجدول الزمني (يعكس الفلاتر المختارة)");
 
   renderAdminCharts(filteredProjects);
 
@@ -2671,7 +2986,7 @@ function phaseBlockHTML(def, pi, steps, locked){
         <span>اسم الخطوة</span><span>الوثائق الداعمة</span><span>البدء</span><span>الانتهاء</span><span>أسابيع (تلقائي)</span><span>الحالة</span><span>المستهدف%</span><span></span>
       </div>
       <div class="phase-steps" data-phase="${pi}">${rows}</div>
-      ${locked ? "" : `<button class="add-step-btn" data-phase="${pi}">+ إضافة خطوة</button>`}
+      <button class="add-step-btn" data-phase="${pi}">+ إضافة خطوة${locked ? ' جديدة (استجدّت بعد الإغلاق)' : ''}</button>
     </div>`;
 }
 
@@ -2688,7 +3003,7 @@ function openProjectDetailForm(projectId){
 
   let bodyHtml = "";
   if(structureLocked){
-    bodyHtml += `<div class="structure-lock-banner">🔒 المراحل مقفلة هيكليًا من قسم التخطيط والدراسات — يمكن فقط تحديث "الحالة" لكل خطوة لمتابعة التقدم.</div>`;
+    bodyHtml += `<div class="structure-lock-banner">🔒 المراحل الحالية مقفلة هيكليًا من قسم التخطيط والدراسات — يمكن فقط تحديث "الحالة" لكل خطوة موجودة. يمكنك إضافة خطوات جديدة استجدّت بعد الإغلاق عبر زر "+ إضافة خطوة" أسفل كل مرحلة.</div>`;
   }
   bodyHtml += `<div class="detail-field-grid">${DETAIL_FIELD_DEFS.map(f=>detailFieldHTML(f, existing)).join("")}</div>`;
   DETAIL_PHASES_DEF.forEach((def, pi)=>{
@@ -3383,6 +3698,10 @@ listenToManagerAuth(()=>{
 });
 listenToActivityLog(()=>{
   if(!document.getElementById("activityScreen").classList.contains("hidden")) renderActivityScreen();
+});
+listenToDecisions(()=>{
+  if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderDecisionLogScreen();
+  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrOverviewView").classList.contains("hidden")) renderManagerOverview();
 });
 if(!firebaseReady){
   console.warn("Firebase غير مُهيّأ بعد. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى ملف index.html.");
