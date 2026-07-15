@@ -10,7 +10,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="exceljs.min.js"></script>
 <script src="chart.min.js"></script>
-<script src="docxgen.js"></script>
 <style>
 :root{
   --navy:#1B2A3A;
@@ -667,8 +666,9 @@ tr.rejected-row td{background:#FDF6F6;}
 .exec-lbl{font-size:11.5px;color:var(--text-muted);margin-top:6px;}
 @media (max-width:900px){ .exec-stats-grid{grid-template-columns:repeat(2,1fr);} }
 @media print{
-  #execSummaryScreen .chart-box{height:260px;page-break-inside:avoid;}
-  #execSummaryScreen{max-width:100%;}
+  #execSummaryScreen .chart-box,#weeklyReportScreen .chart-box{height:260px;page-break-inside:avoid;}
+  #execSummaryScreen,#weeklyReportScreen{max-width:100%;}
+  #weeklyReportScreen .late-proj-row{page-break-inside:avoid;}
 }
 
 @media (max-width:760px){
@@ -800,23 +800,48 @@ tr.rejected-row td{background:#FDF6F6;}
 </div>
 
 <!-- ===================== WEEKLY REPORT MODAL ===================== -->
-<div id="weeklyReportModal" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
-  <div class="detail-modal-box" style="max-width:720px;">
-    <div class="detail-modal-header">
+<!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
+<div id="weeklyReportScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
       <div>
-        <div class="detail-modal-title">📊 التقرير الأسبوعي</div>
-        <div class="detail-modal-subtitle">جاهز للنسخ مباشرة إلى واتساب، أو التصدير كملف Word للتعديل</div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">📊 التقرير الأسبوعي المرئي</div>
       </div>
-      <button class="detail-close-btn" id="weeklyReportCloseX" title="إغلاق">✕</button>
     </div>
-    <div class="detail-modal-body">
-      <textarea id="weeklyReportText" readonly rows="22" style="width:100%;font-family:'Tajawal',monospace;font-size:13px;line-height:1.7;padding:16px;border:1px solid var(--border);border-radius:10px;resize:vertical;direction:rtl;background:#FCFCFD;"></textarea>
+    <div class="actions">
+      <button class="print-btn" id="weeklyReportPrintBtn">🖨️ طباعة / PDF</button>
+      <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ نص واتساب</button>
+      <button class="logout-btn" id="weeklyReportBackBtn">رجوع</button>
     </div>
-    <div class="detail-modal-footer">
-      <button class="btn-secondary" id="weeklyReportCloseBtn">إغلاق</button>
-      <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ النص (واتساب)</button>
-      <button class="add-btn" id="weeklyReportWordBtn">📄 تصدير Word</button>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">تقرير متابعة إدخال المشاريع</div>
+    <div class="section-desc">اختر النطاق (سنة/برنامج/مدير) ثم اطبعه مباشرة كـ PDF أو انسخه لواتساب</div>
+
+    <div class="filters-bar">
+      <select id="reportFilterYear"><option value="">كل السنوات</option></select>
+      <select id="reportFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="reportFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+      <select id="reportFilterManager"><option value="">كل المدراء</option></select>
     </div>
+
+    <div class="exec-header" style="margin-top:10px;">
+      <div class="exec-title">📊 تقرير متابعة إدخال مشاريع الخطة الخمسية الحادية عشرة</div>
+      <div class="exec-sub" id="reportDateSub"></div>
+    </div>
+
+    <div id="reportStatsGrid" class="exec-stats-grid"></div>
+
+    <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="chart-box"><canvas id="reportReadinessChart"></canvas></div>
+      <div class="chart-box"><canvas id="reportLeaderboardChart"></canvas></div>
+    </div>
+    <div class="chart-box" style="height:280px;margin-bottom:26px;"><canvas id="reportProgramStatusChart"></canvas></div>
+
+    <div class="section-title" style="margin-top:6px;">📋 مشاريع تحتاج إكمال</div>
+    <div id="reportNeedsWorkList"></div>
   </div>
 </div>
 
@@ -1786,7 +1811,7 @@ function toggleCountdownCustomFields(){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -2399,18 +2424,20 @@ document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen"
 document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); buildExecYearFilter(); renderExecSummary(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
-document.getElementById("openWeeklyReportBtn").onclick = openWeeklyReportModal;
-document.getElementById("weeklyReportCloseX").onclick = ()=> document.getElementById("weeklyReportModal").classList.add("hidden");
-document.getElementById("weeklyReportCloseBtn").onclick = ()=> document.getElementById("weeklyReportModal").classList.add("hidden");
-document.getElementById("weeklyReportModal").addEventListener("click", e=>{
-  if(e.target.id === "weeklyReportModal") document.getElementById("weeklyReportModal").classList.add("hidden");
-});
+document.getElementById("openWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
+document.getElementById("weeklyReportBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("weeklyReportPrintBtn").onclick = ()=> window.print();
 document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
-  const ta = document.getElementById("weeklyReportText");
-  ta.select();
-  ta.setSelectionRange(0, 999999);
+  const text = buildWeeklyReportText(buildWeeklyReportData(getReportFilters()));
+  const temp = document.createElement("textarea");
+  temp.value = text;
+  temp.style.position = "fixed";
+  temp.style.opacity = "0";
+  document.body.appendChild(temp);
+  temp.select();
+  temp.setSelectionRange(0, 999999);
   try{
-    navigator.clipboard.writeText(ta.value).then(()=>{
+    navigator.clipboard.writeText(text).then(()=>{
       alert("تم نسخ التقرير — الصقه الآن في واتساب.");
     }).catch(()=>{
       document.execCommand("copy");
@@ -2420,8 +2447,8 @@ document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
     document.execCommand("copy");
     alert("تم نسخ التقرير — الصقه الآن في واتساب.");
   }
+  document.body.removeChild(temp);
 };
-document.getElementById("weeklyReportWordBtn").onclick = exportWeeklyReportWord;
 document.getElementById("decisionLogBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
 document.getElementById("requestsBackBtn").onclick = ()=> showScreen("adminScreen");
@@ -3292,17 +3319,48 @@ function addProgramBackupSheet(wb, program){
   }
 }
 
-/* ==================== التقرير الأسبوعي ==================== */
-function buildWeeklyReportData(){
-  const totalPrograms = 36;
-  const programsWithData = new Set(ALL_PROJECTS.map(p=>p.programCode)).size;
-  const totalProjects = ALL_PROJECTS.length;
+
+/* ==================== التقرير الأسبوعي المرئي ==================== */
+function buildReportFilters(){
+  document.getElementById("reportFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  document.getElementById("reportFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("reportFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  document.getElementById("reportFilterManager").innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}">${m}</option>`).join("");
+  ["reportFilterYear","reportFilterGoal","reportFilterProgram","reportFilterManager"].forEach(id=>{
+    document.getElementById(id).onchange = renderWeeklyReportScreen;
+  });
+}
+function getReportFilters(){
+  return {
+    year: document.getElementById("reportFilterYear").value,
+    goalId: document.getElementById("reportFilterGoal").value,
+    programCode: document.getElementById("reportFilterProgram").value,
+    manager: document.getElementById("reportFilterManager").value
+  };
+}
+
+function buildWeeklyReportData(filters){
+  filters = filters || {};
+  let projects = ALL_PROJECTS.filter(pr=>{
+    if(filters.year && String(pr.year)!==filters.year) return false;
+    if(filters.goalId && String(pr.goalId)!==filters.goalId) return false;
+    if(filters.programCode && pr.programCode!==filters.programCode) return false;
+    if(filters.manager && pr.govManager!==filters.manager) return false;
+    return true;
+  });
+  const relevantPrograms = filters.programCode ? [filters.programCode]
+    : filters.goalId ? PROGRAMS.filter(p=>String(p.goalId)===filters.goalId).map(p=>p.code)
+    : PROGRAMS.map(p=>p.code);
+  const totalPrograms = relevantPrograms.length;
+  const programsWithData = new Set(projects.map(p=>p.programCode)).size;
+  const totalProjects = projects.length;
   let readyCount = 0;
+  const relevantManagers = filters.manager ? [filters.manager] : GOV_MANAGERS;
   const managerStats = {};
-  GOV_MANAGERS.forEach(m=> managerStats[m] = { projects:0, sumBasicPct:0, readyCount:0, programs:new Set() });
+  relevantManagers.forEach(m=> managerStats[m] = { projects:0, sumBasicPct:0, readyCount:0, programs:new Set() });
   const needsWork = [];
 
-  ALL_PROJECTS.forEach(pr=>{
+  projects.forEach(pr=>{
     const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
     const basicPct = computeProjectBasicInfoPct(detail);
     const phasesStarted = countPhasesStarted(detail);
@@ -3318,7 +3376,7 @@ function buildWeeklyReportData(){
     if(!ready) needsWork.push({ project: pr, basicPct, phasesStarted, hasDetail: !!detail });
   });
 
-  const leaderboard = GOV_MANAGERS.map(m=>{
+  const leaderboard = relevantManagers.map(m=>{
     const st = managerStats[m];
     const avgBasicPct = st.projects>0 ? Math.round(st.sumBasicPct/st.projects) : 0;
     return { manager:m, projects:st.projects, programs:st.programs.size, avgBasicPct, readyCount:st.readyCount };
@@ -3364,82 +3422,61 @@ function buildWeeklyReportText(data){
   return t;
 }
 
-function openWeeklyReportModal(){
-  const data = buildWeeklyReportData();
-  document.getElementById("weeklyReportText").value = buildWeeklyReportText(data);
-  document.getElementById("weeklyReportModal").dataset.reportData = "1";
-  document.getElementById("weeklyReportModal").classList.remove("hidden");
-  logActivity(ADMIN_NAME, "weekly_report", `${data.totalProjects} مشروع`);
-}
+let reportChartInstances = [];
+function renderWeeklyReportScreen(){
+  const filters = getReportFilters();
+  const data = buildWeeklyReportData(filters);
+  const today = new Date().toLocaleDateString("ar-OM",{year:"numeric",month:"long",day:"numeric"});
+  document.getElementById("reportDateSub").textContent = `تاريخ الإصدار: ${today}`;
 
-async function exportWeeklyReportWord(){
-  if(typeof docx === "undefined"){ alert("تعذّر تحميل مكتبة تصدير Word (docxgen.js). تأكد من رفع هذا الملف على GitHub بجانب index.html."); return; }
-  const btn = document.getElementById("weeklyReportWordBtn");
-  try{
-    btn.disabled = true;
-    btn.textContent = "⏳ جاري التصدير...";
-    const data = buildWeeklyReportData();
-    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType } = docx;
-    const today = new Date().toLocaleDateString("ar-OM",{year:"numeric",month:"long",day:"numeric"});
+  document.getElementById("reportStatsGrid").innerHTML = `
+    <div class="exec-stat"><div class="exec-num">${data.programsWithData}/${data.totalPrograms}</div><div class="exec-lbl">برامج بدأت الإدخال</div></div>
+    <div class="exec-stat"><div class="exec-num">${data.totalProjects}</div><div class="exec-lbl">إجمالي المشاريع</div></div>
+    <div class="exec-stat" style="border-right-color:#1E7A3D;"><div class="exec-num">${data.readyCount}</div><div class="exec-lbl">مشاريع جاهزة بكامل خططها</div></div>
+    <div class="exec-stat" style="border-right-color:var(--red);"><div class="exec-num">${data.totalProjects-data.readyCount}</div><div class="exec-lbl">مشاريع تحتاج إكمال</div></div>
+  `;
 
-    const title = new Paragraph({ alignment:AlignmentType.CENTER, bidirectional:true, children:[ new TextRun({ text:"تقرير أسبوعي - متابعة إدخال مشاريع الخطة الخمسية الحادية عشرة", bold:true, size:32, rightToLeft:true }) ] });
-    const dateP = new Paragraph({ alignment:AlignmentType.CENTER, bidirectional:true, children:[ new TextRun({ text:today, size:22, rightToLeft:true }) ] });
-
-    const overviewHeading = new Paragraph({ bidirectional:true, heading:HeadingLevel.HEADING_2, children:[ new TextRun({ text:"📌 نظرة عامة", bold:true, rightToLeft:true }) ] });
-    const overviewItems = [
-      `البرامج التي بدأت الإدخال: ${data.programsWithData}/${data.totalPrograms}`,
-      `إجمالي المشاريع المُدخلة: ${data.totalProjects}`,
-      `مشاريع جاهزة رسميًا بكامل خطتها التشغيلية: ${data.readyCount}/${data.totalProjects}`
-    ].map(txt=> new Paragraph({ bidirectional:true, bullet:{level:0}, children:[ new TextRun({ text:txt, rightToLeft:true }) ] }));
-
-    const leaderboardHeading = new Paragraph({ bidirectional:true, heading:HeadingLevel.HEADING_2, children:[ new TextRun({ text:"🏆 ترتيب المدراء", bold:true, rightToLeft:true }) ] });
-    const headerRow = new TableRow({
-      children: ["الترتيب","المدير","عدد المشاريع","اكتمال البيانات%","جاهز بالكامل"].map(h=> new TableCell({
-        shading:{ fill:"1B2A3A" },
-        children:[ new Paragraph({ alignment:AlignmentType.CENTER, bidirectional:true, children:[ new TextRun({ text:h, bold:true, color:"FFFFFF", rightToLeft:true }) ] }) ]
-      }))
+  reportChartInstances.forEach(c=> c && c.destroy());
+  reportChartInstances = [];
+  if(typeof Chart !== "undefined"){
+    const c1 = new Chart(document.getElementById("reportReadinessChart"), {
+      type: "doughnut",
+      data: { labels:["جاهزة بالكامل","تحتاج إكمال"], datasets:[{ data:[data.readyCount, data.totalProjects-data.readyCount], backgroundColor:["#1E7A3D","#C9962E"] }] },
+      options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" }, title:{ display:true, text:"نسبة جاهزية الخطط التشغيلية", font:{ size:13 } } } }
     });
-    const bodyRows = data.leaderboard.map((row,i)=>{
-      const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
-      return new TableRow({
-        children:[medal, row.manager, String(row.projects), row.avgBasicPct+"%", String(row.readyCount)].map(v=> new TableCell({
-          children:[ new Paragraph({ alignment:AlignmentType.CENTER, bidirectional:true, children:[ new TextRun({ text:v, rightToLeft:true }) ] }) ]
-        }))
-      });
+    const topManagers = data.leaderboard.filter(r=>r.projects>0);
+    const c2 = new Chart(document.getElementById("reportLeaderboardChart"), {
+      type: "bar",
+      data: { labels: topManagers.map(r=>r.manager), datasets:[
+        { label:"جاهزة بالكامل", data: topManagers.map(r=>r.readyCount), backgroundColor:"#1E7A3D" },
+        { label:"إجمالي المشاريع", data: topManagers.map(r=>r.projects), backgroundColor:"#EEF0F3" }
+      ] },
+      options: { maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" }, title:{ display:true, text:"🏆 ترتيب المدراء", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
     });
-    const leaderboardTable = new Table({ rows:[headerRow, ...bodyRows], width:{ size:100, type:WidthType.PERCENTAGE } });
-
-    const needsWorkChildren = [];
-    if(data.needsWork.length>0){
-      needsWorkChildren.push(new Paragraph({ bidirectional:true, heading:HeadingLevel.HEADING_2, children:[ new TextRun({ text:"📋 مشاريع تحتاج إكمال", bold:true, rightToLeft:true }) ] }));
-      let currentMgr = null;
-      data.needsWork.forEach(item=>{
-        if(item.project.govManager !== currentMgr){
-          currentMgr = item.project.govManager;
-          needsWorkChildren.push(new Paragraph({ bidirectional:true, heading:HeadingLevel.HEADING_3, children:[ new TextRun({ text:"👤 "+currentMgr, bold:true, rightToLeft:true }) ] }));
-        }
-        const status = !item.hasDetail ? "❌ لم تُدخل الخطة التشغيلية بعد" : `⚠️ اكتمال البيانات ${item.basicPct}% | المراحل ${item.phasesStarted}/4`;
-        needsWorkChildren.push(new Paragraph({ bidirectional:true, bullet:{level:0}, children:[ new TextRun({ text:`${item.project.projectName} (${item.project.programCode}) — ${status}`, rightToLeft:true }) ] }));
-      });
-    }else{
-      needsWorkChildren.push(new Paragraph({ bidirectional:true, children:[ new TextRun({ text:"✅ جميع المشاريع المُدخلة جاهزة بكامل خططها التشغيلية!", bold:true, rightToLeft:true }) ] }));
-    }
-
-    const doc = new Document({
-      sections: [{ children: [ title, dateP, new Paragraph({text:""}), overviewHeading, ...overviewItems, new Paragraph({text:""}), leaderboardHeading, leaderboardTable, new Paragraph({text:""}), ...needsWorkChildren ] }]
+    const c3 = new Chart(document.getElementById("reportProgramStatusChart"), {
+      type: "bar",
+      data: { labels: topManagers.map(r=>r.manager), datasets:[{ label:"متوسط اكتمال البيانات%", data: topManagers.map(r=>r.avgBasicPct), backgroundColor:"#5B3EAF" }] },
+      options: { maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:"متوسط اكتمال بيانات الاستمارة لكل مدير", font:{ size:13 } } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+"%" } } } }
     });
+    reportChartInstances = [c1,c2,c3];
+  }
 
-    const blob = await Packer.toBlob(doc);
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `تقرير_أسبوعي_${new Date().toISOString().slice(0,10)}.docx`;
-    link.click();
-  }catch(err){
-    console.error("exportWeeklyReportWord error:", err);
-    alert("حدث خطأ أثناء إنشاء ملف Word:\n" + err.message);
-  }finally{
-    btn.disabled = false;
-    btn.textContent = "📄 تصدير Word";
+  const list = document.getElementById("reportNeedsWorkList");
+  if(data.needsWork.length===0){
+    list.innerHTML = `<div class="empty-note">✅ جميع المشاريع ضمن هذا الاختيار جاهزة بكامل خططها التشغيلية!</div>`;
+  }else{
+    list.innerHTML = data.needsWork.map(item=>{
+      const statusIcon = !item.hasDetail ? "🔴" : (item.basicPct<50 ? "🟠" : "🟡");
+      const statusText = !item.hasDetail ? "لم تُدخل الخطة التشغيلية بعد" : `اكتمال البيانات ${item.basicPct}% | المراحل ${item.phasesStarted}/4`;
+      return `
+        <div class="late-proj-row" style="cursor:default;">
+          <div class="late-proj-info">
+            <div class="lp-name">${statusIcon} ${escapeHtml(item.project.projectName)} <span style="font-weight:400;color:var(--text-muted);">— ${item.project.programCode} — ${escapeHtml(item.project.govManager)}</span></div>
+            <div class="lp-meta">سنة ${item.project.year}</div>
+            <div class="lp-steps">${statusText}</div>
+          </div>
+        </div>`;
+    }).join("");
   }
 }
 
