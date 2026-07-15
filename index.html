@@ -4044,6 +4044,16 @@ function excelCellText(ws, row, col){
   return String(v).trim();
 }
 
+// يوحّد أشكال الألف والمسافات في نص عربي، لمطابقة تسميات الحقول حتى لو اختلفت إملائيًا بشكل بسيط
+// (مثال حقيقي واجهناه: "التكلفة الاجمالية للمشروع" في نموذج الوزارة مقابل "التكلفة الإجمالية للمشروع" في نسخة المنصة)
+function normalizeArabicLabel(s){
+  return String(s||"")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function parseImportedExcel(file){
   const buffer = await file.arrayBuffer();
   const wb = new ExcelJS.Workbook();
@@ -4051,39 +4061,62 @@ async function parseImportedExcel(file){
   const ws = wb.worksheets[0];
   if(!ws) throw new Error("لم يتم العثور على أي ورقة عمل داخل الملف.");
 
-  // تحقق سريع من أن هذا فعلاً نموذج الخطة التفصيلية المعروف (رأس الجدول في الصف 18)
-  const headerCheck = excelCellText(ws, 18, 2); // العمود B، الصف 18 = "الوزن"
-  const headerCheck2 = excelCellText(ws, 18, 3); // العمود C = "المرحلة"
-  if(headerCheck !== "الوزن" || headerCheck2 !== "المرحلة"){
-    throw new Error("تعذّر التعرف على تنسيق الملف. تأكد أنه بنفس تنسيق النموذج الرسمي للخطة التفصيلية (المُصدَّر من المنصة أو النموذج الأصلي من الوزارة) بدون أي تعديل على ترتيب الصفوف أو الأعمدة.");
+  // 1) نبحث ديناميكيًا عن صف رأس جدول الخطوات (بدل افتراض أنه دائمًا صف رقم 18)
+  //    حتى لو اختلف عدد صفوف البيانات الأساسية بين نموذج الوزارة الأصلي ونسخة المنصة
+  let headerRow = -1;
+  for(let r=1; r<=40; r++){
+    if(normalizeArabicLabel(excelCellText(ws,r,2))===normalizeArabicLabel("الوزن") && normalizeArabicLabel(excelCellText(ws,r,3))===normalizeArabicLabel("المرحلة")){
+      headerRow = r;
+      break;
+    }
+  }
+  if(headerRow===-1){
+    throw new Error("تعذّر التعرف على تنسيق الملف. تأكد أنه بنفس تنسيق النموذج الرسمي للخطة التفصيلية (المُصدَّر من المنصة أو النموذج الأصلي من الوزارة).");
   }
 
-  const basicInfoRowMap = [
-    { row:2,  key:"goalIndicator" },
-    { row:3,  key:"description" },
-    { row:4,  key:"desiredOutcome" },
-    { row:5,  key:"totalCost" },
-    { row:6,  key:"currentSpending" },
-    { row:7,  key:"budgetType" },
-    { row:10, key:"owningEntity" },
-    { row:11, key:"supportingEntities", list:true },
-    { row:12, key:"sector" },
-    { row:13, key:"location" },
-    { row:14, key:"priority" },
-    { row:15, key:"projectManager" },
-    { row:16, key:"teamMembers", list:true }
-  ];
+  // 2) نقرأ البيانات الأساسية حسب "نص التسمية" الموجود في كل صف، وليس حسب رقم الصف الثابت —
+  //    هذا يجعل القراءة تعمل بشكل صحيح حتى لو اختلف عدد الصفوف بين نسخة الوزارة ونسخة المنصة
+  //    (مثال معروف: خانة "أعضاء فريق المشروع" موجودة في نسخة المنصة وغير موجودة في نموذج الوزارة الأصلي)
+  const LABEL_TO_KEY = {
+    "الهدف/ المؤشر": "goalIndicator",
+    "وصف المشروع": "description",
+    "الهدف المنشود": "desiredOutcome",
+    "التكلفة الإجمالية للمشروع": "totalCost",
+    "مستوى الصرف الحالي": "currentSpending",
+    "نوع الميزانية": "budgetType",
+    "الجهة": "owningEntity",
+    "الجهات المساندة": "supportingEntities",
+    "القطاع": "sector",
+    "موقع المشروع": "location",
+    "الأولوية": "priority",
+    "مدير المشروع": "projectManager",
+    "أعضاء فريق المشروع": "teamMembers"
+  };
+  // خريطة مطبَّعة (بعد توحيد أشكال الألف والمسافات) لتفادي فشل المطابقة بسبب فروقات إملائية بسيطة
+  // بين النموذج الأصلي للوزارة والنسخة المُصدَّرة من المنصة (مثال حقيقي: "الاجمالية" مقابل "الإجمالية")
+  const NORMALIZED_LABEL_TO_KEY = {};
+  Object.entries(LABEL_TO_KEY).forEach(([label,key])=>{
+    NORMALIZED_LABEL_TO_KEY[normalizeArabicLabel(label)] = key;
+  });
+  const LIST_KEYS = new Set(["supportingEntities","teamMembers"]);
   const data = {};
-  basicInfoRowMap.forEach(({row,key,list})=>{
-    const val = excelCellText(ws, row, 3); // العمود C = القيمة
-    data[key] = list ? val.split("\n").map(s=> s.replace(/^•\s*/,"").trim()).filter(Boolean) : val;
+  for(let r=2; r<headerRow; r++){
+    const label = excelCellText(ws, r, 2); // عمود B = التسمية
+    const key = NORMALIZED_LABEL_TO_KEY[normalizeArabicLabel(label)];
+    if(!key) continue; // صف غير معروف (مثل تاريخ البدء/الانتهاء المحسوبين تلقائيًا) — يُتجاهل بأمان
+    const val = excelCellText(ws, r, 3); // عمود C = القيمة
+    data[key] = LIST_KEYS.has(key) ? val.split("\n").map(s=> s.replace(/^•\s*/,"").trim()).filter(Boolean) : val;
+  }
+  // تعويض أي حقل لم يُعثر عليه إطلاقًا بقيمة افتراضية فارغة مناسبة
+  Object.values(LABEL_TO_KEY).forEach(key=>{
+    if(!(key in data)) data[key] = LIST_KEYS.has(key) ? [] : "";
   });
 
-  // قراءة المراحل والخطوات بدءًا من الصف 19
+  // 3) قراءة المراحل والخطوات بدءًا من الصف الذي يلي رأس الجدول مباشرة (ديناميكي أيضًا)
   const phases = DETAIL_PHASES_DEF.map(def=>({ name:def.name, weight:def.weight, steps:[] }));
   let lastPhaseIdx = 0;
   let emptyStreak = 0;
-  for(let r=19; r<19+300; r++){
+  for(let r=headerRow+1; r<headerRow+1+300; r++){
     const phaseNameCell = excelCellText(ws, r, 3);
     const stepName = excelCellText(ws, r, 4);
     const docs = excelCellText(ws, r, 5);
@@ -4120,7 +4153,7 @@ async function parseImportedExcel(file){
   }
   data.phases = phases;
 
-  const filledBasicCount = basicInfoRowMap.filter(({key,list})=> list ? data[key].length>0 : data[key]).length;
+  const filledBasicCount = Object.keys(LABEL_TO_KEY).map(l=>LABEL_TO_KEY[l]).filter(key=> LIST_KEYS.has(key) ? data[key].length>0 : data[key]).length;
   const totalSteps = phases.reduce((s,p)=> s+p.steps.length, 0);
   if(filledBasicCount===0 && totalSteps===0){
     throw new Error("تم التعرف على تنسيق الملف، لكن لم نجد أي بيانات فعلية بداخله لاستيرادها.");
