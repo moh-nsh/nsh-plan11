@@ -319,6 +319,11 @@ input,select{font-family:inherit;}
   background:#1E4E8C;color:#fff;padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;
 }
 .import-btn:hover{opacity:.85;}
+.clear-plan-btn{
+  background:#FDEAEA;color:var(--red);padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;
+}
+.clear-plan-btn:hover{background:#f9d3d7;}
+.clear-plan-btn:disabled{background:#F1F2F5;color:var(--text-muted);cursor:not-allowed;}
 .import-preview-item{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12.5px;}
 .import-preview-item:last-child{border-bottom:none;}
 .import-preview-item .ip-label{color:var(--text-muted);}
@@ -1281,6 +1286,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="detail-modal-body" id="detailModalBody"></div>
     <div class="detail-modal-footer">
       <button class="btn-secondary" id="detailCancelBtn">إغلاق بدون حفظ</button>
+      <button class="clear-plan-btn" id="detailClearBtn">🗑️ مسح كافة التفاصيل</button>
       <button class="import-btn" id="detailImportBtn">📥 استيراد من Excel</button>
       <input type="file" id="detailImportFile" accept=".xlsx" style="display:none;">
       <button class="export-btn" id="detailExportBtn">📊 تصدير Excel</button>
@@ -3709,6 +3715,9 @@ function openProjectDetailForm(projectId){
   overlay.classList.remove("hidden");
   recalcAllPhasesAndOverall();
   renderGanttPreview();
+  const clearBtn = document.getElementById("detailClearBtn");
+  clearBtn.disabled = structureLocked;
+  clearBtn.title = structureLocked ? "لا يمكن المسح أثناء قفل هيكل المراحل - افتح القفل أولاً من قسم التخطيط" : "مسح جميع بيانات الخطة التفصيلية لهذا المشروع";
   if(isAdminContext){
     const btn = document.getElementById("toggleStructureLockBtn");
     if(btn) btn.onclick = ()=>{
@@ -4211,6 +4220,34 @@ function applyImportedDataToForm(data){
   renderGanttPreview();
   triggerDetailAutoSave();
 }
+
+function clearDetailPlanForm(){
+  // مسح الحقول الأساسية (باستثناء تاريخ البدء/الانتهاء المحسوبين تلقائيًا من المراحل)
+  document.querySelectorAll("#detailModalBody [data-key]").forEach(el=>{
+    if(!el.classList.contains("computed-date")) el.value = "";
+  });
+  // إعادة تعيين خانات القوائم القابلة للإضافة لخانة واحدة فارغة
+  document.querySelectorAll("#detailModalBody .list-builder").forEach(builder=>{
+    const ph = builder.querySelector(".list-item-input")?.placeholder || "";
+    builder.querySelector(".list-items").innerHTML = `
+      <div class="list-item-row">
+        <input type="text" class="list-item-input" placeholder="${escapeAttr(ph)}">
+        <button class="list-item-remove" title="حذف">✕</button>
+      </div>`;
+  });
+  // إعادة كل مرحلة من المراحل الأربع لخطوة واحدة فارغة
+  DETAIL_PHASES_DEF.forEach((_, pi)=>{
+    const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
+    if(container) container.innerHTML = stepRowHTML({}, false);
+  });
+  recalcAllPhasesAndOverall();
+  renderGanttPreview();
+  triggerDetailAutoSave();
+}
+document.getElementById("detailClearBtn").onclick = ()=>{
+  if(!confirm("⚠️ تحذير: سيتم مسح جميع بيانات الخطة التفصيلية لهذا المشروع نهائيًا — البيانات الأساسية وكل خطوات المراحل الأربع.\n\nهذا الإجراء لا يمكن التراجع عنه بعد الحفظ. هل أنت متأكد من المتابعة؟")) return;
+  clearDetailPlanForm();
+};
 
 document.getElementById("detailImportBtn").onclick = ()=> document.getElementById("detailImportFile").click();
 document.getElementById("detailImportFile").addEventListener("change", async (e)=>{
