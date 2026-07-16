@@ -164,6 +164,16 @@ input,select{font-family:inherit;}
 }
 .remind-btn:hover{background:#a80d25;}
 .remind-btn:disabled{background:#D8C7C9;cursor:not-allowed;}
+.lp-sent-badge{
+  display:inline-block;margin-top:6px;background:#E9F7EE;color:#1E7A3D;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:12px;
+}
+.confirm-sent-btn{
+  background:#EEF0F3;color:var(--navy);font-size:11px;font-weight:700;padding:6px 14px;border-radius:14px;white-space:nowrap;
+}
+.confirm-sent-btn:hover{background:#e2e5ea;}
+.confirm-sent-btn.is-sent{background:#1E7A3D;color:#fff;}
+.confirm-sent-btn.is-sent:hover{background:#186631;}
 
 .phase-alert-row{
   display:flex;justify-content:space-between;align-items:center;gap:10px;
@@ -2678,7 +2688,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -3123,7 +3133,7 @@ function renderAdmin(){
     }).join("");
   }
 
-  // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد
+  // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد + تأكيد الإرسال (لمنع التكرار بين عدة مستخدمين)
   const lateList = document.getElementById("lateProjectsList");
   const lateEntries = filteredProjects
     .map(pr=> ({ project: pr, lateSteps: findLateSteps(pr) }))
@@ -3135,18 +3145,39 @@ function renderAdmin(){
       const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
       const hasEmail = authRec && authRec.email;
       const stepsText = lateSteps.map(s=> `${s.phaseName} — ${s.stepName} (متأخر ${s.daysLate} يوم عن ${s.endDate})`).join(" | ");
+      let sentBadge = "";
+      if(project.reminderSentAt && project.reminderSentAt.toDate){
+        const dt = project.reminderSentAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"});
+        sentBadge = `<div class="lp-sent-badge">✓ أُرسل بواسطة ${escapeHtml(project.reminderSentBy||"غير معروف")} — ${dt}</div>`;
+      }
       return `
         <div class="late-proj-row">
           <div class="late-proj-info">
             <div class="lp-name">${escapeHtml(project.projectName)} <span style="font-weight:400;color:var(--text-muted);">— ${project.programCode} — ${escapeHtml(project.govManager)}</span></div>
             <div class="lp-meta">سنة ${project.year} | ${lateSteps.length} بند/خطوة متأخرة</div>
             <div class="lp-steps">⏰ ${escapeHtml(stepsText)}</div>
+            ${sentBadge}
           </div>
-          <button class="remind-btn" data-id="${project.id}" ${hasEmail?'':'disabled title="لا يوجد بريد إلكتروني مسجَّل لهذا المدير - أضفه من صفحة كلمات المرور"'}>📧 إرسال تذكير</button>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <button class="remind-btn" data-id="${project.id}" ${hasEmail?'':'disabled title="لا يوجد بريد إلكتروني مسجَّل لهذا المدير - أضفه من صفحة كلمات المرور"'}>📧 إرسال تذكير</button>
+            <button class="confirm-sent-btn ${project.reminderSentAt?'is-sent':''}" data-id="${project.id}">${project.reminderSentAt ? "↺ إعادة التأكيد" : "✓ تأكيد الإرسال"}</button>
+          </div>
         </div>`;
     }).join("");
     lateList.querySelectorAll(".remind-btn").forEach(btn=>{
       btn.onclick = ()=> sendDelayReminder(btn.dataset.id);
+    });
+    lateList.querySelectorAll(".confirm-sent-btn").forEach(btn=>{
+      btn.onclick = ()=>{
+        const name = prompt("اسمك (لتوضيح من قام بالإرسال، حتى لا يكرر أحد آخر الإرسال):", getActorName());
+        if(name===null) return; // ألغى المستخدم
+        if(!name.trim()){ alert("الرجاء كتابة الاسم."); return; }
+        updateProject(btn.dataset.id, {
+          reminderSentAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reminderSentBy: name.trim()
+        });
+        logActivity(ADMIN_NAME, "confirm_reminder_sent", name.trim());
+      };
     });
   }
 
