@@ -227,6 +227,15 @@ input,select{font-family:inherit;}
 .section-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);margin-bottom:4px;}
 .section-desc{color:var(--text-muted);font-size:13px;margin-bottom:22px;}
 
+.bulk-project-item{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;border:1px solid var(--border);
+  border-radius:10px;background:#FCFCFD;margin-bottom:8px;cursor:pointer;
+}
+.bulk-project-item:hover{background:#F5F6F8;}
+.bulk-project-item input{width:18px;height:18px;cursor:pointer;accent-color:var(--gold);flex-shrink:0;}
+.bulk-project-item .bpi-name{font-size:13px;font-weight:700;color:var(--navy);}
+.bulk-project-item .bpi-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+
 /* ===== Program card (manager view) ===== */
 .program-card{
   background:#fff;border:1px solid var(--border);border-radius:14px;
@@ -1216,6 +1225,25 @@ tr.rejected-row td{background:#FDF6F6;}
     </div>
 
     <button class="add-btn" id="exportBackupBtn" style="font-size:15px;padding:14px 30px;">📥 تصدير النسخة الاحتياطية (Excel)</button>
+
+    <div class="section-title" style="margin-top:40px;">📑 تصدير مجمّع للخطط التفصيلية (بنفس قالب الوزارة)</div>
+    <div class="section-desc">حدّد النطاق، ثم اختر المشاريع التي تريد تصدير خططها التفصيلية — كل خطة في ورقة Excel مستقلة بنفس القالب الرسمي، جاهزة للإرسال مباشرة</div>
+
+    <div class="filters-bar">
+      <select id="bulkExportGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="bulkExportYear"><option value="">كل السنوات</option></select>
+      <select id="bulkExportProgram"><option value="">كل البرامج التنفيذية</option></select>
+    </div>
+
+    <div class="pending-list">
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button class="btn-secondary" id="bulkExportSelectAll" style="padding:8px 18px;border-radius:8px;">تحديد الكل</button>
+        <button class="btn-secondary" id="bulkExportSelectNone" style="padding:8px 18px;border-radius:8px;">إلغاء التحديد</button>
+      </div>
+      <div id="bulkExportProjectsList"></div>
+    </div>
+
+    <button class="add-btn" id="exportBulkPlansBtn" style="font-size:15px;padding:14px 30px;">📥 تصدير الخطط المُحدَّدة (Excel)</button>
   </div>
 </div>
 
@@ -2498,7 +2526,7 @@ document.getElementById("openPasswordsBtn").onclick = ()=>{ showScreen("password
 document.getElementById("passwordsBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
 document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openBackupBtn").onclick = ()=> showScreen("backupScreen");
+document.getElementById("openBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); buildExecYearFilter(); renderExecSummary(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
@@ -2721,7 +2749,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -4397,32 +4425,8 @@ document.getElementById("importPreviewConfirm").onclick = ()=>{
   document.getElementById("importPreviewModal").classList.add("hidden");
 };
 
-async function exportProjectDetailToExcel(){
-  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
-  const overlay = document.getElementById("detailModalOverlay");
-  const projectId = overlay.dataset.projectId;
-  const project = ALL_PROJECTS.find(p=>p.id===projectId);
-  if(!project) return;
-
-  const fieldsData = {};
-  document.querySelectorAll("#detailModalBody [data-key]").forEach(el=>{ fieldsData[el.dataset.key] = el.value.trim(); });
-  Object.assign(fieldsData, readListBuilders("#detailModalBody"));
-
-  const phases = DETAIL_PHASES_DEF.map((def,pi)=>{
-    const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
-    const rows = [...container.querySelectorAll(".step-row")];
-    let steps = rows.map(r=>({
-      name: r.querySelector(".step-name").value.trim(),
-      docs: r.querySelector(".step-docs").value.trim(),
-      startDate: r.querySelector(".step-start").value,
-      endDate: r.querySelector(".step-end").value,
-      durationWeeks: Number(r.querySelector(".step-duration").value)||0,
-      status: r.querySelector(".step-status").value
-    })).filter(s=> s.name || s.docs || s.durationWeeks || s.startDate || s.endDate);
-    if(steps.length===0) steps = [{name:"",docs:"",startDate:"",endDate:"",durationWeeks:0,status:"لم يبدأ"}];
-    return { name: def.name, weight: def.weight, steps };
-  });
-
+// يبني ورقة Excel واحدة لخطة تفصيلية داخل مصنف (workbook) معطى — يُستخدم للتصدير الفردي والمجمّع معًا
+function buildProjectDetailSheet(wb, project, fieldsData, phases, sheetName){
   const totalWeeks = phases.reduce((s,ph)=> s + ph.steps.reduce((s2,st)=>s2+(st.durationWeeks||0),0), 0);
 
   const infoRows = [
@@ -4443,8 +4447,7 @@ async function exportProjectDetailToExcel(){
     ["أعضاء فريق المشروع", listValueHTML(fieldsData.teamMembers)]
   ];
 
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("الخطة التفصيلية", { views:[{ rightToLeft:true }] });
+  const ws = wb.addWorksheet(sheetName.slice(0,31), { views:[{ rightToLeft:true }] });
   ws.columns = [{width:14},{width:12},{width:16},{width:30},{width:24},{width:12},{width:12},{width:11},{width:13},{width:13}];
 
   // العنوان
@@ -4568,10 +4571,138 @@ async function exportProjectDetailToExcel(){
   noteCell.value = "تم إعداد هذه الاستمارة آليًا عبر منصة متابعة مشاريع الخطة الخمسية الحادية عشرة.";
   noteCell.font = { italic:true, size:10, color:{argb:XL_MUTED} };
   noteCell.alignment = { horizontal:"right" };
+}
 
+async function exportProjectDetailToExcel(){
+  if(typeof ExcelJS === "undefined"){ alert("تعذر تحميل مكتبة تصدير Excel. تأكد من اتصالك بالإنترنت وأعد المحاولة."); return; }
+  const overlay = document.getElementById("detailModalOverlay");
+  const projectId = overlay.dataset.projectId;
+  const project = ALL_PROJECTS.find(p=>p.id===projectId);
+  if(!project) return;
+
+  const fieldsData = {};
+  document.querySelectorAll("#detailModalBody [data-key]").forEach(el=>{ fieldsData[el.dataset.key] = el.value.trim(); });
+  Object.assign(fieldsData, readListBuilders("#detailModalBody"));
+
+  const phases = DETAIL_PHASES_DEF.map((def,pi)=>{
+    const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
+    const rows = [...container.querySelectorAll(".step-row")];
+    let steps = rows.map(r=>({
+      name: r.querySelector(".step-name").value.trim(),
+      docs: r.querySelector(".step-docs").value.trim(),
+      startDate: r.querySelector(".step-start").value,
+      endDate: r.querySelector(".step-end").value,
+      durationWeeks: Number(r.querySelector(".step-duration").value)||0,
+      status: r.querySelector(".step-status").value
+    })).filter(s=> s.name || s.docs || s.durationWeeks || s.startDate || s.endDate);
+    if(steps.length===0) steps = [{name:"",docs:"",startDate:"",endDate:"",durationWeeks:0,status:"لم يبدأ"}];
+    return { name: def.name, weight: def.weight, steps };
+  });
+
+  const wb = new ExcelJS.Workbook();
   const safeName = (project.projectName||"مشروع").replace(/[\\/:*?"<>|]/g,"_").slice(0,40);
+  buildProjectDetailSheet(wb, project, fieldsData, phases, "الخطة التفصيلية");
   await downloadWorkbook(wb, `الخطة_التفصيلية_${safeName}.xlsx`);
 }
+
+/* ==================== التصدير المجمّع للخطط التفصيلية ==================== */
+function normalizeDetailPhasesForExport(detail){
+  return DETAIL_PHASES_DEF.map((def,pi)=>{
+    const stored = detail.phases && detail.phases[pi];
+    let steps = (stored && Array.isArray(stored.steps)) ? stored.steps : [];
+    steps = steps.filter(s=> s.name || s.docs || s.durationWeeks || s.startDate || s.endDate);
+    if(steps.length===0) steps = [{name:"",docs:"",startDate:"",endDate:"",durationWeeks:0,status:"لم يبدأ"}];
+    return { name: def.name, weight: def.weight, steps };
+  });
+}
+
+function buildBulkExportFilters(){
+  document.getElementById("bulkExportGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("bulkExportYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  refreshBulkExportProgramOptions();
+  document.getElementById("bulkExportGoal").onchange = ()=>{ refreshBulkExportProgramOptions(); renderBulkExportProjectsList(); };
+  document.getElementById("bulkExportYear").onchange = renderBulkExportProjectsList;
+  document.getElementById("bulkExportProgram").onchange = renderBulkExportProjectsList;
+  renderBulkExportProjectsList();
+}
+function refreshBulkExportProgramOptions(){
+  const goalId = document.getElementById("bulkExportGoal").value;
+  const programs = goalId ? PROGRAMS.filter(p=>String(p.goalId)===goalId) : PROGRAMS;
+  document.getElementById("bulkExportProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + programs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+}
+function renderBulkExportProjectsList(){
+  const goalId = document.getElementById("bulkExportGoal").value;
+  const year = document.getElementById("bulkExportYear").value;
+  const programCode = document.getElementById("bulkExportProgram").value;
+  let projects = ALL_PROJECTS.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  if(goalId) projects = projects.filter(p=> String(p.goalId)===goalId);
+  if(year) projects = projects.filter(p=> String(p.year)===year);
+  if(programCode) projects = projects.filter(p=> p.programCode===programCode);
+  projects = [...projects].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
+
+  const list = document.getElementById("bulkExportProjectsList");
+  if(projects.length===0){
+    list.innerHTML = `<div class="empty-note">لا توجد مشاريع لديها خطة تفصيلية مُدخلة ضمن هذا الاختيار.</div>`;
+    return;
+  }
+  list.innerHTML = projects.map(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const pct = computeOverallPct(detail);
+    return `
+      <label class="bulk-project-item">
+        <input type="checkbox" value="${pr.id}" checked>
+        <div>
+          <div class="bpi-name">${escapeHtml(pr.projectName)}</div>
+          <div class="bpi-meta">${pr.programCode} — ${escapeHtml(pr.programName)} | ${escapeHtml(pr.govManager)} | سنة ${pr.year} | نسبة الإنجاز: ${pct}%</div>
+        </div>
+      </label>`;
+  }).join("");
+}
+document.getElementById("bulkExportSelectAll").onclick = ()=>{
+  document.querySelectorAll("#bulkExportProjectsList input[type=checkbox]").forEach(cb=> cb.checked=true);
+};
+document.getElementById("bulkExportSelectNone").onclick = ()=>{
+  document.querySelectorAll("#bulkExportProjectsList input[type=checkbox]").forEach(cb=> cb.checked=false);
+};
+document.getElementById("exportBulkPlansBtn").onclick = async ()=>{
+  const btn = document.getElementById("exportBulkPlansBtn");
+  try{
+    if(typeof ExcelJS === "undefined"){
+      alert("تعذّر تحميل مكتبة تصدير Excel (exceljs.min.js). تأكد من رفع هذا الملف على GitHub بجانب index.html.");
+      return;
+    }
+    const selectedIds = [...document.querySelectorAll("#bulkExportProjectsList input[type=checkbox]:checked")].map(cb=>cb.value);
+    if(selectedIds.length===0){ alert("الرجاء تحديد مشروع واحد على الأقل."); return; }
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري التصدير...";
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "منصة رصد";
+    const usedNames = new Set();
+    selectedIds.forEach(id=>{
+      const project = ALL_PROJECTS.find(p=>p.id===id);
+      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===id);
+      if(!project || !detail) return;
+      const phases = normalizeDetailPhasesForExport(detail);
+      let sheetName = `${project.programCode} - ${project.projectName}`.slice(0,31);
+      let suffix = 2;
+      while(usedNames.has(sheetName)){
+        sheetName = `${project.programCode} - ${project.projectName}`.slice(0,31-String(suffix).length-1) + " " + suffix;
+        suffix++;
+      }
+      usedNames.add(sheetName);
+      buildProjectDetailSheet(wb, project, detail, phases, sheetName);
+    });
+    const dateStr = new Date().toISOString().slice(0,10);
+    await downloadWorkbook(wb, `الخطط_التفصيلية_مجمّعة_${dateStr}.xlsx`);
+    logActivity(ADMIN_NAME, "bulk_export_plans", `${selectedIds.length} خطة`);
+  }catch(err){
+    console.error("exportBulkPlansExcel error:", err);
+    alert("حدث خطأ أثناء التصدير المجمّع:\n" + err.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "📥 تصدير الخطط المُحدَّدة (Excel)";
+  }
+};
 
 /* ==================== بطاقة تعريف البرنامج التنفيذي ==================== */
 function gatherCardFormData(){
