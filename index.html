@@ -123,23 +123,32 @@ input,select{font-family:inherit;}
 .mgr-tab:hover{color:var(--navy);}
 .mgr-tab.active{color:var(--navy);border-bottom-color:var(--gold);}
 
-.ov-project-card{
-  background:#fff;border:1px solid var(--border);border-radius:12px;
-  padding:16px 20px;margin-bottom:14px;
-}
-.ov-project-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.ov-project-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);}
-.ov-project-meta{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
-.ov-pct-badge{font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;color:var(--navy);}
 .ov-progress-bar{height:8px;background:#E2E5EA;border-radius:5px;overflow:hidden;margin-bottom:10px;}
 .ov-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#1E7A3D);border-radius:5px;}
-.ov-phase-row{display:flex;gap:8px;flex-wrap:wrap;}
-.ov-phase-pill{
-  font-size:11px;padding:4px 10px;border-radius:12px;background:#F1F2F5;color:var(--text-muted);font-weight:700;
+
+.ov-row-wrap{border-top:1px solid var(--border);}
+.ov-project-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:11px 16px;background:#fff;
 }
-.ov-phase-pill.done{background:#E9F7EE;color:#1E7A3D;}
-.ov-phase-pill.active{background:#FFF9EC;color:#8a6d1f;}
-.ov-no-detail{font-size:12px;color:var(--text-muted);font-style:italic;}
+.ov-toggle-btn{
+  background:#EEF0F3;color:var(--navy);font-size:11.5px;font-weight:700;padding:7px 14px;border-radius:14px;flex-shrink:0;
+}
+.ov-toggle-btn:hover{background:#e2e5ea;}
+.ov-expand-panel{background:#F8F9FB;border-top:1px solid var(--border);}
+.inline-detail-panel{padding:16px 18px;}
+.inline-detail-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.inline-open-full-btn{margin-top:0;}
+.inline-basic-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:10px;}
+.inline-basic-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
+.inline-basic-item .ib-label{display:block;font-size:10.5px;color:var(--text-muted);font-weight:700;margin-bottom:2px;}
+.inline-basic-item .ib-value{font-size:12.5px;color:var(--navy);}
+.inline-phase-block{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12.5px;color:var(--navy);}
+.inline-step-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #F1F2F5;font-size:12px;color:#333;}
+.inline-step-status{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:10px;background:#F1F2F5;color:var(--text-muted);}
+.inline-step-status.status-done{background:#E9F7EE;color:#1E7A3D;}
+.inline-step-status.status-active{background:#FFF9EC;color:#8a6d1f;}
+.inline-step-status.status-pending{background:#F1F2F5;color:var(--text-muted);}
 
 .mgr-auth-row{
   display:flex;justify-content:space-between;align-items:center;gap:10px;
@@ -187,6 +196,8 @@ input,select{font-family:inherit;}
 .report-project-item.is-ready{background:#F7FBF8;}
 .report-project-item .rpi-name{font-weight:700;font-size:12.5px;color:var(--navy);}
 .report-project-item .rpi-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.ov-project-row .rpi-name{font-weight:700;font-size:12.5px;color:var(--navy);}
+.ov-project-row .rpi-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .rpi-pct-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;background:#EEF0F3;color:var(--navy);}
 .rpi-pct-badge.high{background:#E9F7EE;color:#1E7A3D;}
 .rpi-pct-badge.mid{background:#FFF9EC;color:#8a6d1f;}
@@ -975,6 +986,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <div class="meeting-filters" style="margin-bottom:18px;">
       <select id="mgrOverviewProgramFilter"><option value="">كل برامجي</option></select>
+      <select id="mgrOverviewYearFilter"><option value="">كل السنوات</option></select>
       <select id="mgrOverviewSort">
         <option value="year">فرز حسب السنة</option>
         <option value="owner">فرز حسب مالك المشروع</option>
@@ -1006,6 +1018,8 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="mgrRequestsList" style="margin-top:16px;"></div>
     </div>
 
+    <div class="section-title" style="margin-top:6px;font-size:17px;">📂 مشاريعي حسب البرنامج</div>
+    <div class="section-desc" style="margin-bottom:14px;">اضغط على أي مشروع لعرض تفاصيله الكاملة والخط الزمني مباشرة هنا، بدون الحاجة لفتح الخطة التفصيلية</div>
     <div id="mgrOverviewContent"></div>
   </div>
 </div>
@@ -2071,6 +2085,9 @@ function buildManagerOverviewFilters(){
   sel.innerHTML = "<option value=''>كل برامجي</option>" +
     myPrograms.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   sel.onchange = renderManagerOverview;
+  document.getElementById("mgrOverviewYearFilter").innerHTML = "<option value=''>كل السنوات</option>" +
+    YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  document.getElementById("mgrOverviewYearFilter").onchange = renderManagerOverview;
   document.getElementById("mgrOverviewSort").onchange = renderManagerOverview;
   buildManagerRequestForm();
 }
@@ -2128,10 +2145,12 @@ function findUpcomingSteps(project, withinDays){
 
 function renderManagerOverview(){
   const progFilter = document.getElementById("mgrOverviewProgramFilter").value;
+  const yearFilter = document.getElementById("mgrOverviewYearFilter").value;
   const sortBy = document.getElementById("mgrOverviewSort").value;
 
   let myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   if(progFilter) myProjects = myProjects.filter(p=>p.programCode===progFilter);
+  if(yearFilter) myProjects = myProjects.filter(p=> String(p.year)===yearFilter);
 
   const withDetail = myProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
   const avgPct = withDetail.length
@@ -2271,44 +2290,151 @@ function renderManagerOverview(){
 
   const container = document.getElementById("mgrOverviewContent");
   if(myProjects.length===0){
-    container.innerHTML = `<div class="empty-note">لا توجد مشاريع مُدخلة بعد.</div>`;
+    container.innerHTML = (progFilter || yearFilter)
+      ? `<div class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</div>`
+      : `<div class="empty-note">لا توجد مشاريع مُدخلة بعد.</div>`;
     return;
   }
-  const sorted = [...myProjects].sort((a,b)=>{
-    if(sortBy==="owner") return (a.projectOwner||"").localeCompare(b.projectOwner||"") || a.year-b.year;
-    return a.year-b.year || a.programCode.localeCompare(b.programCode);
-  });
-  container.innerHTML = sorted.map(pr=>{
-    const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-    const pct = detailRec ? computeOverallPct(detailRec) : 0;
-    let phaseHtml = `<div class="ov-no-detail">لم تُدخل الخطة التفصيلية لهذا المشروع بعد.</div>`;
-    if(detailRec && Array.isArray(detailRec.phases)){
-      phaseHtml = `<div class="ov-phase-row">` + detailRec.phases.map(ph=>{
-        const steps = ph.steps||[];
-        const total = steps.length;
-        const done = steps.filter(s=>s.status==="مكتمل").length;
-        const inProg = steps.filter(s=>s.status==="قيد التنفيذ").length;
-        const cls = total>0 && done===total ? "done" : (inProg>0 || done>0 ? "active" : "");
-        return `<span class="ov-phase-pill ${cls}">${ph.name}: ${done}/${total}</span>`;
-      }).join("") + `</div>`;
-    }
-    const statusBadges = [
-      pr.closed ? `<span class="locked-badge" style="background:#5B3EAF;color:#fff;">✅ مغلق</span>` : "",
-      pr.locked && !pr.closed ? `<span class="locked-badge admin-lock-badge">🔒 مقفل</span>` : ""
-    ].filter(Boolean).join(" ");
-    return `
-      <div class="ov-project-card">
-        <div class="ov-project-head">
-          <div>
-            <div class="ov-project-name">${escapeHtml(pr.projectName)}</div>
-            <div class="ov-project-meta">${pr.programCode} — ${pr.programName} | سنة ${pr.year} ${pr.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(pr.projectOwner)}</span>` : ""} ${statusBadges}</div>
+  const myPrograms = progFilter ? PROGRAMS.filter(p=>p.code===progFilter) : PROGRAMS.filter(p=>p.govManager===currentManager);
+  container.innerHTML = myPrograms.map(program=>{
+    let projectsInProgram = myProjects.filter(p=>p.programCode===program.code);
+    if(projectsInProgram.length===0) return "";
+    projectsInProgram = [...projectsInProgram].sort((a,b)=>{
+      if(sortBy==="owner") return (a.projectOwner||"").localeCompare(b.projectOwner||"","ar") || a.year-b.year;
+      return a.year-b.year || a.projectName.localeCompare(b.projectName,"ar");
+    });
+    const rowsHtml = projectsInProgram.map(pr=>{
+      const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+      const pct = detailRec ? computeOverallPct(detailRec) : 0;
+      const pctClass = pct>=80 ? "high" : (pct>=30 ? "mid" : "low");
+      const statusIcons = [
+        pr.closed ? "🟣" : "",
+        pr.locked && !pr.closed ? "🔒" : ""
+      ].filter(Boolean).join(" ");
+      return `
+        <div class="ov-row-wrap">
+          <div class="ov-project-row">
+            <div>
+              <div class="rpi-name">${statusIcons ? statusIcons+" " : ""}${escapeHtml(pr.projectName)}</div>
+              <div class="rpi-meta">
+                ${pr.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(pr.projectOwner)}</span>` : ""}
+                <span>سنة ${pr.year}</span>
+                <span class="rpi-pct-badge ${pctClass}">${detailRec ? pct+"%" : "لا توجد خطة"}</span>
+              </div>
+            </div>
+            <button class="ov-toggle-btn" data-id="${pr.id}">▼ عرض التفاصيل</button>
           </div>
-          <div class="ov-pct-badge">${detailRec ? pct+"%" : "—"}</div>
-        </div>
-        <div class="ov-progress-bar"><div class="ov-progress-fill" style="width:${pct}%;"></div></div>
-        ${phaseHtml}
+          <div class="ov-expand-panel hidden" id="ovExpand_${pr.id}"></div>
+        </div>`;
+    }).join("");
+    return `
+      <div class="report-program-block">
+        <div class="report-program-header"><span class="rp-title">${program.code} — ${program.name}</span></div>
+        ${rowsHtml}
+      </div>`;
+  }).filter(Boolean).join("") || `<div class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</div>`;
+
+  container.querySelectorAll(".ov-toggle-btn").forEach(btn=>{
+    btn.onclick = ()=> toggleInlineProjectDetails(btn.dataset.id, btn);
+  });
+}
+
+function toggleInlineProjectDetails(projectId, btn){
+  const panel = document.getElementById("ovExpand_"+projectId);
+  if(!panel) return;
+  const wasHidden = panel.classList.contains("hidden");
+  document.querySelectorAll(".ov-expand-panel").forEach(p=>{ if(p!==panel) p.classList.add("hidden"); });
+  document.querySelectorAll(".ov-toggle-btn").forEach(b=>{ if(b!==btn) b.textContent="▼ عرض التفاصيل"; });
+  if(wasHidden){
+    panel.innerHTML = renderInlineProjectDetails(projectId);
+    panel.classList.remove("hidden");
+    btn.textContent = "▲ إخفاء التفاصيل";
+    const openBtn = panel.querySelector(".inline-open-full-btn");
+    if(openBtn) openBtn.onclick = ()=> openProjectDetailForm(projectId);
+  }else{
+    panel.classList.add("hidden");
+    btn.textContent = "▼ عرض التفاصيل";
+  }
+}
+
+function renderInlineProjectDetails(projectId){
+  const pr = ALL_PROJECTS.find(p=>p.id===projectId);
+  const detail = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  if(!pr) return "";
+  if(!detail){
+    return `<div class="inline-detail-panel"><div class="empty-note">لم تُدخل الخطة التفصيلية لهذا المشروع بعد.</div><button class="rpi-open-btn inline-open-full-btn">📋 إدخالها الآن</button></div>`;
+  }
+  const basicFields = [
+    ["الهدف/ المؤشر", detail.goalIndicator],
+    ["وصف المشروع", detail.description],
+    ["الهدف المنشود", detail.desiredOutcome],
+    ["التكلفة الإجمالية", detail.totalCost],
+    ["الجهة", detail.owningEntity],
+    ["مدير المشروع", detail.projectManager]
+  ].filter(([,v])=>v);
+  const basicHtml = basicFields.length ? `
+    <div class="inline-basic-grid">
+      ${basicFields.map(([l,v])=>`<div class="inline-basic-item"><span class="ib-label">${l}</span><span class="ib-value">${escapeHtml(v)}</span></div>`).join("")}
+    </div>` : `<div class="empty-note">لم تُدخل البيانات الأساسية بعد.</div>`;
+
+  const ganttHtml = renderReadOnlyGantt(detail);
+
+  const phasesHtml = (detail.phases||[]).map(ph=>{
+    const steps = (ph.steps||[]).filter(s=>s.name||s.docs||s.durationWeeks);
+    if(steps.length===0) return `<div class="inline-phase-block"><b>${ph.name}</b> <span style="color:var(--text-muted);font-weight:400;">— لا توجد خطوات مُدخلة.</span></div>`;
+    return `
+      <div class="inline-phase-block">
+        <b>${ph.name}</b> <span style="color:var(--text-muted);font-weight:400;">(${Math.round((ph.weight||0)*100)}%)</span>
+        ${steps.map(s=>`
+          <div class="inline-step-row">
+            <span>${escapeHtml(s.name||"(بدون اسم)")}</span>
+            <span class="inline-step-status status-${s.status==='مكتمل'?'done':(s.status==='قيد التنفيذ'?'active':'pending')}">${escapeHtml(s.status||"لم يبدأ")}</span>
+          </div>`).join("")}
       </div>`;
   }).join("");
+
+  return `
+    <div class="inline-detail-panel">
+      <div class="inline-detail-header">
+        <div class="ov-progress-bar" style="flex:1;"><div class="ov-progress-fill" style="width:${computeOverallPct(detail)}%;"></div></div>
+        <span style="font-weight:700;color:var(--navy);">${computeOverallPct(detail)}%</span>
+        <button class="rpi-open-btn inline-open-full-btn">✎ فتح للتعديل الكامل</button>
+      </div>
+      ${basicHtml}
+      <div class="gantt-section" style="margin-top:14px;"><h4>📊 الخط الزمني</h4>${ganttHtml}</div>
+      <div style="margin-top:10px;">${phasesHtml}</div>
+    </div>`;
+}
+
+// نسخة للعرض فقط من الخط الزمني، تُبنى من البيانات المحفوظة مباشرة (بدون قراءة نموذج مفتوح في DOM)
+function renderReadOnlyGantt(detail){
+  const phaseColors = ["#1E7A3D","#1E4E8C","#C9962E","#5B3EAF"];
+  const allSteps = [];
+  (detail.phases||[]).forEach((ph,pi)=>{
+    (ph.steps||[]).forEach(s=>{
+      if(s.startDate && s.endDate && new Date(s.endDate) >= new Date(s.startDate)){
+        allSteps.push({ name: s.name||"(بدون اسم)", start:s.startDate, end:s.endDate, status:s.status, phaseIdx:pi });
+      }
+    });
+  });
+  if(allSteps.length===0) return `<div class="empty-note">لا توجد تواريخ كافية لعرض الخط الزمني بعد.</div>`;
+  const minDate = new Date(Math.min(...allSteps.map(s=>new Date(s.start))));
+  const maxDate = new Date(Math.max(...allSteps.map(s=>new Date(s.end))));
+  const totalMs = (maxDate-minDate) || 1;
+  let html = `<div class="gantt-rows">`;
+  allSteps.forEach(s=>{
+    const startOffset = ((new Date(s.start)-minDate)/totalMs)*100;
+    const width = Math.max(((new Date(s.end)-new Date(s.start))/totalMs)*100, 1.5);
+    const color = phaseColors[s.phaseIdx % phaseColors.length];
+    const opacity = s.status==="مكتمل" ? 1 : (s.status==="قيد التنفيذ" ? 0.65 : 0.3);
+    html += `
+      <div class="gantt-row">
+        <div class="gantt-label" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
+        <div class="gantt-track"><div class="gantt-bar" style="right:${startOffset}%;width:${width}%;background:${color};opacity:${opacity};" title="${escapeAttr(s.start)} → ${escapeAttr(s.end)}"></div></div>
+      </div>`;
+  });
+  html += `</div><div class="gantt-legend"><span>${minDate.toLocaleDateString("ar-OM")}</span><span>${maxDate.toLocaleDateString("ar-OM")}</span></div>`;
+  return html;
 }
 
 function renderManagerPrograms(){
