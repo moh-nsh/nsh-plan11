@@ -240,6 +240,7 @@ input,select{font-family:inherit;}
 .popup-section-label{font-family:'Cairo',sans-serif;font-weight:800;font-size:12.5px;color:var(--navy);margin-bottom:6px;}
 .phase-alert-row.decision-alert{background:#F1EEFB;border:1px solid #D8CDF0;}
 .phase-alert-badge.decision-alert{background:#5B3EAF;color:#fff;}
+.phase-alert-row.announcement-alert{background:#FFF3E0;border:1px solid #F0C987;color:#8a6d1f;font-weight:700;cursor:default;}
 .late-popup-close{width:100%;margin-top:14px;background:var(--navy);color:#fff;padding:11px;border-radius:9px;font-weight:700;}
 
 .backup-checklist{display:flex;flex-direction:column;gap:10px;}
@@ -429,6 +430,15 @@ input,select{font-family:inherit;}
 .health-score-label{font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;}
 .health-score-sub{font-size:12px;color:var(--text-muted);margin-top:2px;margin-bottom:8px;}
 .health-score-breakdown{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--navy);font-weight:700;}
+
+.health-breakdown-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:22px;}
+.health-breakdown-title{font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:12px;}
+.mini-health-row{display:flex;align-items:center;gap:12px;margin-bottom:9px;}
+.mini-health-row:last-child{margin-bottom:0;}
+.mini-health-name{font-size:12px;color:var(--navy);font-weight:700;min-width:220px;flex-shrink:0;}
+.mini-health-bar-wrap{flex:1;height:9px;background:#EEF0F3;border-radius:5px;overflow:hidden;}
+.mini-health-bar{height:100%;border-radius:5px;transition:width .3s;}
+.mini-health-score{font-size:12px;font-weight:800;min-width:38px;text-align:left;flex-shrink:0;}
 
 .decision-add-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
 .decision-add-form select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:220px;}
@@ -1001,6 +1011,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
+      <button class="mgr-tab" id="mgrTabComms">📨 التواصل مع قسم التخطيط</button>
     </div>
   </div>
   <div class="dash-wrap" id="mgrInputView">
@@ -1022,6 +1033,7 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
+    <div id="mgrPerformanceChartWrap" style="position:relative;height:280px;margin-bottom:24px;"><canvas id="mgrPerformanceChart"></canvas></div>
 
     <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
@@ -1031,6 +1043,15 @@ tr.rejected-row td{background:#FDF6F6;}
       <h3>🔴 مراحل متأخرة</h3>
       <div id="mgrLateList"></div>
     </div>
+
+    <div class="section-title" style="margin-top:6px;font-size:17px;">📂 مشاريعي حسب البرنامج</div>
+    <div class="section-desc" style="margin-bottom:14px;">اضغط على أي مشروع لعرض تفاصيله الكاملة والخط الزمني مباشرة هنا، بدون الحاجة لفتح الخطة التفصيلية</div>
+    <div id="mgrOverviewContent"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="mgrCommsView">
+    <div class="section-title">📨 التواصل مع قسم التخطيط والدراسات</div>
+    <div class="section-desc">قرارات وملاحظات الاجتماعات الخاصة ببرامجك، وطلباتك المرسلة لقسم التخطيط</div>
     <div class="pending-list">
       <h3>📝 قرارات وملاحظات الاجتماعات الخاصة ببرامجك</h3>
       <div id="mgrDecisionsList"></div>
@@ -1046,10 +1067,6 @@ tr.rejected-row td{background:#FDF6F6;}
       </div>
       <div id="mgrRequestsList" style="margin-top:16px;"></div>
     </div>
-
-    <div class="section-title" style="margin-top:6px;font-size:17px;">📂 مشاريعي حسب البرنامج</div>
-    <div class="section-desc" style="margin-bottom:14px;">اضغط على أي مشروع لعرض تفاصيله الكاملة والخط الزمني مباشرة هنا، بدون الحاجة لفتح الخطة التفصيلية</div>
-    <div id="mgrOverviewContent"></div>
   </div>
 </div>
 
@@ -1068,7 +1085,6 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
       <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
       <button class="meeting-btn" id="openBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
-      <button class="meeting-btn" id="openExecSummaryBtn" style="background:#C9962E;color:var(--navy);">🖨️ لمحة تنفيذية</button>
       <button class="meeting-btn" id="openDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
       <button class="meeting-btn" id="openRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
       <button class="meeting-btn" id="openProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
@@ -1350,6 +1366,28 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="decisionLogList"></div>
+
+    <div class="section-title" style="margin-top:40px;">📢 رسالة تنبيه منبثقة لكل المدراء</div>
+    <div class="section-desc">تظهر تلقائيًا لكل مدراء البرامج عند دخولهم — مفيدة كتذكير عام (مثلاً: موعد اجتماع، أو تعميم مهم)</div>
+    <div class="pending-list">
+      <div class="decision-add-form" style="align-items:flex-end;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11px;font-weight:700;color:var(--navy);">من تاريخ</label>
+          <input type="date" id="announceStart" style="padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11px;font-weight:700;color:var(--navy);">إلى تاريخ</label>
+          <input type="date" id="announceEnd" style="padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        </div>
+        <textarea id="announceText" rows="2" placeholder="نص الرسالة..."></textarea>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap;">
+          <input type="checkbox" id="announceOnceOnly" style="width:16px;height:16px;">
+          مرة واحدة لكل مدير
+        </label>
+        <button class="add-btn" id="addAnnouncementBtn">📢 نشر الرسالة</button>
+      </div>
+    </div>
+    <div id="announcementsList"></div>
   </div>
 </div>
 
@@ -1510,6 +1548,7 @@ const REQUESTS_COLLECTION = "nsh_plan11_requests"; // طلبات مدراء ال
 const SETTINGS_COLLECTION = "nsh_plan11_settings"; // إعدادات عامة للمنصة (مثل شريط العد التنازلي)
 const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنفيذية (ديناميكية - قابلة للإضافة والتعديل)
 const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
+const ANNOUNCEMENTS_COLLECTION = "nsh_plan11_announcements"; // رسائل تنبيه منبثقة تظهر للمدراء عند الدخول
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
 
@@ -1582,6 +1621,7 @@ let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدرا
 let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
 let ALL_DECISIONS = []; // كاش محلي لسجل قرارات وملاحظات الاجتماعات
 let ALL_REQUESTS = []; // كاش محلي لطلبات مدراء البرامج
+let ALL_ANNOUNCEMENTS = []; // كاش محلي لرسائل التنبيه المنبثقة
 let COUNTDOWN_SETTINGS = { mode:"plan" }; // إعدادات شريط العد التنازلي (الافتراضي: حتى نهاية الخطة)
 let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
 let pendingResetManager = null; // اسم المدير الذي يعيد الإدارة تعيين كلمة مروره حاليًا
@@ -1915,6 +1955,47 @@ function toggleDecisionResolved(id, resolved, byWhom){
   });
 }
 
+/* ---------------- رسائل التنبيه المنبثقة للمدراء ---------------- */
+function listenToAnnouncements(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(ANNOUNCEMENTS_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    ALL_ANNOUNCEMENTS = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function addAnnouncement(text, startDate, endDate, onceOnly){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  return db.collection(ANNOUNCEMENTS_COLLECTION).add({
+    text, startDate, endDate, onceOnly: !!onceOnly,
+    active: true, seenBy: [],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{ logActivity(ADMIN_NAME, "add_announcement", text.slice(0,60)); return true; })
+  .catch(err=>{ console.error(err); alert("تعذّر إضافة الرسالة: " + err.message); return false; });
+}
+function deactivateAnnouncement(id){
+  if(!firebaseReady) return;
+  db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ active:false });
+}
+function markAnnouncementSeen(id, managerName){
+  if(!firebaseReady) return;
+  const ann = ALL_ANNOUNCEMENTS.find(a=>a.id===id);
+  const seenBy = ann && Array.isArray(ann.seenBy) ? [...ann.seenBy, managerName] : [managerName];
+  db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ seenBy });
+}
+// يُعيد الرسائل النشطة والمناسبة لهذا المدير الآن (ضمن الفترة الزمنية، ولم يرها بعد إن كانت "مرة واحدة")
+function getActiveAnnouncementsFor(managerName){
+  const today = new Date().toISOString().slice(0,10);
+  return ALL_ANNOUNCEMENTS.filter(a=>{
+    if(!a.active) return false;
+    if(a.startDate && today < a.startDate) return false;
+    if(a.endDate && today > a.endDate) return false;
+    if(a.onceOnly && Array.isArray(a.seenBy) && a.seenBy.includes(managerName)) return false;
+    return true;
+  });
+}
+
 /* ---------------- طلبات مدراء البرامج لقسم التخطيط والدراسات ---------------- */
 function listenToRequests(cb){
   if(!firebaseReady){ cb([]); return; }
@@ -2245,12 +2326,20 @@ function checkAndShowLateStepsPopup(){
   });
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
   const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
+  const activeAnnouncements = getActiveAnnouncementsFor(currentManager);
 
-  if(lateEntries.length===0 && unresolvedDecisions.length===0) return;
+  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
   let html = "";
+  if(activeAnnouncements.length>0){
+    html += `<div class="popup-section-label">📢 رسائل من قسم التخطيط والدراسات</div>`;
+    html += activeAnnouncements.map(a=>`
+      <div class="phase-alert-row announcement-alert">
+        <div>${escapeHtml(a.text)}</div>
+      </div>`).join("");
+  }
   if(lateEntries.length>0){
-    html += `<div class="popup-section-label">⏰ مراحل متأخرة (${lateEntries.length})</div>`;
+    html += `<div class="popup-section-label" style="margin-top:14px;">⏰ مراحل متأخرة (${lateEntries.length})</div>`;
     html += lateEntries.map(({project,step})=>`
       <div class="phase-alert-row late" data-project-id="${project.id}">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
@@ -2275,26 +2364,34 @@ function checkAndShowLateStepsPopup(){
   list.querySelectorAll(".phase-alert-row[data-decision-id]").forEach(row=>{
     row.onclick = ()=>{
       document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
-      switchMgrTab("overview");
+      switchMgrTab("comms");
     };
   });
   document.getElementById("lateStepsPopupOverlay").classList.remove("hidden");
+  document.getElementById("lateStepsPopupOverlay").dataset.pendingAnnouncementIds = activeAnnouncements.filter(a=>a.onceOnly).map(a=>a.id).join(",");
 }
 document.getElementById("lateStepsPopupClose").onclick = ()=>{
-  document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
+  const overlay = document.getElementById("lateStepsPopupOverlay");
+  const pendingIds = (overlay.dataset.pendingAnnouncementIds||"").split(",").filter(Boolean);
+  pendingIds.forEach(id=> markAnnouncementSeen(id, currentManager));
+  overlay.dataset.pendingAnnouncementIds = "";
+  overlay.classList.add("hidden");
 };
 
 /* ---- تبويبات صفحة المدير: إدخال المشاريع / لوحة المتابعة ---- */
 function switchMgrTab(tab){
-  const isInput = tab==="input";
-  document.getElementById("mgrTabInput").classList.toggle("active", isInput);
-  document.getElementById("mgrTabOverview").classList.toggle("active", !isInput);
-  document.getElementById("mgrInputView").classList.toggle("hidden", !isInput);
-  document.getElementById("mgrOverviewView").classList.toggle("hidden", isInput);
-  if(!isInput){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
+  document.getElementById("mgrTabInput").classList.toggle("active", tab==="input");
+  document.getElementById("mgrTabOverview").classList.toggle("active", tab==="overview");
+  document.getElementById("mgrTabComms").classList.toggle("active", tab==="comms");
+  document.getElementById("mgrInputView").classList.toggle("hidden", tab!=="input");
+  document.getElementById("mgrOverviewView").classList.toggle("hidden", tab!=="overview");
+  document.getElementById("mgrCommsView").classList.toggle("hidden", tab!=="comms");
+  if(tab==="overview"){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
+  if(tab==="comms"){ buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط"); }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
+document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 
 /* ---- تغيير كلمة مرور المدير ---- */
 document.getElementById("mgrChangePwBtn").onclick = ()=>{
@@ -2323,6 +2420,7 @@ document.getElementById("changePwSubmit").onclick = ()=>{
 };
 
 let mgrOverviewChartInstance = null;
+let mgrPerformanceChartInstance = null;
 
 function buildManagerOverviewFilters(){
   const myPrograms = PROGRAMS.filter(p=>p.govManager===currentManager);
@@ -2388,6 +2486,64 @@ function findUpcomingSteps(project, withinDays){
   return upcoming;
 }
 
+function renderManagerComms(){
+  const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
+  const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
+    .sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  const decisionsBox = document.getElementById("mgrDecisionsList");
+  if(myDecisions.length===0){
+    decisionsBox.innerHTML = `<div class="empty-note">لا توجد قرارات أو ملاحظات مسجّلة لبرامجك حتى الآن.</div>`;
+  }else{
+    decisionsBox.innerHTML = myDecisions.map(d=>{
+      const dt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+      return `
+        <div class="decision-row ${d.resolved?'resolved':''}">
+          <div class="dr-top">
+            <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)}</div>
+            <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+          </div>
+          <div class="dr-text">${escapeHtml(d.text)}</div>
+          <div class="dr-meta">سُجّل بتاريخ ${dt}</div>
+        </div>`;
+    }).join("");
+    decisionsBox.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
+      btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), currentManager);
+    });
+  }
+
+  const myRequests = ALL_REQUESTS.filter(r=>r.managerName===currentManager)
+    .sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  const myReqBox = document.getElementById("mgrRequestsList");
+  if(myRequests.length===0){
+    myReqBox.innerHTML = `<div class="empty-note">لم ترسل أي طلبات بعد.</div>`;
+  }else{
+    myReqBox.innerHTML = myRequests.map(r=>{
+      const dt = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+      const target = [
+        r.programCode ? `البرنامج: ${r.programCode}` : "",
+        r.projectName ? `المشروع: ${escapeHtml(r.projectName)}` : ""
+      ].filter(Boolean).join(" | ") || "ملاحظة عامة";
+      return `
+        <div class="request-row ${r.status==='done'?'done':''}">
+          <div class="rq-top">
+            <div><div class="rq-target">${target}</div></div>
+            <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
+          </div>
+          <div class="rq-text">${escapeHtml(r.text)}</div>
+          <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
+        </div>`;
+    }).join("");
+  }
+}
+
 function renderManagerOverview(){
   const progFilter = document.getElementById("mgrOverviewProgramFilter").value;
   const yearFilter = document.getElementById("mgrOverviewYearFilter").value;
@@ -2403,9 +2559,28 @@ function renderManagerOverview(){
     : 0;
   const closedCount = myProjects.filter(p=>p.closed).length;
 
-  const myTotalPrograms = PROGRAMS.filter(p=>p.govManager===currentManager).length;
+  const myProgramsList = PROGRAMS.filter(p=>p.govManager===currentManager);
+  const myTotalPrograms = myProgramsList.length;
   const mgrHealth = computeHealthScore(myProjects, myTotalPrograms);
-  document.getElementById("mgrHealthScoreContainer").innerHTML = healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط");
+  let breakdownHtml = "";
+  if(myProgramsList.length>1){
+    const allMyProjectsUnfiltered = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+    breakdownHtml = `
+      <div class="health-breakdown-wrap">
+        <div class="health-breakdown-title">📊 تفصيل المؤشر حسب كل برنامج — لمعرفة أي برنامج يحتاج تركيزًا أكبر</div>
+        ${myProgramsList.map(prog=>{
+          const progProjects = allMyProjectsUnfiltered.filter(p=>p.programCode===prog.code);
+          const progHealth = computeHealthScore(progProjects, 1);
+          return `
+            <div class="mini-health-row">
+              <span class="mini-health-name">${prog.code} — ${escapeHtml(prog.name)}</span>
+              <div class="mini-health-bar-wrap"><div class="mini-health-bar" style="width:${progHealth.score}%;background:${progHealth.color};"></div></div>
+              <span class="mini-health-score" style="color:${progHealth.color};">${progHealth.score}%</span>
+            </div>`;
+        }).join("")}
+      </div>`;
+  }
+  document.getElementById("mgrHealthScoreContainer").innerHTML = healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط") + breakdownHtml;
 
   document.getElementById("mgrOverviewSummary").innerHTML = `
     <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي المشاريع</div></div>
@@ -2444,6 +2619,36 @@ function renderManagerOverview(){
     }
   }
 
+  // رسم بياني: نسبة الإنجاز لكل مشروع مجمّعة في رسم واحد (بدل النزول للأسفل لمتابعة كل مشروع على حدة)
+  const perfCanvas = document.getElementById("mgrPerformanceChart");
+  const perfWrap = document.getElementById("mgrPerformanceChartWrap");
+  if(mgrPerformanceChartInstance) mgrPerformanceChartInstance.destroy();
+  if(typeof Chart !== "undefined" && myProjects.length>0){
+    const sortedByPerf = [...myProjects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
+    const perfLabels = sortedByPerf.map(p=> `${p.projectName} (${p.year})`);
+    const perfData = sortedByPerf.map(p=>{
+      const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+      return d ? computeOverallPct(d) : 0;
+    });
+    const perfColors = perfData.map(v=> v>=80 ? "#1E7A3D" : (v>=30 ? "#C9962E" : "#C8102E"));
+    perfWrap.style.height = Math.max(280, sortedByPerf.length*28) + "px";
+    mgrPerformanceChartInstance = new Chart(perfCanvas, {
+      type: "bar",
+      data: { labels: perfLabels, datasets: [{ label:"نسبة الإنجاز%", data: perfData, backgroundColor: perfColors }] },
+      options: {
+        indexAxis:"y",
+        maintainAspectRatio:false,
+        plugins:{ legend:{ display:false }, title:{ display:true, text:"📈 أداء كل مشروع — نسبة الإنجاز", font:{ size:14 } } },
+        scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+"%" } } }
+      }
+    });
+  }else if(typeof Chart === "undefined"){
+    perfWrap.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12.5px;">تعذر تحميل مكتبة الرسوم البيانية.</div>`;
+  }else{
+    perfWrap.style.height = "80px";
+    perfWrap.innerHTML = `<div class="empty-note">لا توجد مشاريع بعد لعرض أدائها.</div>`;
+  }
+
   // مراحل ستنتهي خلال أسبوع + مراحل متأخرة
   const upcomingBox = document.getElementById("mgrUpcomingList");
   const lateBox = document.getElementById("mgrLateList");
@@ -2474,64 +2679,6 @@ function renderManagerOverview(){
   document.querySelectorAll(".phase-alert-row").forEach(row=>{
     row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
   });
-
-  // قرارات وملاحظات الاجتماعات الخاصة ببرامج هذا المدير
-  const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
-  const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
-    .sort((a,b)=>{
-      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-      return tb - ta;
-    });
-  const decisionsBox = document.getElementById("mgrDecisionsList");
-  if(myDecisions.length===0){
-    decisionsBox.innerHTML = `<div class="empty-note">لا توجد قرارات أو ملاحظات مسجّلة لبرامجك حتى الآن.</div>`;
-  }else{
-    decisionsBox.innerHTML = myDecisions.map(d=>{
-      const dt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
-      return `
-        <div class="decision-row ${d.resolved?'resolved':''}">
-          <div class="dr-top">
-            <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)}</div>
-            <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
-          </div>
-          <div class="dr-text">${escapeHtml(d.text)}</div>
-          <div class="dr-meta">سُجّل بتاريخ ${dt}</div>
-        </div>`;
-    }).join("");
-    decisionsBox.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
-      btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), currentManager);
-    });
-  }
-
-  // طلباتي المُرسلة لقسم التخطيط والدراسات
-  const myRequests = ALL_REQUESTS.filter(r=>r.managerName===currentManager)
-    .sort((a,b)=>{
-      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-      return tb - ta;
-    });
-  const myReqBox = document.getElementById("mgrRequestsList");
-  if(myRequests.length===0){
-    myReqBox.innerHTML = `<div class="empty-note">لم ترسل أي طلبات بعد.</div>`;
-  }else{
-    myReqBox.innerHTML = myRequests.map(r=>{
-      const dt = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
-      const target = [
-        r.programCode ? `البرنامج: ${r.programCode}` : "",
-        r.projectName ? `المشروع: ${escapeHtml(r.projectName)}` : ""
-      ].filter(Boolean).join(" | ") || "ملاحظة عامة";
-      return `
-        <div class="request-row ${r.status==='done'?'done':''}">
-          <div class="rq-top">
-            <div><div class="rq-target">${target}</div></div>
-            <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
-          </div>
-          <div class="rq-text">${escapeHtml(r.text)}</div>
-          <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
-        </div>`;
-    }).join("");
-  }
 
   const container = document.getElementById("mgrOverviewContent");
   if(myProjects.length===0){
@@ -2899,7 +3046,6 @@ document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityS
 document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openExecSummaryBtn").onclick = ()=>{ showScreen("execSummaryScreen"); buildExecYearFilter(); renderExecSummary(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
 document.getElementById("openWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
@@ -3205,9 +3351,59 @@ function buildDecisionLogScreen(){
       }
     });
   };
+  document.getElementById("addAnnouncementBtn").onclick = ()=>{
+    const text = document.getElementById("announceText").value.trim();
+    const start = document.getElementById("announceStart").value;
+    const end = document.getElementById("announceEnd").value;
+    const onceOnly = document.getElementById("announceOnceOnly").checked;
+    if(!text){ alert("الرجاء كتابة نص الرسالة."); return; }
+    if(start && end && end < start){ alert("تاريخ النهاية أسبق من تاريخ البداية."); return; }
+    addAnnouncement(text, start, end, onceOnly).then(ok=>{
+      if(ok){
+        document.getElementById("announceText").value = "";
+        document.getElementById("announceStart").value = "";
+        document.getElementById("announceEnd").value = "";
+        document.getElementById("announceOnceOnly").checked = false;
+      }
+    });
+  };
+}
+
+function renderAnnouncementsList(){
+  const list = document.getElementById("announcementsList");
+  if(!list) return;
+  if(ALL_ANNOUNCEMENTS.length===0){
+    list.innerHTML = `<div class="empty-note">لا توجد رسائل تنبيه مُنشأة بعد.</div>`;
+    return;
+  }
+  const sorted = [...ALL_ANNOUNCEMENTS].sort((a,b)=>{
+    const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return tb - ta;
+  });
+  const today = new Date().toISOString().slice(0,10);
+  list.innerHTML = sorted.map(a=>{
+    const isExpired = a.endDate && today > a.endDate;
+    const statusLabel = !a.active ? "⏸️ مُوقَفة يدويًا" : (isExpired ? "⌛ منتهية الفترة" : "🟢 نشطة الآن");
+    const period = [a.startDate, a.endDate].filter(Boolean).join(" → ") || "بدون تحديد فترة (نشطة دائمًا حتى الإيقاف)";
+    const seenCount = Array.isArray(a.seenBy) ? a.seenBy.length : 0;
+    return `
+      <div class="decision-row ${(!a.active||isExpired)?'resolved':''}">
+        <div class="dr-top">
+          <div class="dr-program">${statusLabel} ${a.onceOnly?" | مرة واحدة لكل مدير":" | تظهر مرة كل دخول"}</div>
+          ${a.active && !isExpired ? `<button class="decision-resolve-btn" data-id="${a.id}">⏸️ إيقاف</button>` : ""}
+        </div>
+        <div class="dr-text">${escapeHtml(a.text)}</div>
+        <div class="dr-meta">الفترة: ${escapeHtml(period)} ${a.onceOnly ? `| شاهدها ${seenCount} مدير` : ""}</div>
+      </div>`;
+  }).join("");
+  list.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
+    btn.onclick = ()=>{ deactivateAnnouncement(btn.dataset.id); };
+  });
 }
 
 function renderDecisionLogScreen(){
+  renderAnnouncementsList();
   const totalCount = ALL_DECISIONS.length;
   const resolvedCount = ALL_DECISIONS.filter(d=>d.resolved).length;
   document.getElementById("decisionSummaryGrid").innerHTML = `
@@ -5457,12 +5653,15 @@ listenToActivityLog(()=>{
 });
 listenToDecisions(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderDecisionLogScreen();
-  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrOverviewView").classList.contains("hidden")) renderManagerOverview();
+  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
 });
 listenToRequests(()=>{
   updateRequestsBadge();
   if(!document.getElementById("requestsScreen").classList.contains("hidden")) renderRequestsScreen();
-  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrOverviewView").classList.contains("hidden")) renderManagerOverview();
+  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+});
+listenToAnnouncements(()=>{
+  if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAnnouncementsList();
 });
 listenToSettings(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderCountdownBar("adminCountdownBar", true);
