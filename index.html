@@ -1985,8 +1985,14 @@ function markAnnouncementSeen(id, managerName){
   db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ seenBy });
 }
 // يُعيد الرسائل النشطة والمناسبة لهذا المدير الآن (ضمن الفترة الزمنية، ولم يرها بعد إن كانت "مرة واحدة")
+// تاريخ اليوم بالتوقيت المحلي (وليس UTC) بصيغة YYYY-MM-DD — يطابق صيغة حقول <input type="date">
+// ملاحظة: استخدام toISOString() هنا كان يُنتج تاريخ UTC، وهو يختلف عن تاريخ عُمان المحلي (UTC+4) قرب منتصف الليل، ما كان يُسبب عدم ظهور الرسائل المجدولة بدقة
+function todayLocalStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
 function getActiveAnnouncementsFor(managerName){
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocalStr();
   return ALL_ANNOUNCEMENTS.filter(a=>{
     if(!a.active) return false;
     if(a.startDate && today < a.startDate) return false;
@@ -2564,12 +2570,11 @@ function renderManagerOverview(){
   const mgrHealth = computeHealthScore(myProjects, myTotalPrograms);
   let breakdownHtml = "";
   if(myProgramsList.length>1){
-    const allMyProjectsUnfiltered = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
     breakdownHtml = `
       <div class="health-breakdown-wrap">
         <div class="health-breakdown-title">📊 تفصيل المؤشر حسب كل برنامج — لمعرفة أي برنامج يحتاج تركيزًا أكبر</div>
         ${myProgramsList.map(prog=>{
-          const progProjects = allMyProjectsUnfiltered.filter(p=>p.programCode===prog.code);
+          const progProjects = myProjects.filter(p=>p.programCode===prog.code);
           const progHealth = computeHealthScore(progProjects, 1);
           return `
             <div class="mini-health-row">
@@ -3381,9 +3386,7 @@ function renderAnnouncementsList(){
     const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
     return tb - ta;
   });
-  const today = new Date().toISOString().slice(0,10);
-  list.innerHTML = sorted.map(a=>{
-    const isExpired = a.endDate && today > a.endDate;
+  const today = todayLocalStr();
     const statusLabel = !a.active ? "⏸️ مُوقَفة يدويًا" : (isExpired ? "⌛ منتهية الفترة" : "🟢 نشطة الآن");
     const period = [a.startDate, a.endDate].filter(Boolean).join(" → ") || "بدون تحديد فترة (نشطة دائمًا حتى الإيقاف)";
     const seenCount = Array.isArray(a.seenBy) ? a.seenBy.length : 0;
