@@ -60,6 +60,7 @@ input,select{font-family:inherit;}
 .topbar img{height:42px;}
 .topbar .title{font-family:'Cairo',sans-serif;font-weight:700;font-size:16px;}
 .topbar .subtitle{font-size:12px;color:#c9d2de;}
+.sticky-topbar{position:sticky;top:0;z-index:200;flex-wrap:wrap;row-gap:10px;}
 .topbar .actions{display:flex;align-items:center;gap:14px;}
 .topbar .who{font-size:13px;background:rgba(255,255,255,.1);padding:6px 14px;border-radius:20px;}
 .logout-btn{
@@ -815,6 +816,29 @@ tr.rejected-row td{background:#FDF6F6;}
 </head>
 <body>
 
+<!-- ===================== PERSISTENT ADMIN NAV BAR (ثابتة عند التنقل بين كل صفحات قسم التخطيط) ===================== -->
+<div id="adminPersistentNav" class="topbar sticky-topbar hidden">
+  <div class="left">
+    <img src="moh-logo.png" alt="">
+    <div>
+      <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+      <div class="subtitle">قسم التخطيط والدراسات - لوحة التجميع والاستعراض</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="meeting-btn" id="navHomeBtn" style="background:var(--gold);color:var(--navy);">🏠 الرئيسية</button>
+    <button class="meeting-btn" id="navMeetingBtn">📋 الخطة المفصلة</button>
+    <button class="meeting-btn" id="navPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
+    <button class="meeting-btn" id="navActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
+    <button class="meeting-btn" id="navBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
+    <button class="meeting-btn" id="navDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
+    <button class="meeting-btn" id="navRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
+    <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
+    <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
+    <button class="logout-btn" id="navLogoutBtn">تسجيل الخروج</button>
+  </div>
+</div>
+
 <!-- ===================== LOGIN SCREEN ===================== -->
 <div id="loginScreen">
   <div class="login-card">
@@ -936,23 +960,13 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
 <div id="weeklyReportScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">📊 المشاريع — متابعة الإدخال والاكتمال</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="print-btn" id="weeklyReportPrintBtn">🖨️ طباعة / PDF</button>
-      <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ نص واتساب</button>
-      <button class="logout-btn" id="weeklyReportBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">المشاريع — حسب البرنامج التنفيذي</div>
     <div class="section-desc">اختر النطاق (سنة/هدف/برنامج/مدير) لعرض كل البرامج ومشاريعها ومدى اكتمالها — اضغط 📋 لفتح الخطة التفصيلية مباشرة، أو اطبعه كـ PDF أو انسخه لواتساب</div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <button class="print-btn" id="weeklyReportPrintBtn">🖨️ طباعة / PDF</button>
+      <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ نص واتساب</button>
+    </div>
 
     <div class="filters-bar">
       <select id="reportFilterYear"><option value="">كل السنوات</option></select>
@@ -1072,26 +1086,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== ADMIN DASHBOARD ===================== -->
 <div id="adminScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">قسم التخطيط والدراسات - لوحة التجميع والاستعراض</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="meeting-btn" id="openMeetingBtn">📋 الخطة المفصلة</button>
-      <button class="meeting-btn" id="openPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
-      <button class="meeting-btn" id="openActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
-      <button class="meeting-btn" id="openBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
-      <button class="meeting-btn" id="openDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
-      <button class="meeting-btn" id="openRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
-      <button class="meeting-btn" id="openProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
-      <button class="meeting-btn" id="openWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
-      <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
-    </div>
-  </div>
   <div id="adminCountdownBar"></div>
   <div class="dash-wrap">
     <div class="section-title">استعراض المشاريع المجمّعة</div>
@@ -1161,20 +1155,10 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== MEETING VIEW (for presentation) ===================== -->
 <div id="meetingScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">الخطة المفصلة - المشاريع والمبادرات حسب البرنامج الاستراتيجي</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="print-btn" id="meetingPrintBtn">طباعة / PDF</button>
-      <button class="logout-btn" id="meetingBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
+    <div class="section-title" style="margin-bottom:4px;">الخطة المفصلة</div>
+    <div class="section-desc">المشاريع والمبادرات حسب البرنامج الاستراتيجي</div>
+    <button class="print-btn" id="meetingPrintBtn" style="margin-bottom:16px;">🖨️ طباعة / PDF</button>
     <div class="meeting-filters">
       <select id="meetingGoalFilter"><option value="">عرض كل الأهداف الاستراتيجية</option></select>
       <select id="meetingProgramFilter" disabled><option value="">اختر الهدف الاستراتيجي أولاً</option></select>
@@ -1185,18 +1169,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== PASSWORDS SCREEN (منفصلة عن لوحة الإدارة الرئيسية) ===================== -->
 <div id="passwordsScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">🔑 إدارة كلمات مرور مدراء البرامج التنفيذية</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="passwordsBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">كلمات مرور المدراء</div>
     <div class="section-desc">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت (مثلاً لو نسيها أو للحفاظ على المدخلات)</div>
@@ -1206,18 +1178,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== ACTIVITY LOG SCREEN ===================== -->
 <div id="activityScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">📜 سجل نشاط مدراء البرامج التنفيذية</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="activityBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">من يستخدم المنصة بفعالية؟</div>
     <div class="section-desc">آخر نشاط لكل مدير، وسجل كامل لعمليات الدخول والخروج وإضافة المشاريع</div>
@@ -1255,18 +1215,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== BACKUP / EXPORT SCREEN ===================== -->
 <div id="backupScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">💾 نسخة احتياطية شاملة</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="backupBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">تصدير نسخة احتياطية من بيانات المنصة</div>
     <div class="section-desc">اختر البيانات التي تريد تضمينها، ثم اضغط تصدير — سيُنشأ ملف Excel واحد بورقة منفصلة لكل بند مُحدَّد.</div>
@@ -1332,18 +1280,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== DECISION LOG SCREEN ===================== -->
 <div id="decisionLogScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">📝 سجل قرارات وملاحظات الاجتماعات الدورية</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="decisionLogBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">تسجيل قرار أو ملاحظة جديدة</div>
     <div class="section-desc">اختر البرنامج التنفيذي المعني، واكتب القرار أو الملاحظة (مثلاً: طلب المدير العام إضافة كذا) — ستظهر مباشرة لمدير البرنامج المعني لمتابعتها وتنفيذها.</div>
@@ -1393,18 +1329,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== MANAGER REQUESTS SCREEN (طلبات المدراء) ===================== -->
 <div id="requestsScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">📮 طلبات مدراء البرامج التنفيذية</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="requestsBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">طلبات المدراء لقسم التخطيط والدراسات</div>
     <div class="section-desc">طلبات فتح مشاريع للتعديل، أو ملاحظات عامة (مثل تغيير كلمة المرور)، أو أي طلب آخر يرسله مدراء البرامج التنفيذية</div>
@@ -1423,18 +1347,6 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== PROGRAMS & MANAGERS ADMIN SCREEN ===================== -->
 <div id="programsAdminScreen" class="hidden">
-  <div class="topbar">
-    <div class="left">
-      <img src="moh-logo.png" alt="">
-      <div>
-        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-        <div class="subtitle">⚙️ إدارة البرامج التنفيذية والمدراء</div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="logout-btn" id="programsAdminBackBtn">رجوع</button>
-    </div>
-  </div>
   <div class="dash-wrap">
     <div class="section-title">👤 مدراء البرامج التنفيذية بالمحافظة</div>
     <div class="section-desc">إضافة مدير جديد، إعادة تسمية، أو حذف (لا يمكن حذف مدير لا يزال مسؤولًا عن برنامج)</div>
@@ -1981,8 +1893,9 @@ function deactivateAnnouncement(id){
 function markAnnouncementSeen(id, managerName){
   if(!firebaseReady) return;
   const ann = ALL_ANNOUNCEMENTS.find(a=>a.id===id);
-  const seenBy = ann && Array.isArray(ann.seenBy) ? [...ann.seenBy, managerName] : [managerName];
-  db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ seenBy });
+  const existing = ann && Array.isArray(ann.seenBy) ? ann.seenBy : [];
+  if(existing.includes(managerName)) return; // تفادي تكرار نفس الاسم لو شاهد الرسالة أكثر من مرة
+  db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ seenBy: [...existing, managerName] });
 }
 // يُعيد الرسائل النشطة والمناسبة لهذا المدير الآن (ضمن الفترة الزمنية، ولم يرها بعد إن كانت "مرة واحدة")
 // تاريخ اليوم بالتوقيت المحلي (وليس UTC) بصيغة YYYY-MM-DD — يطابق صيغة حقول <input type="date">
@@ -2263,10 +2176,13 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen"];
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen"].forEach(s=>{
+  ["loginScreen","managerScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
+  document.getElementById("adminPersistentNav").classList.toggle("hidden", !ADMIN_CLUSTER_SCREENS.includes(id));
+  window.scrollTo(0,0);
 }
 
 /* ---------------- Login screen build ---------------- */
@@ -2374,7 +2290,7 @@ function checkAndShowLateStepsPopup(){
     };
   });
   document.getElementById("lateStepsPopupOverlay").classList.remove("hidden");
-  document.getElementById("lateStepsPopupOverlay").dataset.pendingAnnouncementIds = activeAnnouncements.filter(a=>a.onceOnly).map(a=>a.id).join(",");
+  document.getElementById("lateStepsPopupOverlay").dataset.pendingAnnouncementIds = activeAnnouncements.map(a=>a.id).join(",");
 }
 document.getElementById("lateStepsPopupClose").onclick = ()=>{
   const overlay = document.getElementById("lateStepsPopupOverlay");
@@ -3026,8 +2942,9 @@ function enterAdmin(){
   updateRequestsBadge();
   renderCountdownBar("adminCountdownBar", true);
 }
-document.getElementById("adminLogout").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
-document.getElementById("openMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
+document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
+document.getElementById("navHomeBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
 document.getElementById("countdownModeSelect").onchange = toggleCountdownCustomFields;
 document.getElementById("countdownSettingsCancel").onclick = ()=> document.getElementById("countdownSettingsModal").classList.add("hidden");
 document.getElementById("countdownSettingsSave").onclick = ()=>{
@@ -3043,18 +2960,13 @@ document.getElementById("countdownSettingsSave").onclick = ()=>{
     if(ok) document.getElementById("countdownSettingsModal").classList.add("hidden");
   });
 };
-document.getElementById("meetingBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
-document.getElementById("openPasswordsBtn").onclick = ()=>{ showScreen("passwordsScreen"); renderPasswordsScreen(); };
-document.getElementById("passwordsBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
-document.getElementById("activityBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
-document.getElementById("backupBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navPasswordsBtn").onclick = ()=>{ showScreen("passwordsScreen"); renderPasswordsScreen(); };
+document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
+document.getElementById("navBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
-document.getElementById("openWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
-document.getElementById("weeklyReportBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
+document.getElementById("navWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
 document.getElementById("weeklyReportPrintBtn").onclick = ()=> window.print();
 document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
   const text = buildWeeklyReportText(buildWeeklyReportData(getReportFilters()));
@@ -3078,10 +2990,8 @@ document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
   }
   document.body.removeChild(temp);
 };
-document.getElementById("decisionLogBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("openRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
-document.getElementById("openProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
-document.getElementById("programsAdminBackBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
+document.getElementById("navProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
 
 function renderProgramsAdminScreen(){
   renderManagersAdminList();
@@ -3268,7 +3178,6 @@ document.getElementById("programEditSave").onclick = async ()=>{
 };
 
 
-document.getElementById("requestsBackBtn").onclick = ()=> showScreen("adminScreen");
 
 function updateRequestsBadge(){
   const badge = document.getElementById("requestsBadge");
@@ -3391,7 +3300,14 @@ function renderAnnouncementsList(){
     const isExpired = a.endDate && today > a.endDate;
     const statusLabel = !a.active ? "⏸️ مُوقَفة يدويًا" : (isExpired ? "⌛ منتهية الفترة" : "🟢 نشطة الآن");
     const period = [a.startDate, a.endDate].filter(Boolean).join(" → ") || "بدون تحديد فترة (نشطة دائمًا حتى الإيقاف)";
-    const seenCount = Array.isArray(a.seenBy) ? a.seenBy.length : 0;
+    const seenBy = Array.isArray(a.seenBy) ? a.seenBy : [];
+    const notSeenYet = GOV_MANAGERS.filter(m=> !seenBy.includes(m));
+    const seenHtml = seenBy.length>0
+      ? `<div class="dr-meta">👀 شاهدها (${seenBy.length}): ${seenBy.map(escapeHtml).join("، ")}</div>`
+      : `<div class="dr-meta">👀 لم يشاهدها أحد بعد</div>`;
+    const notSeenHtml = notSeenYet.length>0 && notSeenYet.length<GOV_MANAGERS.length
+      ? `<div class="dr-meta">⏳ لم يشاهدها بعد: ${notSeenYet.map(escapeHtml).join("، ")}</div>`
+      : "";
     return `
       <div class="decision-row ${(!a.active||isExpired)?'resolved':''}">
         <div class="dr-top">
@@ -3399,7 +3315,9 @@ function renderAnnouncementsList(){
           ${a.active && !isExpired ? `<button class="decision-resolve-btn" data-id="${a.id}">⏸️ إيقاف</button>` : ""}
         </div>
         <div class="dr-text">${escapeHtml(a.text)}</div>
-        <div class="dr-meta">الفترة: ${escapeHtml(period)} ${a.onceOnly ? `| شاهدها ${seenCount} مدير` : ""}</div>
+        <div class="dr-meta">الفترة: ${escapeHtml(period)}</div>
+        ${seenHtml}
+        ${notSeenHtml}
       </div>`;
   }).join("");
   list.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
