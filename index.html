@@ -486,6 +486,20 @@ input,select{font-family:inherit;}
 .request-add-form select{min-width:180px;}
 .request-add-form textarea{flex:1;min-width:220px;resize:vertical;}
 
+.program-admin-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;
+}
+.program-admin-row .pa-name{font-weight:700;font-size:13px;color:var(--navy);}
+.program-admin-row .pa-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.program-admin-row .pa-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.program-manager-select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;min-width:170px;}
+.pa-edit-btn{background:#1E4E8C;color:#fff;font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:14px;}
+.pa-edit-btn:hover{background:#163c6c;}
+.pa-delete-btn{background:#FDEAEA;color:var(--red);font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:14px;}
+.pa-delete-btn:hover{background:#f9d3d7;}
+.goal-group-header{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--gold);margin:18px 0 8px;}
+
 table.results{
   width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;
   box-shadow:0 1px 4px rgba(0,0,0,.04);
@@ -1057,6 +1071,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="meeting-btn" id="openExecSummaryBtn" style="background:#C9962E;color:var(--navy);">🖨️ لمحة تنفيذية</button>
       <button class="meeting-btn" id="openDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
       <button class="meeting-btn" id="openRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
+      <button class="meeting-btn" id="openProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
       <button class="meeting-btn" id="openWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
       <button class="logout-btn" id="adminLogout">تسجيل الخروج</button>
     </div>
@@ -1368,6 +1383,61 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== PROGRAMS & MANAGERS ADMIN SCREEN ===================== -->
+<div id="programsAdminScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">⚙️ إدارة البرامج التنفيذية والمدراء</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="programsAdminBackBtn">رجوع</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="section-title">👤 مدراء البرامج التنفيذية بالمحافظة</div>
+    <div class="section-desc">إضافة مدير جديد، إعادة تسمية، أو حذف (لا يمكن حذف مدير لا يزال مسؤولًا عن برنامج)</div>
+    <button class="add-btn" id="addManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير جديد</button>
+    <div id="managersAdminList"></div>
+
+    <div class="section-title" style="margin-top:40px;" id="programsAdminCountTitle">📂 البرامج التنفيذية</div>
+    <div class="section-desc">تعديل بيانات أي برنامج، أو إعادة تعيين مديره المسؤول مباشرة — عند تغيير المدير تنتقل كل مشاريع البرنامج له تلقائيًا</div>
+    <button class="add-btn" id="addProgramBtn" style="margin-bottom:16px;">➕ إضافة برنامج تنفيذي جديد</button>
+    <div id="programsAdminList"></div>
+  </div>
+</div>
+
+<!-- ===================== PROGRAM EDIT/ADD MODAL ===================== -->
+<div id="programEditModal" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;">
+  <div class="modal-box" style="width:480px;">
+    <h3 id="programEditTitle">تعديل برنامج تنفيذي</h3>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">رمز البرنامج</label>
+    <input type="text" id="peCode" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;" placeholder="مثال: 1.8">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">اسم البرنامج التنفيذي</label>
+    <input type="text" id="peName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الهدف الاستراتيجي</label>
+    <select id="peGoal" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;"></select>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">مدير البرنامج بالمحافظة</label>
+    <select id="peManager" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;"></select>
+    <div class="section-desc" style="margin:14px 0 4px;font-weight:700;color:var(--navy);">بيانات المدير المركزي (اختياري)</div>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 4px;">الاسم</label>
+    <input type="text" id="peCentralName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 4px;">الوظيفة</label>
+    <input type="text" id="peCentralTitle" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 4px;">الهاتف</label>
+    <input type="text" id="peCentralPhone" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 4px;">البريد الإلكتروني</label>
+    <input type="text" id="peCentralEmail" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-secondary" id="programEditCancel">إلغاء</button>
+      <button class="btn-primary" id="programEditSave">حفظ</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
@@ -1438,6 +1508,8 @@ const ACTIVITY_LOG_COLLECTION = "nsh_plan11_activity_log"; // سجل الدخو�
 const DECISION_LOG_COLLECTION = "nsh_plan11_decision_log"; // سجل قرارات وملاحظات الاجتماعات الدورية
 const REQUESTS_COLLECTION = "nsh_plan11_requests"; // طلبات مدراء البرامج التنفيذية لقسم التخطيط والدراسات
 const SETTINGS_COLLECTION = "nsh_plan11_settings"; // إعدادات عامة للمنصة (مثل شريط العد التنازلي)
+const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنفيذية (ديناميكية - قابلة للإضافة والتعديل)
+const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
 
@@ -1900,6 +1972,164 @@ function saveCountdownSettings(settings){
     .then(()=> true)
     .catch(err=>{ console.error(err); alert("تعذّر حفظ الإعدادات: " + err.message); return false; });
 }
+
+/* ==================== إدارة البرامج التنفيذية والمدراء (ديناميكي) ==================== */
+let programsSeedInProgress = false;
+function listenToPrograms(cb){
+  if(!firebaseReady){ cb(); return; }
+  try{
+    db.collection(PROGRAMS_COLLECTION).onSnapshot(snap=>{
+      const arr = [];
+      snap.forEach(doc=> arr.push({ ...doc.data() }));
+      if(arr.length===0 && !programsSeedInProgress){
+        // أول تشغيل للمنصة: تعبئة قاعدة البيانات ببيانات البرامج الأولية (عملية آمنة للتكرار)
+        programsSeedInProgress = true;
+        const batchPromises = DEFAULT_PROGRAMS_SEED.map(p=>
+          db.collection(PROGRAMS_COLLECTION).doc(p.code).set(p)
+        );
+        Promise.all(batchPromises).catch(err=> console.error("seed programs error:", err));
+        return; // سيُعاد استدعاء onSnapshot تلقائيًا بعد اكتمال التعبئة
+      }
+      PROGRAMS = arr.sort((a,b)=> a.code.localeCompare(b.code, undefined, {numeric:true}));
+      cb();
+    }, err=>{ console.error(err); cb(); });
+  }catch(err){
+    console.error("listenToPrograms error:", err);
+    cb();
+  }
+}
+function listenToManagersList(cb){
+  if(!firebaseReady){ cb(); return; }
+  try{
+    db.collection(MANAGERS_COLLECTION).onSnapshot(snap=>{
+      const arr = [];
+      snap.forEach(doc=> arr.push(doc.id));
+      if(arr.length===0 && PROGRAMS.length>0){
+        // تعبئة أولية من أسماء المدراء الفريدة في بذرة البرامج
+        const uniqueNames = [...new Set(DEFAULT_PROGRAMS_SEED.map(p=>p.govManager))];
+        uniqueNames.forEach(name=> db.collection(MANAGERS_COLLECTION).doc(name).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+        return;
+      }
+      GOV_MANAGERS = arr.sort((a,b)=> a.localeCompare(b,"ar"));
+      cb();
+    }, err=>{ console.error(err); cb(); });
+  }catch(err){
+    console.error("listenToManagersList error:", err);
+    cb();
+  }
+}
+
+// إضافة مدير تنفيذي جديد (ينشئ أيضًا حساب دخول افتراضي له)
+function addManager(name){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  name = name.trim();
+  if(!name) return Promise.resolve(false);
+  if(GOV_MANAGERS.includes(name)){ alert("هذا الاسم موجود مسبقًا في قائمة المدراء."); return Promise.resolve(false); }
+  return Promise.all([
+    db.collection(MANAGERS_COLLECTION).doc(name).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
+    db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({ password:"plan2026", updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
+  ]).then(()=>{
+    logActivity(ADMIN_NAME, "add_manager", name);
+    return true;
+  }).catch(err=>{ console.error(err); alert("تعذّر إضافة المدير: " + err.message); return false; });
+}
+
+// حذف مدير — مسموح فقط إذا لم يعد مسؤولًا عن أي برنامج حاليًا
+function deleteManager(name){
+  if(!firebaseReady) return Promise.resolve(false);
+  const stillAssigned = PROGRAMS.some(p=>p.govManager===name);
+  if(stillAssigned){
+    alert(`لا يمكن حذف "${name}" لأنه لا يزال مسؤولًا عن برنامج تنفيذي واحد على الأقل. أعد تعيين برامجه لمدير آخر أولاً.`);
+    return Promise.resolve(false);
+  }
+  return db.collection(MANAGERS_COLLECTION).doc(name).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_manager", name);
+    return true;
+  }).catch(err=>{ console.error(err); alert("تعذّر حذف المدير: " + err.message); return false; });
+}
+
+// إعادة تسمية مدير: تُحدَّث كل الأماكن المرتبطة به (البرامج، حساب الدخول، المشاريع الحالية)
+async function renameManager(oldName, newName){
+  if(!firebaseReady) return false;
+  newName = newName.trim();
+  if(!newName || newName===oldName) return false;
+  if(GOV_MANAGERS.includes(newName)){ alert("هذا الاسم مستخدم بالفعل لمدير آخر."); return false; }
+  try{
+    const authDoc = await db.collection(MANAGER_AUTH_COLLECTION).doc(oldName).get();
+    const authData = authDoc.exists ? authDoc.data() : { password:"plan2026" };
+    await db.collection(MANAGER_AUTH_COLLECTION).doc(newName).set(authData);
+    await db.collection(MANAGER_AUTH_COLLECTION).doc(oldName).delete();
+    await db.collection(MANAGERS_COLLECTION).doc(newName).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection(MANAGERS_COLLECTION).doc(oldName).delete();
+    const affectedPrograms = PROGRAMS.filter(p=>p.govManager===oldName);
+    for(const prog of affectedPrograms){
+      await saveProgramFields(prog.code, { ...prog, govManager:newName }, oldName, false);
+    }
+    logActivity(ADMIN_NAME, "rename_manager", `${oldName} ← ${newName}`);
+    return true;
+  }catch(err){
+    console.error("renameManager error:", err);
+    alert("حدث خطأ أثناء إعادة التسمية: " + err.message);
+    return false;
+  }
+}
+
+// حفظ بيانات برنامج تنفيذي (تعديل أو إضافة) — يُشغّل التحديث التلقائي لكل مشاريعه إذا تغيّر المدير المسؤول
+async function saveProgramFields(code, fields, previousManager, shouldLog){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return false; }
+  shouldLog = shouldLog!==false;
+  try{
+    await db.collection(PROGRAMS_COLLECTION).doc(code).set(fields);
+    if(previousManager && fields.govManager && previousManager!==fields.govManager){
+      await cascadeManagerReassignment(code, fields.govManager, previousManager);
+    }
+    if(shouldLog) logActivity(ADMIN_NAME, "edit_program", `${code} — ${fields.name}`);
+    return true;
+  }catch(err){
+    console.error("saveProgramFields error:", err);
+    alert("تعذّر حفظ بيانات البرنامج: " + err.message);
+    return false;
+  }
+}
+
+// إضافة برنامج تنفيذي جديد بالكامل
+async function addNewProgram(fields){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return false; }
+  if(PROGRAMS.some(p=>p.code===fields.code)){ alert("رمز البرنامج هذا مستخدم بالفعل."); return false; }
+  try{
+    await db.collection(PROGRAMS_COLLECTION).doc(fields.code).set(fields);
+    logActivity(ADMIN_NAME, "add_program", `${fields.code} — ${fields.name}`);
+    return true;
+  }catch(err){
+    console.error("addNewProgram error:", err);
+    alert("تعذّر إضافة البرنامج: " + err.message);
+    return false;
+  }
+}
+
+// حذف برنامج — مسموح فقط إذا لم يعد له أي مشاريع مُدخلة
+function deleteProgram(code){
+  if(!firebaseReady) return Promise.resolve(false);
+  const hasProjects = ALL_PROJECTS.some(p=>p.programCode===code);
+  if(hasProjects){
+    alert("لا يمكن حذف هذا البرنامج لوجود مشاريع مُدخلة تحته. أعد تعيينها لبرنامج آخر أو احذفها أولاً.");
+    return Promise.resolve(false);
+  }
+  return db.collection(PROGRAMS_COLLECTION).doc(code).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_program", code);
+    return true;
+  }).catch(err=>{ console.error(err); alert("تعذّر حذف البرنامج: " + err.message); return false; });
+}
+
+// عند تغيير المدير المسؤول عن برنامج: تحديث كل مشاريعه الحالية تلقائيًا (الصلاحية تتبع المنصب الحالي)
+async function cascadeManagerReassignment(programCode, newManager, oldManager){
+  const affected = ALL_PROJECTS.filter(p=>p.programCode===programCode);
+  for(const proj of affected){
+    await db.collection(COLLECTION_NAME).doc(proj.id).update({ govManager: newManager });
+  }
+  logActivity(ADMIN_NAME, "reassign_manager", `البرنامج ${programCode}: من "${oldManager}" إلى "${newManager}" — تم تحديث ${affected.length} مشروع`);
+}
+
 function computeCountdown(){
   const today = new Date(); today.setHours(0,0,0,0);
   let target, label;
@@ -1947,7 +2177,7 @@ function toggleCountdownCustomFields(){
 
 /* ---------------- Screens ---------------- */
 function showScreen(id){
-  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen"].forEach(s=>{
+  ["loginScreen","managerScreen","adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
 }
@@ -2699,6 +2929,194 @@ document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
 };
 document.getElementById("decisionLogBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("openRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
+document.getElementById("openProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
+document.getElementById("programsAdminBackBtn").onclick = ()=> showScreen("adminScreen");
+
+function renderProgramsAdminScreen(){
+  renderManagersAdminList();
+  renderProgramsAdminList();
+}
+
+function renderManagersAdminList(){
+  const list = document.getElementById("managersAdminList");
+  if(GOV_MANAGERS.length===0){
+    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مُسجَّلون بعد.</div>`;
+    return;
+  }
+  list.innerHTML = GOV_MANAGERS.map(name=>{
+    const authRec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+    const programCount = PROGRAMS.filter(p=>p.govManager===name).length;
+    return `
+      <div class="program-admin-row">
+        <div>
+          <div class="pa-name">👤 ${escapeHtml(name)}</div>
+          <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج</div>
+        </div>
+        <div class="pa-actions">
+          <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="rename">✎ إعادة تسمية</button>
+          <button class="pa-delete-btn" data-name="${escapeAttr(name)}" data-action="delete">🗑️ حذف</button>
+        </div>
+      </div>`;
+  }).join("");
+  list.querySelectorAll("[data-action='rename']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const oldName = btn.dataset.name;
+      const newName = prompt(`الاسم الجديد لـ "${oldName}":`, oldName);
+      if(newName===null || !newName.trim() || newName.trim()===oldName) return;
+      btn.disabled = true;
+      const ok = await renameManager(oldName, newName.trim());
+      if(ok) renderProgramsAdminScreen();
+      btn.disabled = false;
+    };
+  });
+  list.querySelectorAll("[data-action='delete']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const name = btn.dataset.name;
+      if(!confirm(`هل أنت متأكد من حذف المدير "${name}"؟`)) return;
+      const ok = await deleteManager(name);
+      if(ok) renderProgramsAdminScreen();
+    };
+  });
+}
+
+function renderProgramsAdminList(){
+  document.getElementById("programsAdminCountTitle").textContent = `📂 البرامج التنفيذية (${PROGRAMS.length})`;
+  const list = document.getElementById("programsAdminList");
+  if(PROGRAMS.length===0){
+    list.innerHTML = `<div class="empty-note">لا توجد برامج مُسجَّلة بعد.</div>`;
+    return;
+  }
+  list.innerHTML = STRATEGIC_GOALS.map(goal=>{
+    const programsInGoal = PROGRAMS.filter(p=>p.goalId===goal.id);
+    if(programsInGoal.length===0) return "";
+    const rows = programsInGoal.map(p=>`
+      <div class="program-admin-row">
+        <div>
+          <div class="pa-name">${p.code} — ${escapeHtml(p.name)}</div>
+          <div class="pa-meta">المدير المركزي: ${p.central && p.central.name ? escapeHtml(p.central.name) : "—"}</div>
+        </div>
+        <div class="pa-actions">
+          <select class="program-manager-select" data-code="${p.code}">
+            ${GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}" ${m===p.govManager?"selected":""}>${escapeHtml(m)}</option>`).join("")}
+          </select>
+          <button class="pa-edit-btn" data-code="${p.code}" data-action="edit">✎ تعديل</button>
+          <button class="pa-delete-btn" data-code="${p.code}" data-action="delete">🗑️</button>
+        </div>
+      </div>`).join("");
+    return `<div class="goal-group-header">${goal.id}. ${goal.name}</div>${rows}`;
+  }).join("");
+
+  list.querySelectorAll(".program-manager-select").forEach(sel=>{
+    sel.onchange = async ()=>{
+      const code = sel.dataset.code;
+      const program = PROGRAMS.find(p=>p.code===code);
+      const oldManager = program.govManager;
+      const newManager = sel.value;
+      if(newManager===oldManager) return;
+      if(!confirm(`سيتم نقل إشراف البرنامج "${program.name}" من "${oldManager}" إلى "${newManager}"، وستنتقل كل مشاريعه الحالية تلقائيًا للمدير الجديد. هل تريد المتابعة؟`)){
+        sel.value = oldManager;
+        return;
+      }
+      sel.disabled = true;
+      const ok = await saveProgramFields(code, { ...program, govManager:newManager }, oldManager);
+      if(ok) renderProgramsAdminScreen();
+      sel.disabled = false;
+    };
+  });
+  list.querySelectorAll("[data-action='edit']").forEach(btn=>{
+    btn.onclick = ()=> openProgramEditModal(btn.dataset.code);
+  });
+  list.querySelectorAll("[data-action='delete']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const code = btn.dataset.code;
+      const program = PROGRAMS.find(p=>p.code===code);
+      if(!confirm(`هل أنت متأكد من حذف البرنامج "${program.name}" (${code})؟`)) return;
+      const ok = await deleteProgram(code);
+      if(ok) renderProgramsAdminScreen();
+    };
+  });
+}
+
+document.getElementById("addManagerBtn").onclick = async ()=>{
+  const name = prompt("اسم المدير الجديد:");
+  if(name===null || !name.trim()) return;
+  const ok = await addManager(name.trim());
+  if(ok) renderProgramsAdminScreen();
+};
+
+function fillGoalSelectOptions(){
+  document.getElementById("peGoal").innerHTML = STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+}
+function fillManagerSelectOptions(selected){
+  document.getElementById("peManager").innerHTML = GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}" ${m===selected?"selected":""}>${escapeHtml(m)}</option>`).join("");
+}
+
+function openProgramEditModal(code){
+  fillGoalSelectOptions();
+  const program = PROGRAMS.find(p=>p.code===code);
+  document.getElementById("programEditTitle").textContent = "تعديل برنامج تنفيذي";
+  document.getElementById("peCode").value = program.code;
+  document.getElementById("peCode").disabled = true;
+  document.getElementById("peName").value = program.name;
+  document.getElementById("peGoal").value = program.goalId;
+  fillManagerSelectOptions(program.govManager);
+  document.getElementById("peCentralName").value = (program.central && program.central.name) || "";
+  document.getElementById("peCentralTitle").value = (program.central && program.central.title) || "";
+  document.getElementById("peCentralPhone").value = (program.central && program.central.phone) || "";
+  document.getElementById("peCentralEmail").value = (program.central && program.central.email) || "";
+  document.getElementById("programEditModal").dataset.mode = "edit";
+  document.getElementById("programEditModal").dataset.originalManager = program.govManager;
+  document.getElementById("programEditModal").classList.remove("hidden");
+}
+document.getElementById("addProgramBtn").onclick = ()=>{
+  fillGoalSelectOptions();
+  document.getElementById("programEditTitle").textContent = "إضافة برنامج تنفيذي جديد";
+  document.getElementById("peCode").value = "";
+  document.getElementById("peCode").disabled = false;
+  document.getElementById("peName").value = "";
+  fillManagerSelectOptions(GOV_MANAGERS[0]||"");
+  document.getElementById("peCentralName").value = "";
+  document.getElementById("peCentralTitle").value = "";
+  document.getElementById("peCentralPhone").value = "";
+  document.getElementById("peCentralEmail").value = "";
+  document.getElementById("programEditModal").dataset.mode = "add";
+  document.getElementById("programEditModal").dataset.originalManager = "";
+  document.getElementById("programEditModal").classList.remove("hidden");
+};
+document.getElementById("programEditCancel").onclick = ()=> document.getElementById("programEditModal").classList.add("hidden");
+document.getElementById("programEditSave").onclick = async ()=>{
+  const modal = document.getElementById("programEditModal");
+  const mode = modal.dataset.mode;
+  const code = document.getElementById("peCode").value.trim();
+  const name = document.getElementById("peName").value.trim();
+  if(!code || !name){ alert("الرجاء تعبئة رمز البرنامج واسمه على الأقل."); return; }
+  const fields = {
+    code, name,
+    goalId: Number(document.getElementById("peGoal").value),
+    govManager: document.getElementById("peManager").value,
+    central: {
+      name: document.getElementById("peCentralName").value.trim(),
+      title: document.getElementById("peCentralTitle").value.trim(),
+      phone: document.getElementById("peCentralPhone").value.trim(),
+      email: document.getElementById("peCentralEmail").value.trim()
+    }
+  };
+  const btn = document.getElementById("programEditSave");
+  btn.disabled = true;
+  let ok;
+  if(mode==="add"){
+    ok = await addNewProgram(fields);
+  }else{
+    ok = await saveProgramFields(code, fields, modal.dataset.originalManager);
+  }
+  btn.disabled = false;
+  if(ok){
+    modal.classList.add("hidden");
+    renderProgramsAdminScreen();
+  }
+};
+
+
 document.getElementById("requestsBackBtn").onclick = ()=> showScreen("adminScreen");
 
 function updateRequestsBadge(){
@@ -4996,6 +5414,25 @@ async function exportProgramCardToExcel(){
 buildLogin();
 wireDetailModalStaticEvents();
 wireProgramCardEvents();
+let managersListenerStarted = false;
+listenToPrograms(()=>{
+  if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
+  if(!document.getElementById("managerScreen").classList.contains("hidden")){
+    renderManagerPrograms();
+    if(!document.getElementById("mgrOverviewView").classList.contains("hidden")) renderManagerOverview();
+  }
+  if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
+  if(!document.getElementById("programsAdminScreen").classList.contains("hidden")) renderProgramsAdminScreen();
+  if(!managersListenerStarted){
+    managersListenerStarted = true;
+    listenToManagersList(()=>{
+      buildLogin();
+      if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
+      if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
+      if(!document.getElementById("programsAdminScreen").classList.contains("hidden")) renderProgramsAdminScreen();
+    });
+  }
+});
 listenToProjects(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
