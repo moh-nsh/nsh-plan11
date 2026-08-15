@@ -3387,6 +3387,8 @@ function renderAnnouncementsList(){
     return tb - ta;
   });
   const today = todayLocalStr();
+  list.innerHTML = sorted.map(a=>{
+    const isExpired = a.endDate && today > a.endDate;
     const statusLabel = !a.active ? "⏸️ مُوقَفة يدويًا" : (isExpired ? "⌛ منتهية الفترة" : "🟢 نشطة الآن");
     const period = [a.startDate, a.endDate].filter(Boolean).join(" → ") || "بدون تحديد فترة (نشطة دائمًا حتى الإيقاف)";
     const seenCount = Array.isArray(a.seenBy) ? a.seenBy.length : 0;
