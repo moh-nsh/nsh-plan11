@@ -60,7 +60,24 @@ input,select{font-family:inherit;}
 .topbar img{height:42px;}
 .topbar .title{font-family:'Cairo',sans-serif;font-weight:700;font-size:16px;}
 .topbar .subtitle{font-size:12px;color:#c9d2de;}
-.sticky-topbar{position:sticky;top:0;z-index:200;flex-wrap:wrap;row-gap:10px;}
+.sticky-topbar{position:sticky;top:0;z-index:200;display:flex;flex-direction:column;padding:0;}
+.nav-primary-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 24px;flex-wrap:wrap;}
+.nav-primary-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.nav-menu-toggle{display:none;background:rgba(255,255,255,.15);color:#fff;padding:9px 16px;border-radius:8px;font-weight:700;font-size:13px;}
+.nav-menu-toggle:hover{background:rgba(255,255,255,.25);}
+.nav-collapsible{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:0 24px 14px;}
+@media (max-width:760px){
+  .nav-primary-row{padding:10px 14px;}
+  .nav-subtitle-full{display:none;}
+  .topbar.sticky-topbar img{height:32px;}
+  .sticky-topbar .title{font-size:15px;}
+  .nav-primary-actions{gap:6px;}
+  .nav-primary-actions .meeting-btn,.nav-primary-actions .logout-btn{padding:8px 12px;font-size:12px;}
+  .nav-menu-toggle{display:inline-block;}
+  .nav-collapsible{display:none;flex-direction:column;align-items:stretch;gap:8px;padding:4px 14px 14px;background:var(--navy-light);}
+  .nav-collapsible.nav-open{display:flex;}
+  .nav-collapsible .meeting-btn{width:100%;text-align:center;padding:11px;font-size:13px;}
+}
 .topbar .actions{display:flex;align-items:center;gap:14px;}
 .topbar .who{font-size:13px;background:rgba(255,255,255,.1);padding:6px 14px;border-radius:20px;}
 .logout-btn{
@@ -511,6 +528,7 @@ input,select{font-family:inherit;}
 .pa-delete-btn:hover{background:#f9d3d7;}
 .goal-group-header{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--gold);margin:18px 0 8px;}
 
+.table-scroll-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 table.results{
   width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;
   box-shadow:0 1px 4px rgba(0,0,0,.04);
@@ -818,15 +836,21 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== PERSISTENT ADMIN NAV BAR (ثابتة عند التنقل بين كل صفحات قسم التخطيط) ===================== -->
 <div id="adminPersistentNav" class="topbar sticky-topbar hidden">
-  <div class="left">
-    <img src="moh-logo.png" alt="">
-    <div>
-      <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
-      <div class="subtitle">قسم التخطيط والدراسات - لوحة التجميع والاستعراض</div>
+  <div class="nav-primary-row">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد</div>
+        <div class="subtitle nav-subtitle-full">— خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+      </div>
+    </div>
+    <div class="nav-primary-actions">
+      <button class="meeting-btn" id="navHomeBtn" style="background:var(--gold);color:var(--navy);">🏠 الرئيسية</button>
+      <button class="nav-menu-toggle" id="navMenuToggle">☰ القائمة</button>
+      <button class="logout-btn" id="navLogoutBtn">تسجيل الخروج</button>
     </div>
   </div>
-  <div class="actions">
-    <button class="meeting-btn" id="navHomeBtn" style="background:var(--gold);color:var(--navy);">🏠 الرئيسية</button>
+  <div class="nav-collapsible" id="navCollapsible">
     <button class="meeting-btn" id="navMeetingBtn">📋 الخطة المفصلة</button>
     <button class="meeting-btn" id="navPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
     <button class="meeting-btn" id="navActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
@@ -835,7 +859,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
-    <button class="logout-btn" id="navLogoutBtn">تسجيل الخروج</button>
   </div>
 </div>
 
@@ -1134,6 +1157,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="lateProjectsList"></div>
     </div>
 
+    <div class="table-scroll-wrap">
     <table class="results">
       <thead>
         <tr>
@@ -1150,6 +1174,7 @@ tr.rejected-row td{background:#FDF6F6;}
       </thead>
       <tbody id="resultsBody"></tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -1199,6 +1224,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="backup_export">تصدير نسخة احتياطية</option>
       </select>
     </div>
+    <div class="table-scroll-wrap">
     <table class="results">
       <thead>
         <tr>
@@ -1210,6 +1236,7 @@ tr.rejected-row td{background:#FDF6F6;}
       </thead>
       <tbody id="activityLogBody"></tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -2182,6 +2209,7 @@ function showScreen(id){
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
   document.getElementById("adminPersistentNav").classList.toggle("hidden", !ADMIN_CLUSTER_SCREENS.includes(id));
+  document.getElementById("navCollapsible").classList.remove("nav-open");
   window.scrollTo(0,0);
 }
 
@@ -2944,6 +2972,13 @@ function enterAdmin(){
 }
 document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
 document.getElementById("navHomeBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navMenuToggle").onclick = ()=>{
+  document.getElementById("navCollapsible").classList.toggle("nav-open");
+};
+// إغلاق القائمة تلقائيًا على الجوال بعد اختيار أي قسم
+document.getElementById("navCollapsible").addEventListener("click", e=>{
+  if(e.target.tagName==="BUTTON") document.getElementById("navCollapsible").classList.remove("nav-open");
+});
 document.getElementById("navMeetingBtn").onclick = ()=>{ showScreen("meetingScreen"); buildMeetingFilters(); renderMeetingView(); };
 document.getElementById("countdownModeSelect").onchange = toggleCountdownCustomFields;
 document.getElementById("countdownSettingsCancel").onclick = ()=> document.getElementById("countdownSettingsModal").classList.add("hidden");
@@ -3545,7 +3580,7 @@ function renderMeetingView(){
     if(progs.length===0) return;
     html += `<div class="meeting-goal-block">`;
     html += `<div class="meeting-goal-title">${g.id}. ${g.name}</div>`;
-    html += `<table class="meeting-table"><thead><tr>
+    html += `<div class="table-scroll-wrap"><table class="meeting-table"><thead><tr>
         <th style="min-width:110px;">البرنامج الاستراتيجي</th>
         <th style="min-width:170px;">البرنامج التنفيذي</th>
         ${YEARS.map(y=>`<th>${y}</th>`).join("")}
@@ -3592,7 +3627,7 @@ function renderMeetingView(){
       });
       html += "</tr>";
     });
-    html += "</tbody></table></div>";
+    html += "</tbody></table></div></div>";
   });
   const container = document.getElementById("meetingContent");
   container.innerHTML = html || "<div class='empty-note'>لا توجد نتائج مطابقة لهذا الاختيار.</div>";
