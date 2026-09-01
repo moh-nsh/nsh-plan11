@@ -726,15 +726,23 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .phase-weight{background:var(--gold);color:var(--navy);font-size:11.5px;padding:2px 10px;border-radius:12px;}
 .step-header-row{
-  display:grid;grid-template-columns:1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
+  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
   gap:6px;padding:8px 12px 4px;font-size:10.5px;color:var(--text-muted);font-weight:700;
 }
 .phase-steps{padding:0 12px;}
 .step-row{
-  display:grid;grid-template-columns:1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
+  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
   gap:6px;align-items:start;padding:6px 0;border-top:1px dashed var(--border);
 }
 .step-row:first-child{border-top:none;}
+.step-row-highlight{
+  animation:stepHighlightPulse 1.8s ease-in-out 2;
+  border-radius:8px;
+}
+@keyframes stepHighlightPulse{
+  0%,100%{background:transparent;}
+  50%{background:#FDEAEA;box-shadow:0 0 0 3px var(--red);}
+}
 .step-row input,.step-row select{
   padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;width:100%;font-family:inherit;
 }
@@ -771,6 +779,10 @@ tr.rejected-row td{background:#FDF6F6;}
 .planning-notes-box .planning-notes-text{font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;}
 .step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
+.step-seq{
+  display:inline-block;background:var(--navy);color:#fff;font-size:11px;font-weight:800;
+  padding:4px 8px;border-radius:6px;text-align:center;margin-top:8px;
+}
 .step-field{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .step-field-label{display:none;}
 .step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;margin-top:2px;}
@@ -1059,8 +1071,6 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap hidden" id="mgrOverviewView">
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل الخطط التفصيلية</div>
-    <div id="mgrHealthScoreContainer"></div>
-    <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <div class="meeting-filters" style="margin-bottom:18px;">
       <select id="mgrOverviewProgramFilter"><option value="">كل برامجي</option></select>
       <select id="mgrOverviewYearFilter"><option value="">كل السنوات</option></select>
@@ -1069,6 +1079,8 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="owner">فرز حسب مالك المشروع</option>
       </select>
     </div>
+    <div id="mgrHealthScoreContainer"></div>
+    <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
     <div id="mgrPerformanceChartWrap" style="position:relative;height:280px;margin-bottom:24px;"><canvas id="mgrPerformanceChart"></canvas></div>
 
@@ -1684,9 +1696,10 @@ function computeOverallPct(detailData){
 }
 
 // مؤشر "صحة الخطة" الإجمالي: يجمع أربعة أبعاد بأوزان متساوية (تغطية البرامج، تعبئة الخطط التفصيلية، متوسط الإنجاز، الالتزام بالجدول)
-function computeHealthScore(projects, totalPrograms){
-  if(totalPrograms===0 || projects.length===0){
-    return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0 };
+function computeHealthScore(projects, totalPrograms, includeCoverage){
+  includeCoverage = includeCoverage !== false; // افتراضيًا مفعّل (مؤشر الإدارة العام) — يُعطَّل لمؤشر المدير الشخصي حسب القرار المعتمد
+  if((includeCoverage && totalPrograms===0) || projects.length===0){
+    return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0, includeCoverage };
   }
   const programsWithData = new Set(projects.map(p=>p.programCode)).size;
   const coverageScore = totalPrograms>0 ? Math.min(programsWithData/totalPrograms,1) : 0;
@@ -1697,12 +1710,14 @@ function computeHealthScore(projects, totalPrograms){
     : 0;
   const lateCount = projects.filter(p=> findLateSteps(p).length>0).length;
   const onScheduleScore = projects.length>0 ? Math.max(1 - lateCount/projects.length,0) : 1;
-  const overall = Math.round(((coverageScore*0.25)+(detailScore*0.25)+(avgCompletion*0.25)+(onScheduleScore*0.25))*100);
+  const overall = includeCoverage
+    ? Math.round(((coverageScore*0.25)+(detailScore*0.25)+(avgCompletion*0.25)+(onScheduleScore*0.25))*100)
+    : Math.round(((detailScore/3)+(avgCompletion/3)+(onScheduleScore/3))*100);
   let color, label;
   if(overall>=80){ color="#1E7A3D"; label="🟢 صحة الخطة ممتازة"; }
   else if(overall>=50){ color="#C9962E"; label="🟡 تحتاج متابعة"; }
   else { color="#C8102E"; label="🔴 تحتاج تدخّلًا عاجلاً"; }
-  return { score:overall, color, label, coverageScore, detailScore, avgCompletion, onScheduleScore };
+  return { score:overall, color, label, coverageScore, detailScore, avgCompletion, onScheduleScore, includeCoverage };
 }
 function healthScoreCardHTML(health, subtitle){
   return `
@@ -1714,7 +1729,7 @@ function healthScoreCardHTML(health, subtitle){
         <div class="health-score-label" style="color:${health.color};">${health.label}</div>
         <div class="health-score-sub">${subtitle}</div>
         <div class="health-score-breakdown">
-          <span>تغطية البرامج: ${Math.round(health.coverageScore*100)}%</span>
+          ${health.includeCoverage ? `<span>تغطية البرامج: ${Math.round(health.coverageScore*100)}%</span>` : ""}
           <span>تعبئة الخطط: ${Math.round(health.detailScore*100)}%</span>
           <span>متوسط الإنجاز: ${Math.round(health.avgCompletion*100)}%</span>
           <span>الالتزام بالجدول: ${Math.round(health.onScheduleScore*100)}%</span>
@@ -1743,13 +1758,13 @@ function findLateSteps(project){
   if(!detailRec || !Array.isArray(detailRec.phases)) return [];
   const today = new Date(); today.setHours(0,0,0,0);
   const late = [];
-  detailRec.phases.forEach(ph=>{
-    (ph.steps||[]).forEach(st=>{
+  detailRec.phases.forEach((ph,phaseIdx)=>{
+    (ph.steps||[]).forEach((st,stepIdx)=>{
       if(st.endDate && st.status!=="مكتمل"){
         const end = new Date(st.endDate);
         if(!isNaN(end) && end < today){
           const daysLate = Math.round((today-end)/(1000*60*60*24));
-          late.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", endDate: st.endDate, daysLate, status: st.status });
+          late.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", endDate: st.endDate, daysLate, status: st.status, seq: `${phaseIdx+1}.${stepIdx+1}`, phaseIdx, stepIdx });
         }
       }
     });
@@ -1765,18 +1780,22 @@ function sendDelayReminder(projectId){
   const lateSteps = findLateSteps(project);
   if(lateSteps.length===0){ alert("لا توجد بنود متأخرة حاليًا لهذا المشروع."); return; }
 
+  const senderName = prompt("اسمك (لتوثيق من قام بإرسال هذا التذكير):", getActorName());
+  if(senderName===null) return; // ألغى الإرسال
+  if(!senderName.trim()){ alert("الرجاء كتابة الاسم."); return; }
+
   const subject = `تذكير: تأخر في تنفيذ مشروع "${project.projectName}" — ${project.programCode}`;
-  let body = `عزيزي/عزيزتي ${project.govManager}،\n\n`;
+  let body = `الفاضل/الفاضلة ${project.govManager}،\n\n`;
   body += `نود تذكيركم بوجود تأخر في تنفيذ البند/البنود التالية ضمن المشروع "${project.projectName}" (${project.programCode} — ${project.programName}) للسنة ${project.year}:\n\n`;
   lateSteps.forEach((s,i)=>{
-    body += `${i+1}. المرحلة: ${s.phaseName}\n   البند/النشاط: ${s.stepName}\n   تاريخ الانتهاء المستهدف: ${s.endDate}\n   عدد أيام التأخير: ${s.daysLate} يوم\n   الحالة الحالية: ${s.status}\n\n`;
+    body += `${i+1}. التسلسل: ${s.seq}\n   المرحلة: ${s.phaseName}\n   البند/النشاط: ${s.stepName}\n   تاريخ الانتهاء المستهدف: ${s.endDate}\n   عدد أيام التأخير: ${s.daysLate} يوم\n   الحالة الحالية: ${s.status}\n\n`;
   });
   body += `يُرجى تحديث حالة التنفيذ على منصة "رصد" في أقرب وقت ممكن، أو التواصل مع قسم التخطيط والدراسات في حال وجود أي معوقات.\n\n`;
   body += `مع الشكر،\nقسم التخطيط والدراسات\nدائرة التخطيط والتنظيم الصحي\nالمديرية العامة للخدمات الصحية - محافظة شمال الشرقية`;
 
   const mailtoLink = `mailto:${encodeURIComponent(authRec.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailtoLink;
-  logActivity(ADMIN_NAME, "send_reminder", `${project.programCode} — ${project.projectName} (${lateSteps.length} بند متأخر)`);
+  logActivity(ADMIN_NAME, "send_reminder", `${project.programCode} — ${project.projectName} (${lateSteps.length} بند متأخر) — أرسله: ${senderName.trim()}`);
 }
 
 /* ---------------- بطاقة تعريف البرنامج التنفيذي ---------------- */
@@ -2291,8 +2310,8 @@ function checkAndShowLateStepsPopup(){
   if(lateEntries.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">⏰ مراحل متأخرة (${lateEntries.length})</div>`;
     html += lateEntries.map(({project,step})=>`
-      <div class="phase-alert-row late" data-project-id="${project.id}">
-        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+      <div class="phase-alert-row late" data-project-id="${project.id}" data-phase-idx="${step.phaseIdx}" data-step-idx="${step.stepIdx}">
+        <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
         <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
       </div>`).join("");
   }
@@ -2308,7 +2327,9 @@ function checkAndShowLateStepsPopup(){
   list.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
       document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
-      openProjectDetailForm(row.dataset.projectId);
+      const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
+      const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
+      openProjectDetailForm(row.dataset.projectId, pIdx, sIdx);
     };
   });
   list.querySelectorAll(".phase-alert-row[data-decision-id]").forEach(row=>{
@@ -2422,13 +2443,13 @@ function findUpcomingSteps(project, withinDays){
   const today = new Date(); today.setHours(0,0,0,0);
   const limit = new Date(today); limit.setDate(limit.getDate()+withinDays);
   const upcoming = [];
-  detailRec.phases.forEach(ph=>{
-    (ph.steps||[]).forEach(st=>{
+  detailRec.phases.forEach((ph,phaseIdx)=>{
+    (ph.steps||[]).forEach((st,stepIdx)=>{
       if(st.endDate && st.status!=="مكتمل"){
         const end = new Date(st.endDate);
         if(!isNaN(end) && end>=today && end<=limit){
           const daysLeft = Math.round((end-today)/(1000*60*60*24));
-          upcoming.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", endDate: st.endDate, daysLeft, status: st.status });
+          upcoming.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", endDate: st.endDate, daysLeft, status: st.status, seq: `${phaseIdx+1}.${stepIdx+1}`, phaseIdx, stepIdx });
         }
       }
     });
@@ -2511,7 +2532,7 @@ function renderManagerOverview(){
 
   const myProgramsList = PROGRAMS.filter(p=>p.govManager===currentManager);
   const myTotalPrograms = myProgramsList.length;
-  const mgrHealth = computeHealthScore(myProjects, myTotalPrograms);
+  const mgrHealth = computeHealthScore(myProjects, myTotalPrograms, false);
   let breakdownHtml = "";
   if(myProgramsList.length>1){
     breakdownHtml = `
@@ -2519,7 +2540,7 @@ function renderManagerOverview(){
         <div class="health-breakdown-title">📊 تفصيل المؤشر حسب كل برنامج — لمعرفة أي برنامج يحتاج تركيزًا أكبر</div>
         ${myProgramsList.map(prog=>{
           const progProjects = myProjects.filter(p=>p.programCode===prog.code);
-          const progHealth = computeHealthScore(progProjects, 1);
+          const progHealth = computeHealthScore(progProjects, 1, false);
           return `
             <div class="mini-health-row">
               <span class="mini-health-name">${prog.code} — ${escapeHtml(prog.name)}</span>
@@ -2611,8 +2632,8 @@ function renderManagerOverview(){
     upcomingBox.innerHTML = `<div class="empty-note">لا توجد مراحل ستنتهي خلال أسبوع.</div>`;
   }else{
     upcomingBox.innerHTML = upcomingEntries.map(({project,step})=>`
-      <div class="phase-alert-row upcoming" data-project-id="${project.id}">
-        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+      <div class="phase-alert-row upcoming" data-project-id="${project.id}" data-phase-idx="${step.phaseIdx}" data-step-idx="${step.stepIdx}">
+        <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
         <span class="phase-alert-badge upcoming">باقي ${step.daysLeft} يوم</span>
       </div>`).join("");
   }
@@ -2620,13 +2641,17 @@ function renderManagerOverview(){
     lateBox.innerHTML = `<div class="empty-note">لا توجد مراحل متأخرة. ✅</div>`;
   }else{
     lateBox.innerHTML = lateEntries.map(({project,step})=>`
-      <div class="phase-alert-row late" data-project-id="${project.id}">
-        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+      <div class="phase-alert-row late" data-project-id="${project.id}" data-phase-idx="${step.phaseIdx}" data-step-idx="${step.stepIdx}">
+        <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
         <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
       </div>`).join("");
   }
-  document.querySelectorAll(".phase-alert-row").forEach(row=>{
-    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
+  document.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
+    row.onclick = ()=>{
+      const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
+      const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
+      openProjectDetailForm(row.dataset.projectId, pIdx, sIdx);
+    };
   });
 
   const container = document.getElementById("mgrOverviewContent");
@@ -2971,7 +2996,7 @@ function enterAdmin(){
   renderCountdownBar("adminCountdownBar", true);
 }
 document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
-document.getElementById("navHomeBtn").onclick = ()=> showScreen("adminScreen");
+document.getElementById("navHomeBtn").onclick = ()=>{ showScreen("adminScreen"); renderAdmin(); };
 document.getElementById("navMenuToggle").onclick = ()=>{
   document.getElementById("navCollapsible").classList.toggle("nav-open");
 };
@@ -3918,7 +3943,7 @@ function renderAdmin(){
     lateList.innerHTML = lateEntries.map(({project, lateSteps})=>{
       const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
       const hasEmail = authRec && authRec.email;
-      const stepsText = lateSteps.map(s=> `${s.phaseName} — ${s.stepName} (متأخر ${s.daysLate} يوم عن ${s.endDate})`).join(" | ");
+      const stepsText = lateSteps.map(s=> `[${s.seq}] ${s.phaseName} — ${s.stepName} (متأخر ${s.daysLate} يوم عن ${s.endDate})`).join(" | ");
       let sentBadge = "";
       if(project.reminderSentAt && project.reminderSentAt.toDate){
         const dt = project.reminderSentAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"});
@@ -4466,12 +4491,16 @@ function detailFieldHTML(f, data){
   return `<div class="detail-field"><label>${f.label}</label><input type="${f.type||"text"}" data-key="${f.key}" placeholder="${escapeAttr(f.placeholder||"")}" value="${escapeAttr(val)}"></div>`;
 }
 
-function stepRowHTML(step, locked){
+function stepRowHTML(step, locked, seqLabel){
   step = step || {};
   const ro = locked ? "readonly disabled" : "";
   const roClass = locked ? "field-locked" : "";
   return `
     <div class="step-row">
+      <div class="step-field">
+        <span class="step-field-label">التسلسل</span>
+        <span class="step-seq">${seqLabel||""}</span>
+      </div>
       <div class="step-field">
         <span class="step-field-label">اسم الخطوة</span>
         <textarea class="step-name ${roClass}" placeholder="اسم خطوة العمل" rows="2" ${ro}>${escapeHtml(step.name||"")}</textarea>
@@ -4507,19 +4536,29 @@ function stepRowHTML(step, locked){
 }
 
 function phaseBlockHTML(def, pi, steps, locked){
-  const rows = (steps && steps.length ? steps : [{}]).map(st=>stepRowHTML(st, locked)).join("");
+  const rows = (steps && steps.length ? steps : [{}]).map((st,idx)=>stepRowHTML(st, locked, `${pi+1}.${idx+1}`)).join("");
   return `
     <div class="phase-block">
       <div class="phase-header"><span>${def.name}</span><span class="phase-weight">${Math.round(def.weight*100)}%</span></div>
       <div class="step-header-row">
-        <span>اسم الخطوة</span><span>الوثائق الداعمة</span><span>البدء</span><span>الانتهاء</span><span>أسابيع (تلقائي)</span><span>الحالة</span><span>المستهدف%</span><span></span>
+        <span>التسلسل</span><span>اسم الخطوة</span><span>الوثائق الداعمة</span><span>البدء</span><span>الانتهاء</span><span>أسابيع (تلقائي)</span><span>الحالة</span><span>المستهدف%</span><span></span>
       </div>
       <div class="phase-steps" data-phase="${pi}">${rows}</div>
       <button class="add-step-btn" data-phase="${pi}">+ إضافة خطوة${locked ? ' جديدة (استجدّت بعد الإغلاق)' : ''}</button>
     </div>`;
 }
 
-function openProjectDetailForm(projectId){
+// يُعيد ترقيم تسلسل الخطوات داخل مرحلة معيّنة (مثال: 2.1، 2.2، 2.3) بعد أي إضافة أو حذف
+function renumberStepsInPhase(phaseIdx){
+  const container = document.querySelector(`.phase-steps[data-phase="${phaseIdx}"]`);
+  if(!container) return;
+  container.querySelectorAll(".step-row").forEach((row,idx)=>{
+    const seqEl = row.querySelector(".step-seq");
+    if(seqEl) seqEl.textContent = `${phaseIdx+1}.${idx+1}`;
+  });
+}
+
+function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
   const project = ALL_PROJECTS.find(p=>p.id===projectId);
   if(!project) return;
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId) || {};
@@ -4572,6 +4611,15 @@ function openProjectDetailForm(projectId){
   overlay.classList.remove("hidden");
   recalcAllPhasesAndOverall();
   renderGanttPreview();
+  if(highlightPhaseIdx!=null && highlightStepIdx!=null){
+    const phaseContainer = document.querySelector(`.phase-steps[data-phase="${highlightPhaseIdx}"]`);
+    const targetRow = phaseContainer ? phaseContainer.querySelectorAll(".step-row")[highlightStepIdx] : null;
+    if(targetRow){
+      targetRow.classList.add("step-row-highlight");
+      setTimeout(()=>{ targetRow.scrollIntoView({ behavior:"smooth", block:"center" }); }, 150);
+      setTimeout(()=>{ targetRow.classList.remove("step-row-highlight"); }, 6000);
+    }
+  }
   const clearBtn = document.getElementById("detailClearBtn");
   clearBtn.disabled = structureLocked;
   clearBtn.title = structureLocked ? "لا يمكن المسح أثناء قفل هيكل المراحل - افتح القفل أولاً من قسم التخطيط" : "مسح جميع بيانات الخطة التفصيلية لهذا المشروع";
@@ -4597,6 +4645,7 @@ function recalcPhase(phaseIdx){
     const pct = sum>0 ? (durations[i]/sum)*weight*100 : 0;
     r.querySelector(".step-pct").textContent = pct.toFixed(1)+"%";
   });
+  renumberStepsInPhase(phaseIdx);
   recalcOverallOnly();
   renderGanttPreview();
   updateProjectDateRangeFromSteps();
