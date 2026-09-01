@@ -811,15 +811,20 @@ tr.rejected-row td{background:#FDF6F6;}
 .exec-lbl{font-size:11.5px;color:var(--text-muted);margin-top:6px;}
 @media (max-width:900px){ .exec-stats-grid{grid-template-columns:repeat(2,1fr);} }
 @media print{
-  @page{ size:A4; margin:12mm; }
+  @page{ margin:12mm; }
   html,body{width:100%;}
   #execSummaryScreen .chart-box,#weeklyReportScreen .chart-box{height:220px;page-break-inside:avoid;}
-  #execSummaryScreen,#weeklyReportScreen{max-width:100%;}
-  #execSummaryScreen .dash-wrap,#weeklyReportScreen .dash-wrap{max-width:100% !important;width:100%;padding:0 !important;margin:0;}
+  #execSummaryScreen,#weeklyReportScreen,#meetingScreen{max-width:100%;}
+  #execSummaryScreen .dash-wrap,#weeklyReportScreen .dash-wrap,#meetingScreen .dash-wrap{max-width:100% !important;width:100%;padding:0 !important;margin:0;}
   #execSummaryScreen .charts-grid,#weeklyReportScreen .charts-grid{grid-template-columns:1fr 1fr !important;gap:10px;}
   #weeklyReportScreen .exec-stats-grid{grid-template-columns:repeat(4,1fr) !important;}
   #weeklyReportScreen .late-proj-row{page-break-inside:avoid;}
   #weeklyReportScreen canvas,#execSummaryScreen canvas{max-width:100% !important;}
+  /* الطباعة تعرض الجدول كاملاً بدل قصّه عند حدود التمرير الأفقي - المستخدم يختار الاتجاه (عمودي/أفقي) وحجم التصغير المناسب من نافذة الطباعة نفسها */
+  .table-scroll-wrap{overflow:visible !important;width:auto !important;}
+  #meetingScreen table.meeting-table{width:100%;font-size:10.5px;}
+  #meetingScreen .meeting-goal-block{page-break-inside:avoid;}
+  #weeklyReportScreen .report-program-block{page-break-inside:avoid;}
 }
 
 @media (max-width:760px){
@@ -1151,16 +1156,6 @@ tr.rejected-row td{background:#FDF6F6;}
         <div class="chart-box"><canvas id="adminClosureChart"></canvas></div>
         <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
       </div>
-    </div>
-
-    <div class="pending-list">
-      <h3>حالة الإدخال حسب البرنامج التنفيذي (36 برنامج)</h3>
-      <div id="pendingChips"></div>
-    </div>
-
-    <div class="pending-list">
-      <h3>متابعة الخطط التفصيلية للمشاريع المُدخلة</h3>
-      <div id="detailCoverageChips"></div>
     </div>
 
     <div class="pending-list">
@@ -1695,7 +1690,9 @@ function computeOverallPct(detailData){
   return Math.round(total*100);
 }
 
-// مؤشر "صحة الخطة" الإجمالي: يجمع أربعة أبعاد بأوزان متساوية (تغطية البرامج، تعبئة الخطط التفصيلية، متوسط الإنجاز، الالتزام بالجدول)
+// مؤشر "صحة الخطة" الإجمالي: يجمع ثلاثة أبعاد بأوزان متساوية (تعبئة الخطط التفصيلية، متوسط الإنجاز، الالتزام بالجدول)
+// ملاحظة: بُعد "تغطية البرامج" أُزيل نهائيًا من الحساب (لكل من مؤشر المدير الشخصي ومؤشر الإدارة العام) بقرار معتمد،
+// لأن عدم وجود مشروع لبرنامج معيّن في سنة ما قد يكون قرارًا إداريًا خارجًا عن سيطرة المدير التنفيذي، فلا يجب أن يُحسب ضده
 function computeHealthScore(projects, totalPrograms, includeCoverage){
   includeCoverage = includeCoverage !== false; // افتراضيًا مفعّل (مؤشر الإدارة العام) — يُعطَّل لمؤشر المدير الشخصي حسب القرار المعتمد
   if((includeCoverage && totalPrograms===0) || projects.length===0){
@@ -3906,31 +3903,10 @@ function renderAdmin(){
     };
   }
 
-  const adminHealth = computeHealthScore(filteredProjects, 36);
-  document.getElementById("healthScoreContainer").innerHTML = healthScoreCardHTML(adminHealth, "مؤشر مركّب يعكس تغطية البرامج، تعبئة الخطط التفصيلية، متوسط الإنجاز، والالتزام بالجدول الزمني (يعكس الفلاتر المختارة)");
+  const adminHealth = computeHealthScore(filteredProjects, 36, false);
+  document.getElementById("healthScoreContainer").innerHTML = healthScoreCardHTML(adminHealth, "مؤشر مركّب يعكس تعبئة الخطط التفصيلية، متوسط الإنجاز، والالتزام بالجدول الزمني (يعكس الفلاتر المختارة)");
 
   renderAdminCharts(filteredProjects);
-
-  // pending chips
-  const chips = document.getElementById("pendingChips");
-  chips.innerHTML = PROGRAMS.map(p=>{
-    const has = ALL_PROJECTS.some(pr=>pr.programCode===p.code);
-    return `<span class="${has?'ok-chip':'pending-chip'}">${p.code} ${p.name}</span>`;
-  }).join("");
-
-  // detail-plan coverage chips
-  const detailChips = document.getElementById("detailCoverageChips");
-  if(filteredProjects.length===0){
-    detailChips.innerHTML = `<span class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</span>`;
-  }else{
-    detailChips.innerHTML = filteredProjects.map(pr=>{
-      const rec = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-      const label = `${pr.programCode} (${pr.year}) — ${pr.projectName}`;
-      return rec
-        ? `<span class="ok-chip" title="نسبة الإنجاز: ${computeOverallPct(rec)}%">✅ ${label} — ${computeOverallPct(rec)}%</span>`
-        : `<span class="pending-chip" title="لم تُدخل الخطة التفصيلية بعد">❌ ${label}</span>`;
-    }).join("");
-  }
 
   // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد + تأكيد الإرسال (لمنع التكرار بين عدة مستخدمين)
   const lateList = document.getElementById("lateProjectsList");
