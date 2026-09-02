@@ -206,15 +206,10 @@ input,select{font-family:inherit;}
 .remind-btn:hover{background:#a80d25;}
 .remind-btn:disabled{background:#D8C7C9;cursor:not-allowed;}
 .lp-sent-badge{
-  display:inline-block;margin-top:6px;background:#E9F7EE;color:#1E7A3D;font-size:11px;font-weight:700;
-  padding:3px 10px;border-radius:12px;
+  display:block;margin-top:5px;background:#E9F7EE;color:#1E7A3D;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:12px;width:fit-content;
 }
-.confirm-sent-btn{
-  background:#EEF0F3;color:var(--navy);font-size:11px;font-weight:700;padding:6px 14px;border-radius:14px;white-space:nowrap;
-}
-.confirm-sent-btn:hover{background:#e2e5ea;}
-.confirm-sent-btn.is-sent{background:#1E7A3D;color:#fff;}
-.confirm-sent-btn.is-sent:hover{background:#186631;}
+.lp-sent-history{margin-top:4px;display:flex;flex-direction:column;gap:2px;}
 
 .report-program-block{border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;}
 .report-program-header{
@@ -599,21 +594,22 @@ tr.approved-row td{background:#FAFDFB;}
   font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;color:var(--navy);
   background:#EEF0F3;padding:10px 18px;border-right:5px solid var(--gold);border-radius:8px;margin-bottom:12px;
 }
-table.meeting-table{width:100%;border-collapse:collapse;background:#fff;margin-bottom:6px;}
+table.meeting-table{width:100%;border-collapse:collapse;background:#fff;margin-bottom:6px;table-layout:fixed;}
 table.meeting-table th{
-  background:var(--navy);color:#fff;padding:10px 8px;font-size:12.5px;font-family:'Cairo',sans-serif;
-  border:1px solid var(--navy-light);text-align:center;
+  background:var(--navy);color:#fff;padding:8px 4px;font-size:11.5px;font-family:'Cairo',sans-serif;
+  border:1px solid var(--navy-light);text-align:center;word-wrap:break-word;
 }
 table.meeting-table td{
-  border:1px solid var(--border);padding:8px;font-size:12px;vertical-align:top;text-align:center;
+  border:1px solid var(--border);padding:6px;font-size:11px;vertical-align:top;text-align:center;
+  word-wrap:break-word;overflow-wrap:break-word;
 }
-.mt-goal-cell{background:#F8F9FB;font-weight:700;font-size:12.5px;color:var(--navy);}
-.mt-prog-cell{text-align:right;font-weight:700;background:#FBFBFC;min-width:170px;}
+.mt-goal-cell{background:#F8F9FB;font-weight:700;font-size:11.5px;color:var(--navy);width:80px;}
+.mt-prog-cell{text-align:right;font-weight:700;background:#FBFBFC;width:130px;font-size:11px;}
 .mt-empty{color:#C7CBD3;}
 
 .mt-proj-item{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:6px;
-  padding:5px 8px;border-radius:7px;margin-bottom:4px;background:#FAFAFB;text-align:right;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:4px;
+  padding:4px 6px;border-radius:7px;margin-bottom:4px;background:#FAFAFB;text-align:right;font-size:10.5px;
 }
 .mt-proj-item:last-child{margin-bottom:0;}
 .mt-proj-item.mt-status-approved{background:#E9F7EE;}
@@ -1202,7 +1198,17 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== PASSWORDS SCREEN (منفصلة عن لوحة الإدارة الرئيسية) ===================== -->
 <div id="passwordsScreen" class="hidden">
   <div class="dash-wrap">
-    <div class="section-title">كلمات مرور المدراء</div>
+    <div class="section-title">🔑 كلمة مرور حساب قسم التخطيط والدراسات</div>
+    <div class="section-desc">هذه هي كلمة مرور الحساب المشترك المستخدم من الجميع في القسم — غيّرها بشكل دوري للحفاظ على الأمان</div>
+    <div class="pending-list" style="max-width:420px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input type="password" id="adminNewPasswordInput" placeholder="كلمة المرور الجديدة" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <input type="password" id="adminConfirmPasswordInput" placeholder="تأكيد كلمة المرور الجديدة" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <button class="add-btn" id="saveAdminPasswordBtn">💾 حفظ كلمة المرور الجديدة</button>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:40px;">كلمات مرور المدراء</div>
     <div class="section-desc">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت (مثلاً لو نسيها أو للحفاظ على المدخلات)</div>
     <div id="managerAuthList"></div>
   </div>
@@ -1496,7 +1502,8 @@ const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنف�
 const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
 const ANNOUNCEMENTS_COLLECTION = "nsh_plan11_announcements"; // رسائل تنبيه منبثقة تظهر للمدراء عند الدخول
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
-const ADMIN_PASSWORD = "plan"; // غيّر هذا الرقم السري قبل النشر
+const ADMIN_PASSWORD = "plan"; // كلمة المرور الافتراضية الأولى فقط — تُستبدل تلقائيًا بأي كلمة مرور مُحدَّثة من Firestore بعد أول تغيير
+let ADMIN_PASSWORD_CURRENT = null; // يُملأ من قاعدة البيانات إن وُجد تغيير سابق
 
 // 4 مراحل ثابتة بأوزان ثابتة (حسب نموذج الخطة التفصيلية)
 const DETAIL_PHASES_DEF = [
@@ -1792,6 +1799,9 @@ function sendDelayReminder(projectId){
 
   const mailtoLink = `mailto:${encodeURIComponent(authRec.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailtoLink;
+  updateProject(projectId, {
+    reminderLog: firebase.firestore.FieldValue.arrayUnion({ sentBy: senderName.trim(), sentAt: new Date().toISOString() })
+  });
   logActivity(ADMIN_NAME, "send_reminder", `${project.programCode} — ${project.projectName} (${lateSteps.length} بند متأخر) — أرسله: ${senderName.trim()}`);
 }
 
@@ -2008,12 +2018,25 @@ function listenToSettings(cb){
     console.error("listenToSettings error:", err);
     cb();
   }
+  try{
+    db.collection(SETTINGS_COLLECTION).doc("adminAuth").onSnapshot(doc=>{
+      ADMIN_PASSWORD_CURRENT = (doc.exists && doc.data().password) ? doc.data().password : null;
+    }, err=> console.error(err));
+  }catch(err){
+    console.error("listenToAdminAuth error:", err);
+  }
 }
 function saveCountdownSettings(settings){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
   return db.collection(SETTINGS_COLLECTION).doc("countdown").set(settings)
     .then(()=> true)
     .catch(err=>{ console.error(err); alert("تعذّر حفظ الإعدادات: " + err.message); return false; });
+}
+function saveAdminPassword(newPassword){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
+  return db.collection(SETTINGS_COLLECTION).doc("adminAuth").set({ password:newPassword, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(()=>{ logActivity(ADMIN_NAME, "change_admin_password", ""); return true; })
+    .catch(err=>{ console.error(err); alert("تعذّر حفظ كلمة المرور الجديدة: " + err.message); return false; });
 }
 
 /* ==================== إدارة البرامج التنفيذية والمدراء (ديناميكي) ==================== */
@@ -2245,7 +2268,7 @@ function submitLoginForm(){
   const errEl = document.getElementById("loginError");
   if(!sel){ errEl.textContent = "الرجاء اختيار المستخدم"; return; }
   if(sel === "__admin__"){
-    if(pw === ADMIN_PASSWORD){
+    if(pw === (ADMIN_PASSWORD_CURRENT || ADMIN_PASSWORD)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterAdmin();
     }else{
@@ -3019,6 +3042,19 @@ document.getElementById("countdownSettingsSave").onclick = ()=>{
 };
 document.getElementById("meetingPrintBtn").onclick = ()=> window.print();
 document.getElementById("navPasswordsBtn").onclick = ()=>{ showScreen("passwordsScreen"); renderPasswordsScreen(); };
+document.getElementById("saveAdminPasswordBtn").onclick = ()=>{
+  const pw1 = document.getElementById("adminNewPasswordInput").value;
+  const pw2 = document.getElementById("adminConfirmPasswordInput").value;
+  if(!pw1 || pw1.length<4){ alert("الرجاء إدخال كلمة مرور لا تقل عن 4 أحرف/أرقام."); return; }
+  if(pw1!==pw2){ alert("كلمتا المرور غير متطابقتين."); return; }
+  saveAdminPassword(pw1).then(ok=>{
+    if(ok){
+      alert("تم تحديث كلمة المرور بنجاح.");
+      document.getElementById("adminNewPasswordInput").value = "";
+      document.getElementById("adminConfirmPasswordInput").value = "";
+    }
+  });
+};
 document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
 document.getElementById("navBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
@@ -3484,7 +3520,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -3603,8 +3639,8 @@ function renderMeetingView(){
     html += `<div class="meeting-goal-block">`;
     html += `<div class="meeting-goal-title">${g.id}. ${g.name}</div>`;
     html += `<div class="table-scroll-wrap"><table class="meeting-table"><thead><tr>
-        <th style="min-width:110px;">البرنامج الاستراتيجي</th>
-        <th style="min-width:170px;">البرنامج التنفيذي</th>
+        <th style="width:80px;">البرنامج الاستراتيجي</th>
+        <th style="width:130px;">البرنامج التنفيذي</th>
         ${YEARS.map(y=>`<th>${y}</th>`).join("")}
       </tr></thead><tbody>`;
     progs.forEach((p,pi)=>{
@@ -3908,7 +3944,7 @@ function renderAdmin(){
 
   renderAdminCharts(filteredProjects);
 
-  // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد + تأكيد الإرسال (لمنع التكرار بين عدة مستخدمين)
+  // المشاريع المتأخرة عن جدولها الزمني + زر التذكير بالبريد (خطوة واحدة فقط تسجّل المرسل تلقائيًا)
   const lateList = document.getElementById("lateProjectsList");
   const lateEntries = filteredProjects
     .map(pr=> ({ project: pr, lateSteps: findLateSteps(pr) }))
@@ -3920,39 +3956,28 @@ function renderAdmin(){
       const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
       const hasEmail = authRec && authRec.email;
       const stepsText = lateSteps.map(s=> `[${s.seq}] ${s.phaseName} — ${s.stepName} (متأخر ${s.daysLate} يوم عن ${s.endDate})`).join(" | ");
-      let sentBadge = "";
-      if(project.reminderSentAt && project.reminderSentAt.toDate){
-        const dt = project.reminderSentAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"});
-        sentBadge = `<div class="lp-sent-badge">✓ أُرسل بواسطة ${escapeHtml(project.reminderSentBy||"غير معروف")} — ${dt}</div>`;
-      }
+      const log = Array.isArray(project.reminderLog) ? [...project.reminderLog].sort((a,b)=> new Date(b.sentAt)-new Date(a.sentAt)) : [];
+      const historyHtml = log.length>0
+        ? `<div class="lp-sent-history">${log.map(entry=>{
+            const dt = new Date(entry.sentAt).toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"});
+            return `<div class="lp-sent-badge">✓ أُرسل بواسطة ${escapeHtml(entry.sentBy)} — ${dt}</div>`;
+          }).join("")}</div>`
+        : "";
       return `
         <div class="late-proj-row">
           <div class="late-proj-info">
             <div class="lp-name">${escapeHtml(project.projectName)} <span style="font-weight:400;color:var(--text-muted);">— ${project.programCode} — ${escapeHtml(project.govManager)}</span></div>
             <div class="lp-meta">سنة ${project.year} | ${lateSteps.length} بند/خطوة متأخرة</div>
             <div class="lp-steps">⏰ ${escapeHtml(stepsText)}</div>
-            ${sentBadge}
+            ${historyHtml}
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-            <button class="remind-btn" data-id="${project.id}" ${hasEmail?'':'disabled title="لا يوجد بريد إلكتروني مسجَّل لهذا المدير - أضفه من صفحة كلمات المرور"'}>📧 إرسال تذكير</button>
-            <button class="confirm-sent-btn ${project.reminderSentAt?'is-sent':''}" data-id="${project.id}">${project.reminderSentAt ? "↺ إعادة التأكيد" : "✓ تأكيد الإرسال"}</button>
+            <button class="remind-btn" data-id="${project.id}" ${hasEmail?'':'disabled title="لا يوجد بريد إلكتروني مسجَّل لهذا المدير - أضفه من صفحة كلمات المرور"'}>📧 ${log.length>0?"إرسال تذكير آخر":"إرسال تذكير"}</button>
           </div>
         </div>`;
     }).join("");
     lateList.querySelectorAll(".remind-btn").forEach(btn=>{
       btn.onclick = ()=> sendDelayReminder(btn.dataset.id);
-    });
-    lateList.querySelectorAll(".confirm-sent-btn").forEach(btn=>{
-      btn.onclick = ()=>{
-        const name = prompt("اسمك (لتوضيح من قام بالإرسال، حتى لا يكرر أحد آخر الإرسال):", getActorName());
-        if(name===null) return; // ألغى المستخدم
-        if(!name.trim()){ alert("الرجاء كتابة الاسم."); return; }
-        updateProject(btn.dataset.id, {
-          reminderSentAt: firebase.firestore.FieldValue.serverTimestamp(),
-          reminderSentBy: name.trim()
-        });
-        logActivity(ADMIN_NAME, "confirm_reminder_sent", name.trim());
-      };
     });
   }
 
