@@ -722,12 +722,12 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .phase-weight{background:var(--gold);color:var(--navy);font-size:11.5px;padding:2px 10px;border-radius:12px;}
 .step-header-row{
-  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
+  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr .8fr 1fr 1fr .8fr 1fr .7fr 30px;
   gap:6px;padding:8px 12px 4px;font-size:10.5px;color:var(--text-muted);font-weight:700;
 }
 .phase-steps{padding:0 12px;}
 .step-row{
-  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr 1fr 1fr .8fr 1fr .7fr 30px;
+  display:grid;grid-template-columns:.5fr 1.6fr 1.3fr .8fr 1fr 1fr .8fr 1fr .7fr 30px;
   gap:6px;align-items:start;padding:6px 0;border-top:1px dashed var(--border);
 }
 .step-row:first-child{border-top:none;}
@@ -773,6 +773,31 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .planning-notes-box.readonly{background:#F1EEFB;}
 .planning-notes-box .planning-notes-text{font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;}
+
+.docs-link-box{
+  background:#EAF4FB;border:1px solid #B8DCF0;border-radius:10px;padding:14px 16px;margin-bottom:18px;
+}
+.docs-link-box label{display:block;font-size:12.5px;font-weight:700;color:#1E4E8C;margin-bottom:8px;}
+.docs-link-box input[type=text]{
+  flex:1;padding:9px 12px;border:1px solid #B8DCF0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;
+}
+.docs-link-box.readonly{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.open-docs-folder-btn{
+  display:inline-block;background:#1E4E8C;color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;
+}
+.open-docs-folder-btn:hover{background:#163c6c;}
+.docs-count-badge{
+  display:inline-block;background:#fff;color:#1E4E8C;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;border:1px solid #B8DCF0;margin-top:8px;
+}
+.copy-folder-name-btn{
+  background:#fff;color:#1E4E8C;border:1px solid #B8DCF0;font-size:11.5px;font-weight:700;padding:9px 12px;border-radius:8px;white-space:nowrap;flex-shrink:0;
+}
+.copy-folder-name-btn:hover{background:#EAF4FB;}
+.copy-filename-btn{
+  background:#EEF0F3;color:var(--navy);font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;flex-shrink:0;
+}
+.copy-filename-btn:hover{background:#e2e5ea;}
+
 .step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
 .step-seq{
@@ -4356,6 +4381,7 @@ function renderWeeklyReportScreen(){
             pr.closed ? "🟣" : "",
             pr.locked && !pr.closed ? "🔒" : ""
           ].filter(Boolean).join(" ");
+          const totalFiles = detail && detail.phases ? detail.phases.reduce((s,ph)=> s + (ph.steps||[]).filter(st=>st.uploaded).length, 0) : 0;
           return `
             <div class="report-project-item ${ready?'is-ready':''}">
               <div>
@@ -4365,6 +4391,8 @@ function renderWeeklyReportScreen(){
                   <span>سنة ${pr.year}</span>
                   <span class="rpi-pct-badge ${pctClass}">تنفيذ: ${detail ? execPct+"%" : "لا توجد خطة"}</span>
                   <span class="rpi-pct-badge ${basicPct===100?'high':(basicPct>0?'mid':'low')}">بيانات: ${basicPct}%</span>
+                  ${totalFiles>0 ? `<span class="rpi-pct-badge high">📎 ${totalFiles} خطوة مرفَقة</span>` : ""}
+                  ${detail && detail.documentsLink ? `<a href="${escapeAttr(detail.documentsLink)}" target="_blank" class="rpi-pct-badge high" style="text-decoration:none;">📁 المجلد</a>` : ""}
                 </div>
               </div>
               <button class="rpi-open-btn" data-id="${pr.id}">📋 فتح الخطة التفصيلية</button>
@@ -4511,6 +4539,13 @@ function stepRowHTML(step, locked, seqLabel){
         <textarea class="step-docs ${roClass}" placeholder="الوثائق الداعمة" rows="2" ${ro}>${escapeHtml(step.docs||"")}</textarea>
       </div>
       <div class="step-field">
+        <span class="step-field-label">تم رفع الوثائق</span>
+        <div style="display:flex;gap:5px;align-items:center;justify-content:center;">
+          <input type="checkbox" class="step-uploaded" ${step.uploaded?"checked":""} style="width:18px;height:18px;cursor:pointer;">
+          <button class="copy-filename-btn" type="button" title="نسخ اسم ملف مقترح لهذه الخطوة">📋</button>
+        </div>
+      </div>
+      <div class="step-field">
         <span class="step-field-label">تاريخ البدء</span>
         <input type="date" class="step-start ${roClass}" value="${step.startDate||""}" ${ro}>
       </div>
@@ -4542,7 +4577,7 @@ function phaseBlockHTML(def, pi, steps, locked){
     <div class="phase-block">
       <div class="phase-header"><span>${def.name}</span><span class="phase-weight">${Math.round(def.weight*100)}%</span></div>
       <div class="step-header-row">
-        <span>التسلسل</span><span>اسم الخطوة</span><span>الوثائق الداعمة</span><span>البدء</span><span>الانتهاء</span><span>أسابيع (تلقائي)</span><span>الحالة</span><span>المستهدف%</span><span></span>
+        <span>التسلسل</span><span>اسم الخطوة</span><span>الوثائق الداعمة</span><span>رُفعت؟</span><span>البدء</span><span>الانتهاء</span><span>أسابيع (تلقائي)</span><span>الحالة</span><span>المستهدف%</span><span></span>
       </div>
       <div class="phase-steps" data-phase="${pi}">${rows}</div>
       <button class="add-step-btn" data-phase="${pi}">+ إضافة خطوة${locked ? ' جديدة (استجدّت بعد الإغلاق)' : ''}</button>
@@ -4585,6 +4620,26 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
       <div class="planning-notes-box readonly">
         <label>📝 ملاحظات قسم التخطيط والدراسات</label>
         <div class="planning-notes-text">${escapeHtml(existing.planningNotes)}</div>
+      </div>`;
+  }
+
+  // رابط مجلد الوثائق الداعمة (Google Drive) — التعديل لقسم التخطيط فقط، الفتح متاح للجميع
+  const totalFilesCount = existing.phases ? existing.phases.reduce((s,ph)=> s + (ph.steps||[]).filter(st=>st.uploaded).length, 0) : 0;
+  if(isAdminContext){
+    bodyHtml += `
+      <div class="docs-link-box">
+        <label>📁 رابط مجلد الوثائق الداعمة (Google Drive) <span style="font-weight:400;color:var(--text-muted);">— يُعدَّل من قسم التخطيط فقط</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" data-key="documentsLink" value="${escapeAttr(existing.documentsLink||"")}" placeholder="الصق رابط مجلد Drive الخاص بهذا المشروع هنا">
+          <button class="copy-folder-name-btn" type="button" title="نسخ اسم مجلد مقترح لهذا المشروع">📋 نسخ اسم المجلد المقترح</button>
+        </div>
+        ${totalFilesCount>0 ? `<div class="docs-count-badge">📎 خطوات مرفَق لها وثائق: ${totalFilesCount}</div>` : ""}
+      </div>`;
+  }else if(existing.documentsLink){
+    bodyHtml += `
+      <div class="docs-link-box readonly">
+        <a href="${escapeAttr(existing.documentsLink)}" target="_blank" class="open-docs-folder-btn">📁 فتح مجلد الوثائق الداعمة</a>
+        ${totalFilesCount>0 ? `<span class="docs-count-badge">📎 خطوات مرفَق لها وثائق: ${totalFilesCount}</span>` : ""}
       </div>`;
   }
   bodyHtml += `<div class="detail-field-grid">${DETAIL_FIELD_DEFS.map(f=>detailFieldHTML(f, existing)).join("")}</div>`;
@@ -4794,11 +4849,12 @@ function gatherDetailFormData(){
       steps: rows.map(r=>({
         name: r.querySelector(".step-name").value.trim(),
         docs: r.querySelector(".step-docs").value.trim(),
+        uploaded: r.querySelector(".step-uploaded").checked,
         startDate: r.querySelector(".step-start").value,
         endDate: r.querySelector(".step-end").value,
         durationWeeks: Number(r.querySelector(".step-duration").value)||0,
         status: r.querySelector(".step-status").value
-      })).filter(s=> s.name || s.docs || s.durationWeeks)
+      })).filter(s=> s.name || s.docs || s.durationWeeks || s.uploaded)
     };
   });
   return data;
@@ -4829,6 +4885,38 @@ function triggerDetailAutoSave(){
   }, 2000);
 }
 
+// يبني اسم ملف/مجلد آمنًا (بدون رموز تُسبب مشاكل في نظام الملفات) من نص عربي حر
+function slugifyForFilename(text){
+  return String(text||"")
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 40);
+}
+// ينسخ نصًا للحافظة ويعرض تأكيدًا مؤقتًا على الزر نفسه
+function copyTextToClipboard(text, btnEl){
+  const showConfirm = ()=>{
+    if(!btnEl) return;
+    const original = btnEl.textContent;
+    btnEl.textContent = "✓ تم النسخ";
+    setTimeout(()=>{ btnEl.textContent = original; }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(showConfirm).catch(()=>{
+      const temp = document.createElement("textarea");
+      temp.value = text; temp.style.position="fixed"; temp.style.opacity="0";
+      document.body.appendChild(temp); temp.select();
+      document.execCommand("copy"); document.body.removeChild(temp);
+      showConfirm();
+    });
+  }else{
+    const temp = document.createElement("textarea");
+    temp.value = text; temp.style.position="fixed"; temp.style.opacity="0";
+    document.body.appendChild(temp); temp.select();
+    document.execCommand("copy"); document.body.removeChild(temp);
+    showConfirm();
+  }
+}
 function wireDetailModalStaticEvents(){
   const body = document.getElementById("detailModalBody");
   body.addEventListener("input", e=>{
@@ -4884,6 +4972,22 @@ function wireDetailModalStaticEvents(){
       }
       recalcPhase(pi);
       triggerDetailAutoSave();
+    }
+    if(e.target.classList.contains("copy-filename-btn")){
+      const row = e.target.closest(".step-row");
+      const seq = row.querySelector(".step-seq").textContent.trim() || "0.0";
+      const stepName = row.querySelector(".step-name").value.trim() || "خطوة";
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      const project = ALL_PROJECTS.find(p=>p.id===projectId);
+      const suggested = `${project?project.programCode:""}-${seq}-${slugifyForFilename(stepName)}`;
+      copyTextToClipboard(suggested, e.target);
+    }
+    if(e.target.classList.contains("copy-folder-name-btn")){
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      const project = ALL_PROJECTS.find(p=>p.id===projectId);
+      if(!project) return;
+      const suggested = `${project.programCode} - ${project.projectName} - ${project.year}`;
+      copyTextToClipboard(suggested, e.target);
     }
   });
   document.getElementById("detailModalCloseX").onclick = flushAndCloseDetailModal;
