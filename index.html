@@ -2040,6 +2040,13 @@ function toggleDecisionResolved(id, resolved, byWhom){
     resolvedBy: resolved ? byWhom : null
   });
 }
+// حذف نهائي لقرار/ملاحظة — يُزال فورًا من عرض قسم التخطيط والمدير التنفيذي ومدير المشروع معًا
+function deleteDecision(id){
+  if(!firebaseReady) return;
+  db.collection(DECISION_LOG_COLLECTION).doc(id).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_decision", id);
+  }).catch(err=>{ console.error(err); alert("تعذّر حذف القرار: " + err.message); });
+}
 
 /* ---------------- رسائل التنبيه المنبثقة للمدراء ---------------- */
 function listenToAnnouncements(cb){
@@ -2563,8 +2570,11 @@ function renderPMProjectsList(){
   container.innerHTML = projects.map(pr=>{
     const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
     const pct = detail ? computeOverallPct(detail) : 0;
+    const program = PROGRAMS.find(p=>p.code===pr.programCode);
+    const goal = program ? STRATEGIC_GOALS.find(g=>g.id===program.goalId) : null;
     return `
       <div class="report-program-block">
+        <div class="report-program-header"><span class="rp-title">${goal ? goal.id+". "+goal.name : ""}</span></div>
         <div class="report-project-item" style="border-top:none;">
           <div>
             <div class="rpi-name">${escapeHtml(pr.projectName)}</div>
@@ -2927,7 +2937,8 @@ function renderManagerComms(){
     });
   }
 
-  const myRequests = ALL_REQUESTS.filter(r=>r.managerName===currentManager)
+  const myProjectIds = ALL_PROJECTS.filter(p=>p.govManager===currentManager).map(p=>p.id);
+  const myRequests = ALL_REQUESTS.filter(r=> r.managerName===currentManager || (r.projectId && myProjectIds.includes(r.projectId)))
     .sort((a,b)=>{
       const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
       const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
@@ -2943,10 +2954,11 @@ function renderManagerComms(){
         r.programCode ? `البرنامج: ${r.programCode}` : "",
         r.projectName ? `المشروع: ${escapeHtml(r.projectName)}` : ""
       ].filter(Boolean).join(" | ") || "ملاحظة عامة";
+      const senderTag = r.managerName!==currentManager ? ` <span style="color:#5B3EAF;font-weight:700;">👤 أرسله: ${escapeHtml(r.managerName)}</span>` : "";
       return `
         <div class="request-row ${r.status==='done'?'done':''}">
           <div class="rq-top">
-            <div><div class="rq-target">${target}</div></div>
+            <div><div class="rq-target">${target}${senderTag}</div></div>
             <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
           </div>
           <div class="rq-text">${escapeHtml(r.text)}</div>
@@ -3128,6 +3140,7 @@ function renderManagerOverview(){
                 <span>سنة ${pr.year}</span>
                 <span class="rpi-pct-badge ${pctClass}">${detailRec ? pct+"%" : "لا توجد خطة"}</span>
               </div>
+              ${Array.isArray(pr.assignedProjectManagerIds) && pr.assignedProjectManagerIds.length>0 ? `<div class="rpi-meta" style="margin-top:2px;">${pmDelegationBadgeHTML(pr)}</div>` : ""}
             </div>
             <button class="ov-toggle-btn" data-id="${pr.id}">▼ عرض التفاصيل</button>
           </div>
@@ -4031,7 +4044,10 @@ function renderDecisionLogScreen(){
       <div class="decision-row ${d.resolved?'resolved':''}">
         <div class="dr-top">
           <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)} <span style="color:var(--text-muted);font-weight:400;">(${escapeHtml(d.govManager)})</span>${d.projectName ? ` <span style="color:#5B3EAF;font-weight:700;">📌 مشروع: ${escapeHtml(d.projectName)}</span>` : ""}</div>
-          <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+          <div style="display:flex;gap:6px;">
+            <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+            <button class="decision-delete-btn" data-id="${d.id}" title="حذف نهائيًا">🗑️</button>
+          </div>
         </div>
         <div class="dr-text">${escapeHtml(d.text)}</div>
         <div class="dr-meta">سُجّل بتاريخ ${dt}${d.resolved && d.resolvedBy ? ` | نُفّذ بواسطة: ${escapeHtml(d.resolvedBy)}` : ""}</div>
@@ -4039,6 +4055,12 @@ function renderDecisionLogScreen(){
   }).join("");
   list.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
     btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), getActorName());
+  });
+  list.querySelectorAll(".decision-delete-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("هل أنت متأكد من حذف هذا القرار/الملاحظة نهائيًا؟ سيُحذف من عرض المدير التنفيذي ومدير المشروع أيضًا، ولا يمكن التراجع عن هذا الإجراء.")) return;
+      deleteDecision(btn.dataset.id);
+    };
   });
 }
 document.getElementById("execPrintBtn").onclick = ()=> window.print();
@@ -4100,7 +4122,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -5154,7 +5176,7 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
   if(!project) return;
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId) || {};
   const structureLocked = !!existing.structureLocked;
-  const isAdminContext = currentManager === null;
+  const isAdminContext = currentManager === null && currentProjectManagerId === null;
 
   document.getElementById("detailModalTitle").textContent = "الخطة التفصيلية: " + project.projectName;
   document.getElementById("detailModalSubtitle").textContent = `${project.programCode} — ${project.programName} | سنة ${project.year}`;
@@ -6324,11 +6346,13 @@ listenToActivityLog(()=>{
 listenToDecisions(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderDecisionLogScreen();
   if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+  if(!document.getElementById("projectManagerScreen").classList.contains("hidden") && !document.getElementById("pmCommsView").classList.contains("hidden")) renderPMComms();
 });
 listenToRequests(()=>{
   updateRequestsBadge();
   if(!document.getElementById("requestsScreen").classList.contains("hidden")) renderRequestsScreen();
   if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+  if(!document.getElementById("projectManagerScreen").classList.contains("hidden") && !document.getElementById("pmCommsView").classList.contains("hidden")) renderPMComms();
 });
 listenToAnnouncements(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAnnouncementsList();
