@@ -1143,6 +1143,69 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== PROJECT MANAGER SCREEN (جديد) ===================== -->
+<div id="projectManagerScreen" class="hidden">
+  <div class="topbar">
+    <div class="left">
+      <img src="moh-logo.png" alt="">
+      <div>
+        <div class="title">رصد — خطة التنمية الخمسية الحادية عشرة 2026-2030</div>
+        <div class="subtitle">مدير مشروع: <span id="pmWho"></span></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="logout-btn" id="pmChangePwBtn" style="background:var(--navy-light);">🔑 كلمة المرور</button>
+      <button class="logout-btn" id="pmLogout">تسجيل الخروج</button>
+    </div>
+  </div>
+  <div class="dash-wrap" style="padding-bottom:0;">
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="pmTabInput">📥 مشاريعي</button>
+      <button class="mgr-tab" id="pmTabOverview">📊 لوحة المتابعة</button>
+      <button class="mgr-tab" id="pmTabComms">📨 التواصل مع قسم التخطيط</button>
+    </div>
+  </div>
+
+  <div class="dash-wrap" id="pmInputView">
+    <div class="section-title">مشاريعي المُسنَدة</div>
+    <div class="section-desc">المشاريع التي أسندك إليها قسم التخطيط والدراسات لإدخال ومتابعة بياناتها</div>
+    <div id="pmProjectsList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="pmOverviewView">
+    <div class="section-title">لوحة المتابعة</div>
+    <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل خططها التفصيلية</div>
+    <div id="pmHealthScoreContainer"></div>
+    <div id="pmPerformanceChartWrap" style="position:relative;height:260px;margin-bottom:24px;"><canvas id="pmPerformanceChart"></canvas></div>
+    <div class="pending-list">
+      <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
+      <div id="pmUpcomingList"></div>
+    </div>
+    <div class="pending-list">
+      <h3>🔴 مراحل متأخرة</h3>
+      <div id="pmLateList"></div>
+    </div>
+  </div>
+
+  <div class="dash-wrap hidden" id="pmCommsView">
+    <div class="section-title">📨 التواصل مع قسم التخطيط والدراسات</div>
+    <div class="section-desc">قرارات وملاحظات خاصة بمشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="pending-list">
+      <h3>📝 قرارات وملاحظات خاصة بمشاريعك</h3>
+      <div id="pmDecisionsList"></div>
+    </div>
+    <div class="pending-list">
+      <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
+      <div class="request-add-form">
+        <select id="pmRequestProject"><option value="">المشروع المعني (اختياري)</option></select>
+        <textarea id="pmRequestText" rows="2" placeholder="نص الطلب أو الملاحظة..."></textarea>
+        <button class="add-btn" id="pmSendRequestBtn">📮 إرسال الطلب</button>
+      </div>
+      <div id="pmRequestsList" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== ADMIN DASHBOARD ===================== -->
 <div id="adminScreen" class="hidden">
   <div id="adminCountdownBar"></div>
@@ -1345,10 +1408,11 @@ tr.rejected-row td{background:#FDF6F6;}
 <div id="decisionLogScreen" class="hidden">
   <div class="dash-wrap">
     <div class="section-title">تسجيل قرار أو ملاحظة جديدة</div>
-    <div class="section-desc">اختر البرنامج التنفيذي المعني، واكتب القرار أو الملاحظة (مثلاً: طلب المدير العام إضافة كذا) — ستظهر مباشرة لمدير البرنامج المعني لمتابعتها وتنفيذها.</div>
+    <div class="section-desc">اختر البرنامج التنفيذي المعني (ومشروعًا محددًا اختياريًا) واكتب القرار أو الملاحظة — تصل مباشرة لمن يعنيه الأمر لمتابعتها وتنفيذها. تحديد مشروع معيّن يُرسل نسخة تلقائية للمدير التنفيذي أيضًا.</div>
     <div class="pending-list">
       <div class="decision-add-form">
         <select id="decisionProgramSelect"></select>
+        <select id="decisionProjectSelect"><option value="">(اختياري) مشروع محدد ضمن البرنامج</option></select>
         <textarea id="decisionText" rows="2" placeholder="نص القرار أو الملاحظة..."></textarea>
         <button class="add-btn" id="addDecisionBtn">➕ إضافة للسجل</button>
       </div>
@@ -1420,6 +1484,33 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-desc">تعديل بيانات أي برنامج، أو إعادة تعيين مديره المسؤول مباشرة — عند تغيير المدير تنتقل كل مشاريع البرنامج له تلقائيًا</div>
     <button class="add-btn" id="addProgramBtn" style="margin-bottom:16px;">➕ إضافة برنامج تنفيذي جديد</button>
     <div id="programsAdminList"></div>
+
+    <div class="section-title" style="margin-top:40px;">👤 مدراء المشاريع</div>
+    <div class="section-desc">حسابات مستقلة لأصحاب مشاريع مُحدَّدة — لا يحتاج المدير التنفيذي مشاركة كلمة مروره الخاصة، وقد يُسنَد المشروع لأكثر من مدير مشروع، ومدير المشروع الواحد لعدد غير محدود من المشاريع</div>
+    <button class="add-btn" id="addProjectManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير مشروع جديد</button>
+    <div id="projectManagersAdminList"></div>
+  </div>
+</div>
+
+<!-- ===================== PROJECT MANAGER ADD/EDIT MODAL ===================== -->
+<div id="projectManagerEditModal" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;">
+  <div class="modal-box" style="width:520px;">
+    <h3 id="pmEditTitle">إضافة مدير مشروع جديد</h3>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الاسم</label>
+    <input type="text" id="pmeName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الرقم الوظيفي (اسم المستخدم لتسجيل الدخول)</label>
+    <input type="text" id="pmeEmployeeId" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">المسمى الوظيفي (اختياري)</label>
+    <input type="text" id="pmeJobTitle" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">كلمة المرور</label>
+    <input type="text" id="pmePassword" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;" value="plan2026">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:14px 0 4px;">المشاريع المُسنَدة</label>
+    <input type="text" id="pmeProjectSearch" placeholder="🔍 ابحث باسم المشروع أو البرنامج..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:8px;">
+    <div id="pmeProjectsChecklist" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-secondary" id="pmEditCancel">إلغاء</button>
+      <button class="btn-primary" id="pmEditSave">حفظ</button>
+    </div>
   </div>
 </div>
 
@@ -1606,6 +1697,8 @@ let pendingResetManager = null; // اسم المدير الذي يعيد الإ�
 let pendingEmailManager = null; // اسم المدير الذي يُحدَّث بريده الإلكتروني حاليًا
 let pendingCloseProjectId = null; // معرّف المشروع الجاري إغلاقه حاليًا
 let currentManager = null;
+let currentProjectManagerId = null;
+let currentProjectManagerName = null;
 let activeYearByProgram = {};
 let editingProjectId = null;
 let editingNoteId = null; // لتحرير الملاحظات داخل صفحة عرض الاجتماع
@@ -1919,13 +2012,16 @@ function listenToDecisions(cb){
     cb(arr);
   }, err=>{ console.error(err); cb([]); });
 }
-function addDecision(programCode, text){
+function addDecision(programCode, text, projectId){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
   const program = PROGRAMS.find(p=>p.code===programCode);
+  const project = projectId ? ALL_PROJECTS.find(p=>p.id===projectId) : null;
   return db.collection(DECISION_LOG_COLLECTION).add({
     programCode: programCode,
     programName: program ? program.name : "",
     govManager: program ? program.govManager : "",
+    projectId: projectId || "",
+    projectName: project ? project.projectName : "",
     text: text,
     resolved: false,
     createdBy: ADMIN_NAME,
@@ -2114,17 +2210,18 @@ function listenToManagersList(cb){
 }
 
 // إضافة مدير تنفيذي جديد (ينشئ أيضًا حساب دخول افتراضي له)
-function addManager(name, employeeId){
+function addManager(name, employeeId, jobTitle){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
   name = name.trim();
   employeeId = (employeeId||"").trim();
+  jobTitle = (jobTitle||"").trim();
   if(!name || !employeeId) return Promise.resolve(false);
   if(GOV_MANAGERS.includes(name)){ alert("هذا الاسم موجود مسبقًا في قائمة المدراء."); return Promise.resolve(false); }
   if(ALL_MANAGERS_FULL.some(m=>m.employeeId===employeeId) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===employeeId) || employeeId==="admin"){
     alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return Promise.resolve(false);
   }
   return Promise.all([
-    db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId, addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
+    db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId, jobTitle, addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
     db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({ password:"plan2026", updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
   ]).then(()=>{
     logActivity(ADMIN_NAME, "add_manager", `${name} (${employeeId})`);
@@ -2189,16 +2286,16 @@ function listenToProjectManagers(cb){
   }
 }
 // إضافة مدير مشروع جديد + إسناد المشاريع المُحدَّدة له مباشرة
-async function addProjectManager(name, employeeId, password, projectIds){
+async function addProjectManager(name, employeeId, password, projectIds, jobTitle){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return false; }
-  name = name.trim(); employeeId = employeeId.trim();
+  name = name.trim(); employeeId = employeeId.trim(); jobTitle = (jobTitle||"").trim();
   if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return false; }
   if(employeeId==="admin" || ALL_MANAGERS_FULL.some(m=>m.employeeId===employeeId) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===employeeId)){
     alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return false;
   }
   try{
     await db.collection(PROJECT_MANAGERS_COLLECTION).doc(employeeId).set({
-      name, password, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      name, password, jobTitle, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     for(const pid of (projectIds||[])){
       await addProjectManagerToProject(pid, employeeId);
@@ -2350,7 +2447,7 @@ function toggleCountdownCustomFields(){
 /* ---------------- Screens ---------------- */
 const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen"];
 function showScreen(id){
-  ["loginScreen","managerScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
+  ["loginScreen","managerScreen","projectManagerScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
   document.getElementById("adminPersistentNav").classList.toggle("hidden", !ADMIN_CLUSTER_SCREENS.includes(id));
@@ -2422,6 +2519,191 @@ document.getElementById("mgrLogout").onclick = ()=>{
   if(currentManager) logActivity(currentManager, "logout", "");
   currentManager=null; resetLoginForm(); showScreen("loginScreen");
 };
+
+/* ==================== حساب مدير المشروع (جديد) ==================== */
+function getPMProjects(){
+  return ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(currentProjectManagerId));
+}
+function enterProjectManager(employeeId, name){
+  currentProjectManagerId = employeeId;
+  currentProjectManagerName = name;
+  document.getElementById("pmWho").textContent = name;
+  showScreen("projectManagerScreen");
+  switchPMTab("input");
+  logActivity(name, "login", "");
+}
+document.getElementById("pmLogout").onclick = ()=>{
+  if(currentProjectManagerName) logActivity(currentProjectManagerName, "logout", "");
+  currentProjectManagerId = null; currentProjectManagerName = null;
+  resetLoginForm(); showScreen("loginScreen");
+};
+
+function switchPMTab(tab){
+  document.getElementById("pmTabInput").classList.toggle("active", tab==="input");
+  document.getElementById("pmTabOverview").classList.toggle("active", tab==="overview");
+  document.getElementById("pmTabComms").classList.toggle("active", tab==="comms");
+  document.getElementById("pmInputView").classList.toggle("hidden", tab!=="input");
+  document.getElementById("pmOverviewView").classList.toggle("hidden", tab!=="overview");
+  document.getElementById("pmCommsView").classList.toggle("hidden", tab!=="comms");
+  if(tab==="input") renderPMProjectsList();
+  if(tab==="overview") renderPMOverview();
+  if(tab==="comms"){ buildPMRequestForm(); renderPMComms(); }
+}
+document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
+document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
+document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
+
+function renderPMProjectsList(){
+  const projects = getPMProjects();
+  const container = document.getElementById("pmProjectsList");
+  if(projects.length===0){
+    container.innerHTML = `<div class="empty-note">لا توجد مشاريع مُسنَدة إليك بعد. تواصل مع مديرك التنفيذي أو قسم التخطيط.</div>`;
+    return;
+  }
+  container.innerHTML = projects.map(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const pct = detail ? computeOverallPct(detail) : 0;
+    return `
+      <div class="report-program-block">
+        <div class="report-project-item" style="border-top:none;">
+          <div>
+            <div class="rpi-name">${escapeHtml(pr.projectName)}</div>
+            <div class="rpi-meta">
+              <span>${pr.programCode} — ${escapeHtml(pr.programName)}</span>
+              <span>سنة ${pr.year}</span>
+              <span class="rpi-pct-badge ${pct>=80?'high':(pct>=30?'mid':'low')}">${detail?pct+'%':'لا توجد خطة بعد'}</span>
+            </div>
+          </div>
+          <button class="rpi-open-btn" data-id="${pr.id}">📋 فتح الخطة التفصيلية</button>
+        </div>
+      </div>`;
+  }).join("");
+  container.querySelectorAll(".rpi-open-btn").forEach(btn=>{
+    btn.onclick = ()=> openProjectDetailForm(btn.dataset.id);
+  });
+}
+
+let pmPerformanceChartInstance = null;
+function renderPMOverview(){
+  const projects = getPMProjects();
+  const health = computeHealthScore(projects, projects.length, false);
+  document.getElementById("pmHealthScoreContainer").innerHTML = healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة");
+
+  const wrap = document.getElementById("pmPerformanceChartWrap");
+  if(pmPerformanceChartInstance) pmPerformanceChartInstance.destroy();
+  if(typeof Chart !== "undefined" && projects.length>0){
+    const sorted = [...projects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
+    const labels = sorted.map(p=>`${p.projectName} (${p.year})`);
+    const dataVals = sorted.map(p=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return d?computeOverallPct(d):0; });
+    const colors = dataVals.map(v=> v>=80?"#1E7A3D":(v>=30?"#C9962E":"#C8102E"));
+    wrap.style.height = Math.max(220, sorted.length*28)+"px";
+    pmPerformanceChartInstance = new Chart(document.getElementById("pmPerformanceChart"), {
+      type:"bar",
+      data:{ labels, datasets:[{label:"نسبة الإنجاز%", data:dataVals, backgroundColor:colors}] },
+      options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{legend:{display:false}, title:{display:true,text:"📈 أداء مشاريعك", font:{size:14}}}, scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+"%"}}} }
+    });
+  }else{
+    wrap.style.height="70px";
+    wrap.innerHTML = `<div class="empty-note">${projects.length===0?"لا توجد مشاريع بعد.":"تعذر تحميل مكتبة الرسوم البيانية."}</div>`;
+  }
+
+  const upcomingEntries = [], lateEntries = [];
+  projects.forEach(pr=>{
+    findUpcomingSteps(pr,7).forEach(s=> upcomingEntries.push({project:pr, step:s}));
+    findLateSteps(pr).forEach(s=> lateEntries.push({project:pr, step:s}));
+  });
+  document.getElementById("pmUpcomingList").innerHTML = upcomingEntries.length===0
+    ? `<div class="empty-note">لا توجد مراحل ستنتهي خلال أسبوع.</div>`
+    : upcomingEntries.map(({project,step})=>`
+      <div class="phase-alert-row upcoming" data-project-id="${project.id}" data-phase-idx="${step.phaseIdx}" data-step-idx="${step.stepIdx}">
+        <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+        <span class="phase-alert-badge upcoming">باقي ${step.daysLeft} يوم</span>
+      </div>`).join("");
+  document.getElementById("pmLateList").innerHTML = lateEntries.length===0
+    ? `<div class="empty-note">لا توجد مراحل متأخرة. ✅</div>`
+    : lateEntries.map(({project,step})=>`
+      <div class="phase-alert-row late" data-project-id="${project.id}" data-phase-idx="${step.phaseIdx}" data-step-idx="${step.stepIdx}">
+        <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
+        <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
+      </div>`).join("");
+  document.querySelectorAll("#pmOverviewView .phase-alert-row").forEach(row=>{
+    row.onclick = ()=>{
+      const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
+      const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
+      openProjectDetailForm(row.dataset.projectId, pIdx, sIdx);
+    };
+  });
+}
+
+function buildPMRequestForm(){
+  const projects = getPMProjects();
+  document.getElementById("pmRequestProject").innerHTML = "<option value=''>المشروع المعني (اختياري)</option>" +
+    projects.map(p=>`<option value="${p.id}">${escapeHtml(p.projectName)}</option>`).join("");
+}
+document.getElementById("pmSendRequestBtn").onclick = ()=>{
+  const projectId = document.getElementById("pmRequestProject").value;
+  const project = projectId ? ALL_PROJECTS.find(p=>p.id===projectId) : null;
+  const text = document.getElementById("pmRequestText").value.trim();
+  if(!text){ alert("الرجاء كتابة نص الطلب."); return; }
+  addRequest(currentProjectManagerName, project?project.programCode:"", projectId, text).then(ok=>{
+    if(ok){
+      document.getElementById("pmRequestText").value = "";
+      document.getElementById("pmRequestProject").value = "";
+    }
+  });
+};
+
+function renderPMComms(){
+  const projects = getPMProjects();
+  const projectIds = projects.map(p=>p.id);
+  const myDecisions = ALL_DECISIONS.filter(d=> d.projectId && projectIds.includes(d.projectId))
+    .sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  const decisionsBox = document.getElementById("pmDecisionsList");
+  decisionsBox.innerHTML = myDecisions.length===0
+    ? `<div class="empty-note">لا توجد قرارات أو ملاحظات مسجّلة لمشاريعك حتى الآن.</div>`
+    : myDecisions.map(d=>{
+        const dt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+        return `
+          <div class="decision-row ${d.resolved?'resolved':''}">
+            <div class="dr-top">
+              <div class="dr-program">${escapeHtml(d.projectName||d.programCode||"")}</div>
+              <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+            </div>
+            <div class="dr-text">${escapeHtml(d.text)}</div>
+            <div class="dr-meta">سُجّل بتاريخ ${dt}</div>
+          </div>`;
+      }).join("");
+  decisionsBox.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
+    btn.onclick = ()=> toggleDecisionResolved(btn.dataset.id, !btn.classList.contains("is-resolved"), currentProjectManagerName);
+  });
+
+  const myRequests = ALL_REQUESTS.filter(r=>r.managerName===currentProjectManagerName)
+    .sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  const myReqBox = document.getElementById("pmRequestsList");
+  myReqBox.innerHTML = myRequests.length===0
+    ? `<div class="empty-note">لم ترسل أي طلبات بعد.</div>`
+    : myRequests.map(r=>{
+        const dt = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"}) : "—";
+        const target = r.projectName ? `المشروع: ${escapeHtml(r.projectName)}` : "ملاحظة عامة";
+        return `
+          <div class="request-row ${r.status==='done'?'done':''}">
+            <div class="rq-top">
+              <div><div class="rq-target">${target}</div></div>
+              <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
+            </div>
+            <div class="rq-text">${escapeHtml(r.text)}</div>
+            <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
+          </div>`;
+      }).join("");
+}
 
 function checkAndShowLateStepsPopup(){
   if(!currentManager) return;
@@ -2507,6 +2789,15 @@ document.getElementById("mgrChangePwBtn").onclick = ()=>{
   document.getElementById("changePwNew").value = "";
   document.getElementById("changePwConfirm").value = "";
   document.getElementById("changePwError").textContent = "";
+  document.getElementById("changePwModal").dataset.role = "manager";
+  document.getElementById("changePwModal").classList.remove("hidden");
+};
+document.getElementById("pmChangePwBtn").onclick = ()=>{
+  document.getElementById("changePwCurrent").value = "";
+  document.getElementById("changePwNew").value = "";
+  document.getElementById("changePwConfirm").value = "";
+  document.getElementById("changePwError").textContent = "";
+  document.getElementById("changePwModal").dataset.role = "pm";
   document.getElementById("changePwModal").classList.remove("hidden");
 };
 document.getElementById("changePwCancel").onclick = ()=> document.getElementById("changePwModal").classList.add("hidden");
@@ -2515,9 +2806,22 @@ document.getElementById("changePwSubmit").onclick = ()=>{
   const nw = document.getElementById("changePwNew").value;
   const conf = document.getElementById("changePwConfirm").value;
   const errEl = document.getElementById("changePwError");
-  if(cur !== getManagerPassword(currentManager)){ errEl.textContent = "كلمة المرور الحالية غير صحيحة"; return; }
+  const role = document.getElementById("changePwModal").dataset.role;
   if(!nw || nw.length<4){ errEl.textContent = "كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل"; return; }
   if(nw !== conf){ errEl.textContent = "كلمة المرور الجديدة وتأكيدها غير متطابقين"; return; }
+  if(role==="pm"){
+    const rec = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===currentProjectManagerId);
+    if(cur !== (rec&&rec.password)){ errEl.textContent = "كلمة المرور الحالية غير صحيحة"; return; }
+    resetProjectManagerPassword(currentProjectManagerId, nw).then(ok=>{
+      if(ok){
+        document.getElementById("changePwModal").classList.add("hidden");
+        alert("تم تغيير كلمة المرور بنجاح.");
+        logActivity(currentProjectManagerName, "change_password", "");
+      }
+    });
+    return;
+  }
+  if(cur !== getManagerPassword(currentManager)){ errEl.textContent = "كلمة المرور الحالية غير صحيحة"; return; }
   setManagerPassword(currentManager, nw).then(ok=>{
     if(ok){
       document.getElementById("changePwModal").classList.add("hidden");
@@ -2611,7 +2915,7 @@ function renderManagerComms(){
       return `
         <div class="decision-row ${d.resolved?'resolved':''}">
           <div class="dr-top">
-            <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)}</div>
+            <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)}${d.projectName ? ` <span style="color:#5B3EAF;font-weight:700;">📌 مشروع: ${escapeHtml(d.projectName)}</span>` : ""}</div>
             <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
           </div>
           <div class="dr-text">${escapeHtml(d.text)}</div>
@@ -2940,6 +3244,15 @@ function renderReadOnlyGantt(detail){
   return html;
 }
 
+// شارة توضح للمدير التنفيذي أن مشروعًا معيّنًا مُفوَّض لمدير/مدراء مشاريع مستقلين
+function pmDelegationBadgeHTML(project){
+  if(!Array.isArray(project.assignedProjectManagerIds) || project.assignedProjectManagerIds.length===0) return "";
+  const names = project.assignedProjectManagerIds.map(id=>{
+    const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===id);
+    return pm ? pm.name : id;
+  });
+  return `<div class="pnote" style="color:#5B3EAF;">👤 يُدار من: ${names.map(n=>escapeHtml(n)).join("، ")}</div>`;
+}
 function renderManagerPrograms(){
   const container = document.getElementById("programsContainer");
   container.innerHTML = "";
@@ -3013,6 +3326,7 @@ function renderYearPanel(panelEl, program){
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
               ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
+              ${pmDelegationBadgeHTML(it)}
               ${it.closedNote ? `<div class="pnote">📌 ملاحظة الإغلاق: ${escapeHtml(it.closedNote)}</div>` : ""}
             </div>
             <span class="locked-badge" style="background:#5B3EAF;color:#fff;" title="اكتمل هذا المشروع وأُغلق نهائيًا من قسم التخطيط">✅ مغلق ومكتمل</span>
@@ -3025,6 +3339,7 @@ function renderYearPanel(panelEl, program){
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
               ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
+              ${pmDelegationBadgeHTML(it)}
               ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
             </div>
             <span class="locked-badge admin-lock-badge" title="مقفل من قسم التخطيط والدراسات - لا يمكن التعديل أو الحذف إلا بإذن">🔒 مقفل من الإدارة</span>
@@ -3037,6 +3352,7 @@ function renderYearPanel(panelEl, program){
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
               ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
+              ${pmDelegationBadgeHTML(it)}
               ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
             </div>
             ${detailBtn}
@@ -3206,6 +3522,7 @@ document.getElementById("navProgramsAdminBtn").onclick = ()=>{ showScreen("progr
 function renderProgramsAdminScreen(){
   renderManagersAdminList();
   renderProgramsAdminList();
+  renderProjectManagersAdminList();
 }
 
 function renderManagersAdminList(){
@@ -3221,11 +3538,12 @@ function renderManagersAdminList(){
     return `
       <div class="program-admin-row">
         <div>
-          <div class="pa-name">👤 ${escapeHtml(name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}</span></div>
+          <div class="pa-name">👤 ${escapeHtml(name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}${fullRec && fullRec.jobTitle ? " — " + escapeHtml(fullRec.jobTitle) : ""}</span></div>
           <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج</div>
         </div>
         <div class="pa-actions">
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="editid">🔢 الرقم الوظيفي</button>
+          <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="editjob">💼 المسمى الوظيفي</button>
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="rename">✎ إعادة تسمية</button>
           <button class="pa-delete-btn" data-name="${escapeAttr(name)}" data-action="delete">🗑️ حذف</button>
         </div>
@@ -3243,6 +3561,17 @@ function renderManagersAdminList(){
       }
       await db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId: trimmedId }, { merge:true });
       logActivity(ADMIN_NAME, "edit_manager", `${name} — تحديث الرقم الوظيفي إلى ${trimmedId}`);
+      renderProgramsAdminScreen();
+    };
+  });
+  list.querySelectorAll("[data-action='editjob']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const name = btn.dataset.name;
+      const fullRec = ALL_MANAGERS_FULL.find(m=>m.name===name);
+      const newTitle = prompt(`المسمى الوظيفي لـ "${name}":`, (fullRec&&fullRec.jobTitle)||"");
+      if(newTitle===null) return;
+      await db.collection(MANAGERS_COLLECTION).doc(name).set({ jobTitle: newTitle.trim() }, { merge:true });
+      logActivity(ADMIN_NAME, "edit_manager", `${name} — تحديث المسمى الوظيفي`);
       renderProgramsAdminScreen();
     };
   });
@@ -3325,12 +3654,117 @@ function renderProgramsAdminList(){
   });
 }
 
+/* ==================== إدارة حسابات مدراء المشاريع ==================== */
+function renderProjectManagersAdminList(){
+  const list = document.getElementById("projectManagersAdminList");
+  if(!list) return;
+  if(ALL_PROJECT_MANAGERS.length===0){
+    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مشاريع مُسجَّلون بعد.</div>`;
+    return;
+  }
+  list.innerHTML = ALL_PROJECT_MANAGERS.map(pm=>{
+    const assignedProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId));
+    return `
+      <div class="program-admin-row">
+        <div>
+          <div class="pa-name">👤 ${escapeHtml(pm.name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${escapeHtml(pm.employeeId)}${pm.jobTitle?" — "+escapeHtml(pm.jobTitle):""}</span></div>
+          <div class="pa-meta">مُسنَد إليه ${assignedProjects.length} مشروع${assignedProjects.length? ": "+assignedProjects.map(p=>escapeHtml(p.projectName)).join("، ") : ""}</div>
+        </div>
+        <div class="pa-actions">
+          <button class="pa-edit-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="editpm">✎ تعديل</button>
+          <button class="pa-delete-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="deletepm">🗑️ حذف</button>
+        </div>
+      </div>`;
+  }).join("");
+  list.querySelectorAll("[data-action='editpm']").forEach(btn=>{
+    btn.onclick = ()=> openProjectManagerEditModal(btn.dataset.id);
+  });
+  list.querySelectorAll("[data-action='deletepm']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===btn.dataset.id);
+      if(!confirm(`هل أنت متأكد من حذف حساب "${pm.name}"؟ سيفقد الوصول لكل مشاريعه المُسنَدة.`)) return;
+      const ok = await deleteProjectManager(btn.dataset.id);
+      if(ok) renderProgramsAdminScreen();
+    };
+  });
+}
+
+function renderPMProjectsChecklist(selectedIds, searchTerm){
+  searchTerm = (searchTerm||"").trim().toLowerCase();
+  const container = document.getElementById("pmeProjectsChecklist");
+  let projects = [...ALL_PROJECTS].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
+  if(searchTerm){
+    projects = projects.filter(p=> p.projectName.toLowerCase().includes(searchTerm) || p.programCode.toLowerCase().includes(searchTerm) || (p.programName||"").toLowerCase().includes(searchTerm));
+  }
+  if(projects.length===0){
+    container.innerHTML = `<div class="empty-note">لا توجد مشاريع مطابقة.</div>`;
+    return;
+  }
+  container.innerHTML = projects.map(p=>`
+    <label class="bulk-project-item" style="margin-bottom:4px;">
+      <input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id)?"checked":""}>
+      <div>
+        <div class="bpi-name">${escapeHtml(p.projectName)}</div>
+        <div class="bpi-meta">${p.programCode} — ${escapeHtml(p.programName)} | سنة ${p.year}</div>
+      </div>
+    </label>`).join("");
+}
+
+function openProjectManagerEditModal(employeeId){
+  const pm = employeeId ? ALL_PROJECT_MANAGERS.find(m=>m.employeeId===employeeId) : null;
+  document.getElementById("pmEditTitle").textContent = pm ? "تعديل مدير مشروع" : "إضافة مدير مشروع جديد";
+  document.getElementById("pmeName").value = pm ? pm.name : "";
+  document.getElementById("pmeEmployeeId").value = pm ? pm.employeeId : "";
+  document.getElementById("pmeEmployeeId").disabled = !!pm;
+  document.getElementById("pmeJobTitle").value = pm ? (pm.jobTitle||"") : "";
+  document.getElementById("pmePassword").value = pm ? pm.password : "plan2026";
+  document.getElementById("pmeProjectSearch").value = "";
+  const currentlyAssigned = pm ? ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId)).map(p=>p.id) : [];
+  renderPMProjectsChecklist(currentlyAssigned, "");
+  document.getElementById("pmeProjectSearch").oninput = ()=>{
+    const checked = [...document.querySelectorAll("#pmeProjectsChecklist input:checked")].map(cb=>cb.value);
+    renderPMProjectsChecklist(checked, document.getElementById("pmeProjectSearch").value);
+  };
+  document.getElementById("projectManagerEditModal").dataset.mode = pm ? "edit" : "add";
+  document.getElementById("projectManagerEditModal").dataset.employeeId = employeeId || "";
+  document.getElementById("projectManagerEditModal").classList.remove("hidden");
+}
+document.getElementById("addProjectManagerBtn").onclick = ()=> openProjectManagerEditModal(null);
+document.getElementById("pmEditCancel").onclick = ()=> document.getElementById("projectManagerEditModal").classList.add("hidden");
+document.getElementById("pmEditSave").onclick = async ()=>{
+  const modal = document.getElementById("projectManagerEditModal");
+  const mode = modal.dataset.mode;
+  const name = document.getElementById("pmeName").value.trim();
+  const employeeId = document.getElementById("pmeEmployeeId").value.trim();
+  const jobTitle = document.getElementById("pmeJobTitle").value.trim();
+  const password = document.getElementById("pmePassword").value.trim();
+  const selectedProjectIds = [...document.querySelectorAll("#pmeProjectsChecklist input:checked")].map(cb=>cb.value);
+  if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return; }
+  const btn = document.getElementById("pmEditSave");
+  btn.disabled = true;
+  let ok;
+  if(mode==="add"){
+    ok = await addProjectManager(name, employeeId, password, selectedProjectIds, jobTitle);
+  }else{
+    const oldEmployeeId = modal.dataset.employeeId;
+    await db.collection(PROJECT_MANAGERS_COLLECTION).doc(oldEmployeeId).update({ name, jobTitle, password });
+    await updateProjectManagerAssignments(oldEmployeeId, selectedProjectIds);
+    ok = true;
+  }
+  btn.disabled = false;
+  if(ok){
+    modal.classList.add("hidden");
+    renderProgramsAdminScreen();
+  }
+};
+
 document.getElementById("addManagerBtn").onclick = async ()=>{
   const name = prompt("اسم المدير الجديد:");
   if(name===null || !name.trim()) return;
   const employeeId = prompt("الرقم الوظيفي لهذا المدير (يُستخدم كاسم مستخدم لتسجيل الدخول):");
   if(employeeId===null || !employeeId.trim()){ alert("الرقم الوظيفي مطلوب لإنشاء الحساب."); return; }
-  const ok = await addManager(name.trim(), employeeId.trim());
+  const jobTitle = prompt("المسمى الوظيفي (اختياري):", "");
+  const ok = await addManager(name.trim(), employeeId.trim(), jobTitle||"");
   if(ok) renderProgramsAdminScreen();
 };
 
@@ -3478,18 +3912,28 @@ function renderRequestsScreen(){
 function buildDecisionLogScreen(){
   const opts = "<option value=''>-- اختر البرنامج التنفيذي --</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name} (${p.govManager})</option>`).join("");
   document.getElementById("decisionProgramSelect").innerHTML = opts;
+  document.getElementById("decisionProgramSelect").onchange = ()=>{
+    const programCode = document.getElementById("decisionProgramSelect").value;
+    const projSel = document.getElementById("decisionProjectSelect");
+    const projects = programCode ? ALL_PROJECTS.filter(p=>p.programCode===programCode) : [];
+    projSel.innerHTML = "<option value=''>(اختياري) مشروع محدد ضمن البرنامج</option>" +
+      projects.map(p=>`<option value="${p.id}">${escapeHtml(p.projectName)} (${p.year})</option>`).join("");
+  };
   document.getElementById("decisionFilterProgram").innerHTML = "<option value=''>كل البرامج</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   document.getElementById("decisionFilterProgram").onchange = renderDecisionLogScreen;
   document.getElementById("decisionFilterStatus").onchange = renderDecisionLogScreen;
   document.getElementById("addDecisionBtn").onclick = ()=>{
     const programCode = document.getElementById("decisionProgramSelect").value;
+    const projectId = document.getElementById("decisionProjectSelect").value;
     const text = document.getElementById("decisionText").value.trim();
     if(!programCode){ alert("الرجاء اختيار البرنامج التنفيذي المعني."); return; }
     if(!text){ alert("الرجاء كتابة نص القرار أو الملاحظة."); return; }
-    addDecision(programCode, text).then(ok=>{
+    addDecision(programCode, text, projectId).then(ok=>{
       if(ok){
-        logActivity(ADMIN_NAME, "add_decision", `${programCode} — ${text.slice(0,60)}`);
+        const project = projectId ? ALL_PROJECTS.find(p=>p.id===projectId) : null;
+        logActivity(ADMIN_NAME, "add_decision", `${programCode}${project?" — "+project.projectName:""} — ${text.slice(0,60)}`);
         document.getElementById("decisionProgramSelect").value = "";
+        document.getElementById("decisionProjectSelect").innerHTML = "<option value=''>(اختياري) مشروع محدد ضمن البرنامج</option>";
         document.getElementById("decisionText").value = "";
       }
     });
@@ -3586,7 +4030,7 @@ function renderDecisionLogScreen(){
     return `
       <div class="decision-row ${d.resolved?'resolved':''}">
         <div class="dr-top">
-          <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)} <span style="color:var(--text-muted);font-weight:400;">(${escapeHtml(d.govManager)})</span></div>
+          <div class="dr-program">${d.programCode} — ${escapeHtml(d.programName)} <span style="color:var(--text-muted);font-weight:400;">(${escapeHtml(d.govManager)})</span>${d.projectName ? ` <span style="color:#5B3EAF;font-weight:700;">📌 مشروع: ${escapeHtml(d.projectName)}</span>` : ""}</div>
           <button class="decision-resolve-btn ${d.resolved?'is-resolved':''}" data-id="${d.id}">${d.resolved ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
         </div>
         <div class="dr-text">${escapeHtml(d.text)}</div>
@@ -5850,6 +6294,8 @@ listenToPrograms(()=>{
     });
     listenToProjectManagers(()=>{
       if(!document.getElementById("programsAdminScreen").classList.contains("hidden")) renderProgramsAdminScreen();
+      if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
+      if(!document.getElementById("projectManagerScreen").classList.contains("hidden")) switchPMTab(document.getElementById("pmTabOverview").classList.contains("active")?"overview":(document.getElementById("pmTabComms").classList.contains("active")?"comms":"input"));
     });
   }
 });
