@@ -913,12 +913,10 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="login-title">خطة التنمية الخمسية الحادية عشرة 2026 - 2030</div>
     <div class="gold-rule"></div>
     <div class="login-form">
-      <label>المستخدم</label>
-      <select id="loginUserSelect">
-        <option value="">-- اختر المستخدم --</option>
-      </select>
+      <label>اسم المستخدم</label>
+      <input type="text" id="loginUsernameInput" placeholder="الرقم الوظيفي (أو admin لحساب التخطيط)" autocomplete="username">
       <label>كلمة المرور</label>
-      <input type="password" id="loginPasswordInput" placeholder="كلمة المرور" maxlength="30">
+      <input type="password" id="loginPasswordInput" placeholder="كلمة المرور" maxlength="30" autocomplete="current-password">
       <div class="modal-error" id="loginError"></div>
       <button id="loginSubmitBtn" class="login-submit-btn">تسجيل الدخول</button>
     </div>
@@ -1525,6 +1523,7 @@ const REQUESTS_COLLECTION = "nsh_plan11_requests"; // طلبات مدراء ال
 const SETTINGS_COLLECTION = "nsh_plan11_settings"; // إعدادات عامة للمنصة (مثل شريط العد التنازلي)
 const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنفيذية (ديناميكية - قابلة للإضافة والتعديل)
 const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
+const PROJECT_MANAGERS_COLLECTION = "nsh_plan11_project_managers"; // حسابات مدراء المشاريع (جديد) — قد يُسنَد للمشروع الواحد أكثر من مدير، وللمدير الواحد أكثر من مشروع
 const ANNOUNCEMENTS_COLLECTION = "nsh_plan11_announcements"; // رسائل تنبيه منبثقة تظهر للمدراء عند الدخول
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // كلمة المرور الافتراضية الأولى فقط — تُستبدل تلقائيًا بأي كلمة مرور مُحدَّثة من Firestore بعد أول تغيير
@@ -1596,6 +1595,7 @@ let ALL_PROJECTS = []; // كاش محلي من Firestore
 let ALL_PROJECT_DETAILS = []; // كاش محلي للخطط التفصيلية
 let ALL_PROGRAM_CARDS = []; // كاش محلي لبطاقات تعريف البرامج التنفيذية
 let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدراء
+let ALL_PROJECT_MANAGERS = []; // كاش محلي لحسابات مدراء المشاريع (الاسم، الرقم الوظيفي، كلمة المرور)
 let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
 let ALL_DECISIONS = []; // كاش محلي لسجل قرارات وملاحظات الاجتماعات
 let ALL_REQUESTS = []; // كاش محلي لطلبات مدراء البرامج
@@ -2089,12 +2089,14 @@ function listenToPrograms(cb){
     cb();
   }
 }
+let ALL_MANAGERS_FULL = []; // كاش كامل بسجلات المدراء التنفيذيين (بما فيها الرقم الوظيفي) لاستخدامه في شاشة الدخول
 function listenToManagersList(cb){
   if(!firebaseReady){ cb(); return; }
   try{
     db.collection(MANAGERS_COLLECTION).onSnapshot(snap=>{
       const arr = [];
-      snap.forEach(doc=> arr.push(doc.id));
+      const full = [];
+      snap.forEach(doc=>{ arr.push(doc.id); full.push({ name: doc.id, ...doc.data() }); });
       if(arr.length===0 && PROGRAMS.length>0){
         // تعبئة أولية من أسماء المدراء الفريدة في بذرة البرامج
         const uniqueNames = [...new Set(DEFAULT_PROGRAMS_SEED.map(p=>p.govManager))];
@@ -2102,6 +2104,7 @@ function listenToManagersList(cb){
         return;
       }
       GOV_MANAGERS = arr.sort((a,b)=> a.localeCompare(b,"ar"));
+      ALL_MANAGERS_FULL = full;
       cb();
     }, err=>{ console.error(err); cb(); });
   }catch(err){
@@ -2111,16 +2114,20 @@ function listenToManagersList(cb){
 }
 
 // إضافة مدير تنفيذي جديد (ينشئ أيضًا حساب دخول افتراضي له)
-function addManager(name){
+function addManager(name, employeeId){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
   name = name.trim();
-  if(!name) return Promise.resolve(false);
+  employeeId = (employeeId||"").trim();
+  if(!name || !employeeId) return Promise.resolve(false);
   if(GOV_MANAGERS.includes(name)){ alert("هذا الاسم موجود مسبقًا في قائمة المدراء."); return Promise.resolve(false); }
+  if(ALL_MANAGERS_FULL.some(m=>m.employeeId===employeeId) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===employeeId) || employeeId==="admin"){
+    alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return Promise.resolve(false);
+  }
   return Promise.all([
-    db.collection(MANAGERS_COLLECTION).doc(name).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
+    db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId, addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
     db.collection(MANAGER_AUTH_COLLECTION).doc(name).set({ password:"plan2026", updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
   ]).then(()=>{
-    logActivity(ADMIN_NAME, "add_manager", name);
+    logActivity(ADMIN_NAME, "add_manager", `${name} (${employeeId})`);
     return true;
   }).catch(err=>{ console.error(err); alert("تعذّر إضافة المدير: " + err.message); return false; });
 }
@@ -2150,7 +2157,8 @@ async function renameManager(oldName, newName){
     const authData = authDoc.exists ? authDoc.data() : { password:"plan2026" };
     await db.collection(MANAGER_AUTH_COLLECTION).doc(newName).set(authData);
     await db.collection(MANAGER_AUTH_COLLECTION).doc(oldName).delete();
-    await db.collection(MANAGERS_COLLECTION).doc(newName).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    const existingRec = ALL_MANAGERS_FULL.find(m=>m.name===oldName) || {};
+    await db.collection(MANAGERS_COLLECTION).doc(newName).set({ employeeId: existingRec.employeeId||"", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
     await db.collection(MANAGERS_COLLECTION).doc(oldName).delete();
     const affectedPrograms = PROGRAMS.filter(p=>p.govManager===oldName);
     for(const prog of affectedPrograms){
@@ -2163,6 +2171,79 @@ async function renameManager(oldName, newName){
     alert("حدث خطأ أثناء إعادة التسمية: " + err.message);
     return false;
   }
+}
+
+/* ==================== حسابات مدراء المشاريع (جديد) ==================== */
+function listenToProjectManagers(cb){
+  if(!firebaseReady){ cb(); return; }
+  try{
+    db.collection(PROJECT_MANAGERS_COLLECTION).onSnapshot(snap=>{
+      const arr = [];
+      snap.forEach(doc=> arr.push({ employeeId: doc.id, ...doc.data() }));
+      ALL_PROJECT_MANAGERS = arr.sort((a,b)=> a.name.localeCompare(b.name,"ar"));
+      cb();
+    }, err=>{ console.error(err); cb(); });
+  }catch(err){
+    console.error("listenToProjectManagers error:", err);
+    cb();
+  }
+}
+// إضافة مدير مشروع جديد + إسناد المشاريع المُحدَّدة له مباشرة
+async function addProjectManager(name, employeeId, password, projectIds){
+  if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return false; }
+  name = name.trim(); employeeId = employeeId.trim();
+  if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return false; }
+  if(employeeId==="admin" || ALL_MANAGERS_FULL.some(m=>m.employeeId===employeeId) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===employeeId)){
+    alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return false;
+  }
+  try{
+    await db.collection(PROJECT_MANAGERS_COLLECTION).doc(employeeId).set({
+      name, password, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    for(const pid of (projectIds||[])){
+      await addProjectManagerToProject(pid, employeeId);
+    }
+    logActivity(ADMIN_NAME, "add_project_manager", `${name} (${employeeId}) — ${(projectIds||[]).length} مشروع`);
+    return true;
+  }catch(err){
+    console.error("addProjectManager error:", err);
+    alert("تعذّر إضافة مدير المشروع: " + err.message);
+    return false;
+  }
+}
+function deleteProjectManager(employeeId){
+  if(!firebaseReady) return Promise.resolve(false);
+  const assignedProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId));
+  return Promise.all(assignedProjects.map(p=> removeProjectManagerFromProject(p.id, employeeId)))
+    .then(()=> db.collection(PROJECT_MANAGERS_COLLECTION).doc(employeeId).delete())
+    .then(()=>{ logActivity(ADMIN_NAME, "delete_project_manager", employeeId); return true; })
+    .catch(err=>{ console.error(err); alert("تعذّر حذف الحساب: " + err.message); return false; });
+}
+function resetProjectManagerPassword(employeeId, newPassword){
+  if(!firebaseReady) return Promise.resolve(false);
+  return db.collection(PROJECT_MANAGERS_COLLECTION).doc(employeeId).update({ password: newPassword })
+    .then(()=>{ logActivity(ADMIN_NAME, "reset_project_manager_password", employeeId); return true; })
+    .catch(err=>{ console.error(err); alert("تعذّر تحديث كلمة المرور: " + err.message); return false; });
+}
+function addProjectManagerToProject(projectId, employeeId){
+  const project = ALL_PROJECTS.find(p=>p.id===projectId);
+  const current = (project && Array.isArray(project.assignedProjectManagerIds)) ? project.assignedProjectManagerIds : [];
+  if(current.includes(employeeId)) return Promise.resolve();
+  return db.collection(COLLECTION_NAME).doc(projectId).update({ assignedProjectManagerIds: [...current, employeeId] });
+}
+function removeProjectManagerFromProject(projectId, employeeId){
+  const project = ALL_PROJECTS.find(p=>p.id===projectId);
+  const current = (project && Array.isArray(project.assignedProjectManagerIds)) ? project.assignedProjectManagerIds : [];
+  return db.collection(COLLECTION_NAME).doc(projectId).update({ assignedProjectManagerIds: current.filter(id=>id!==employeeId) });
+}
+// يحدّث إسناد المشاريع لمدير مشروع دفعة واحدة (يقارن القائمة الجديدة بالحالية ويضيف/يحذف الفرق فقط)
+async function updateProjectManagerAssignments(employeeId, newProjectIds){
+  const currentlyAssigned = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId)).map(p=>p.id);
+  const toAdd = newProjectIds.filter(id=> !currentlyAssigned.includes(id));
+  const toRemove = currentlyAssigned.filter(id=> !newProjectIds.includes(id));
+  for(const pid of toAdd) await addProjectManagerToProject(pid, employeeId);
+  for(const pid of toRemove) await removeProjectManagerFromProject(pid, employeeId);
+  logActivity(ADMIN_NAME, "edit_project_manager_assignments", `${employeeId} — ${newProjectIds.length} مشروع`);
 }
 
 // حفظ بيانات برنامج تنفيذي (تعديل أو إضافة) — يُشغّل التحديث التلقائي لكل مشاريعه إذا تغيّر المدير المسؤول
@@ -2278,39 +2359,50 @@ function showScreen(id){
 }
 
 /* ---------------- Login screen build ---------------- */
-function buildLogin(){
-  const sel = document.getElementById("loginUserSelect");
-  sel.innerHTML = `<option value="">-- اختر المستخدم --</option>
-    <option value="__admin__">🔒 ${ADMIN_NAME}</option>
-    ${GOV_MANAGERS.map(name=>`<option value="${escapeAttr(name)}">${name}</option>`).join("")}`;
-}
-
 document.getElementById("loginSubmitBtn").onclick = submitLoginForm;
 document.getElementById("loginPasswordInput").addEventListener("keydown", e=>{ if(e.key==="Enter") submitLoginForm(); });
+document.getElementById("loginUsernameInput").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("loginPasswordInput").focus(); });
 function submitLoginForm(){
-  const sel = document.getElementById("loginUserSelect").value;
+  const username = document.getElementById("loginUsernameInput").value.trim();
   const pw = document.getElementById("loginPasswordInput").value;
   const errEl = document.getElementById("loginError");
-  if(!sel){ errEl.textContent = "الرجاء اختيار المستخدم"; return; }
-  if(sel === "__admin__"){
+  if(!username){ errEl.textContent = "الرجاء إدخال اسم المستخدم"; return; }
+  if(!pw){ errEl.textContent = "الرجاء إدخال كلمة المرور"; return; }
+
+  if(username === "admin"){
     if(pw === (ADMIN_PASSWORD_CURRENT || ADMIN_PASSWORD)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterAdmin();
-    }else{
-      errEl.textContent = "الرقم السري غير صحيح";
+      return;
     }
-  }else{
-    if(pw === getManagerPassword(sel)){
-      errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
-      enterManager(sel);
-    }else{
-      errEl.textContent = "كلمة المرور غير صحيحة";
-    }
+    errEl.textContent = "بيانات الدخول غير صحيحة"; return;
   }
+
+  const execRec = ALL_MANAGERS_FULL.find(m=>m.employeeId===username);
+  if(execRec){
+    if(pw === getManagerPassword(execRec.name)){
+      errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
+      enterManager(execRec.name);
+      return;
+    }
+    errEl.textContent = "بيانات الدخول غير صحيحة"; return;
+  }
+
+  const pmRec = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===username);
+  if(pmRec){
+    if(pw === pmRec.password){
+      errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
+      enterProjectManager(pmRec.employeeId, pmRec.name);
+      return;
+    }
+    errEl.textContent = "بيانات الدخول غير صحيحة"; return;
+  }
+
+  errEl.textContent = "بيانات الدخول غير صحيحة";
 }
 
 function resetLoginForm(){
-  document.getElementById("loginUserSelect").value = "";
+  document.getElementById("loginUsernameInput").value = "";
   document.getElementById("loginPasswordInput").value = "";
   document.getElementById("loginError").textContent = "";
 }
@@ -3124,19 +3216,36 @@ function renderManagersAdminList(){
   }
   list.innerHTML = GOV_MANAGERS.map(name=>{
     const authRec = ALL_MANAGER_AUTH.find(a=>a.id===name);
+    const fullRec = ALL_MANAGERS_FULL.find(m=>m.name===name);
     const programCount = PROGRAMS.filter(p=>p.govManager===name).length;
     return `
       <div class="program-admin-row">
         <div>
-          <div class="pa-name">👤 ${escapeHtml(name)}</div>
+          <div class="pa-name">👤 ${escapeHtml(name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}</span></div>
           <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج</div>
         </div>
         <div class="pa-actions">
+          <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="editid">🔢 الرقم الوظيفي</button>
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="rename">✎ إعادة تسمية</button>
           <button class="pa-delete-btn" data-name="${escapeAttr(name)}" data-action="delete">🗑️ حذف</button>
         </div>
       </div>`;
   }).join("");
+  list.querySelectorAll("[data-action='editid']").forEach(btn=>{
+    btn.onclick = async ()=>{
+      const name = btn.dataset.name;
+      const fullRec = ALL_MANAGERS_FULL.find(m=>m.name===name);
+      const newId = prompt(`الرقم الوظيفي لـ "${name}" (يُستخدم كاسم مستخدم لتسجيل الدخول):`, (fullRec&&fullRec.employeeId)||"");
+      if(newId===null || !newId.trim()) return;
+      const trimmedId = newId.trim();
+      if(ALL_MANAGERS_FULL.some(m=>m.employeeId===trimmedId && m.name!==name) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===trimmedId) || trimmedId==="admin"){
+        alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return;
+      }
+      await db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId: trimmedId }, { merge:true });
+      logActivity(ADMIN_NAME, "edit_manager", `${name} — تحديث الرقم الوظيفي إلى ${trimmedId}`);
+      renderProgramsAdminScreen();
+    };
+  });
   list.querySelectorAll("[data-action='rename']").forEach(btn=>{
     btn.onclick = async ()=>{
       const oldName = btn.dataset.name;
@@ -3219,7 +3328,9 @@ function renderProgramsAdminList(){
 document.getElementById("addManagerBtn").onclick = async ()=>{
   const name = prompt("اسم المدير الجديد:");
   if(name===null || !name.trim()) return;
-  const ok = await addManager(name.trim());
+  const employeeId = prompt("الرقم الوظيفي لهذا المدير (يُستخدم كاسم مستخدم لتسجيل الدخول):");
+  if(employeeId===null || !employeeId.trim()){ alert("الرقم الوظيفي مطلوب لإنشاء الحساب."); return; }
+  const ok = await addManager(name.trim(), employeeId.trim());
   if(ok) renderProgramsAdminScreen();
 };
 
@@ -5719,7 +5830,6 @@ async function exportProgramCardToExcel(){
 }
 
 /* ---------------- Init ---------------- */
-buildLogin();
 wireDetailModalStaticEvents();
 wireProgramCardEvents();
 let managersListenerStarted = false;
@@ -5734,9 +5844,11 @@ listenToPrograms(()=>{
   if(!managersListenerStarted){
     managersListenerStarted = true;
     listenToManagersList(()=>{
-      buildLogin();
       if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
       if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
+      if(!document.getElementById("programsAdminScreen").classList.contains("hidden")) renderProgramsAdminScreen();
+    });
+    listenToProjectManagers(()=>{
       if(!document.getElementById("programsAdminScreen").classList.contains("hidden")) renderProgramsAdminScreen();
     });
   }
