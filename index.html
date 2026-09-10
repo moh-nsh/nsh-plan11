@@ -1084,7 +1084,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
-      <button class="mgr-tab" id="mgrTabComms">📨 التواصل مع قسم التخطيط</button>
+      <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
     </div>
   </div>
   <div class="dash-wrap" id="mgrInputView">
@@ -1307,7 +1307,8 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-desc">آخر نشاط لكل مدير، وسجل كامل لعمليات الدخول والخروج وإضافة المشاريع</div>
     <div id="activitySummaryGrid" class="summary-grid" style="margin-bottom:22px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
-      <select id="activityManagerFilter"><option value="">كل المدراء</option></select>
+      <select id="activityProgramFilter"><option value="">كل البرامج التنفيذية</option></select>
+      <select id="activityPMFilter"><option value="">كل مدراء المشاريع</option></select>
       <select id="activityActionFilter">
         <option value="">كل الإجراءات</option>
         <option value="login">تسجيل دخول</option>
@@ -1322,6 +1323,13 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="send_reminder">إرسال تذكير تأخر</option>
         <option value="backup_export">تصدير نسخة احتياطية</option>
       </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">من
+        <input type="date" id="activityDateFrom" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">إلى
+        <input type="date" id="activityDateTo" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+      </label>
+      <button class="export-btn" id="activityFilterClearBtn">✕ إزالة الفلاتر</button>
     </div>
     <div class="table-scroll-wrap">
     <table class="results">
@@ -2071,6 +2079,13 @@ function deactivateAnnouncement(id){
   if(!firebaseReady) return;
   db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).update({ active:false });
 }
+// حذف نهائي لرسالة تنبيه منبثقة — تختفي فورًا لكل المدراء
+function deleteAnnouncement(id){
+  if(!firebaseReady) return;
+  db.collection(ANNOUNCEMENTS_COLLECTION).doc(id).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_announcement", id);
+  }).catch(err=>{ console.error(err); alert("تعذّر حذف الرسالة: " + err.message); });
+}
 function markAnnouncementSeen(id, managerName){
   if(!firebaseReady) return;
   const ann = ALL_ANNOUNCEMENTS.find(a=>a.id===id);
@@ -2131,6 +2146,13 @@ function resolveRequest(id, done){
     status: done ? "done" : "open",
     resolvedAt: done ? firebase.firestore.FieldValue.serverTimestamp() : null
   });
+}
+// حذف نهائي لطلب — يُزال فورًا من عرض قسم التخطيط والمدير التنفيذي ومدير المشروع معًا
+function deleteRequest(id){
+  if(!firebaseReady) return;
+  db.collection(REQUESTS_COLLECTION).doc(id).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_request", id);
+  }).catch(err=>{ console.error(err); alert("تعذّر حذف الطلب: " + err.message); });
 }
 
 /* ---------------- شريط العد التنازلي ---------------- */
@@ -2519,6 +2541,7 @@ function enterManager(name){
   switchMgrTab("input");
   renderManagerPrograms();
   renderCountdownBar("mgrCountdownBar", false);
+  updateMgrCommsBadge();
   logActivity(name, "login", "");
   setTimeout(checkAndShowLateStepsPopup, 500);
 }
@@ -2908,6 +2931,19 @@ function findUpcomingSteps(project, withinDays){
   return upcoming;
 }
 
+// شارة عداد على تبويب "التواصل مع قسم التخطيط" للمدير التنفيذي — تشمل طلباته وطلبات مدراء مشاريعه المفتوحة
+function updateMgrCommsBadge(){
+  const badge = document.getElementById("mgrCommsBadge");
+  if(!badge || !currentManager) return;
+  const myProjectIds = ALL_PROJECTS.filter(p=>p.govManager===currentManager).map(p=>p.id);
+  const openCount = ALL_REQUESTS.filter(r=> (r.managerName===currentManager || (r.projectId && myProjectIds.includes(r.projectId))) && r.status==="open").length;
+  if(openCount>0){
+    badge.textContent = openCount;
+    badge.classList.remove("hidden");
+  }else{
+    badge.classList.add("hidden");
+  }
+}
 function renderManagerComms(){
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
   const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
@@ -3911,7 +3947,10 @@ function renderRequestsScreen(){
             <div class="rq-manager">👤 ${escapeHtml(r.managerName)}</div>
             <div class="rq-target">${target}</div>
           </div>
-          <button class="request-resolve-btn ${r.status==='done'?'is-done':''}" data-id="${r.id}">${r.status==='done' ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+          <div style="display:flex;gap:6px;">
+            <button class="request-resolve-btn ${r.status==='done'?'is-done':''}" data-id="${r.id}">${r.status==='done' ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+            <button class="request-delete-btn" data-id="${r.id}" title="حذف نهائيًا">🗑️</button>
+          </div>
         </div>
         <div class="rq-text">${escapeHtml(r.text)}</div>
         <div class="rq-meta">سُجّل بتاريخ ${dt}</div>
@@ -3919,6 +3958,12 @@ function renderRequestsScreen(){
   }).join("");
   list.querySelectorAll(".request-resolve-btn").forEach(btn=>{
     btn.onclick = ()=> resolveRequest(btn.dataset.id, !btn.classList.contains("is-done"));
+  });
+  list.querySelectorAll(".request-delete-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("هل أنت متأكد من حذف هذا الطلب نهائيًا؟ سيُحذف من عرض المدير التنفيذي ومدير المشروع أيضًا، ولا يمكن التراجع عن هذا الإجراء.")) return;
+      deleteRequest(btn.dataset.id);
+    };
   });
 }
 
@@ -3998,7 +4043,10 @@ function renderAnnouncementsList(){
       <div class="decision-row ${(!a.active||isExpired)?'resolved':''}">
         <div class="dr-top">
           <div class="dr-program">${statusLabel} ${a.onceOnly?" | مرة واحدة لكل مدير":" | تظهر مرة كل دخول"}</div>
-          ${a.active && !isExpired ? `<button class="decision-resolve-btn" data-id="${a.id}">⏸️ إيقاف</button>` : ""}
+          <div style="display:flex;gap:6px;">
+            ${a.active && !isExpired ? `<button class="decision-resolve-btn" data-id="${a.id}">⏸️ إيقاف</button>` : ""}
+            <button class="announcement-delete-btn" data-id="${a.id}" title="حذف نهائيًا">🗑️</button>
+          </div>
         </div>
         <div class="dr-text">${escapeHtml(a.text)}</div>
         <div class="dr-meta">الفترة: ${escapeHtml(period)}</div>
@@ -4008,6 +4056,12 @@ function renderAnnouncementsList(){
   }).join("");
   list.querySelectorAll(".decision-resolve-btn").forEach(btn=>{
     btn.onclick = ()=>{ deactivateAnnouncement(btn.dataset.id); };
+  });
+  list.querySelectorAll(".announcement-delete-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("هل أنت متأكد من حذف رسالة التنبيه هذه نهائيًا؟ ستختفي فورًا من كل حسابات المدراء.")) return;
+      deleteAnnouncement(btn.dataset.id);
+    };
   });
 }
 
@@ -4111,39 +4165,67 @@ function renderPasswordsScreen(){
   });
 }
 
+// يُعيد أسماء كل من يُحتمل ظهوره في السجل ومرتبط ببرنامج معيّن (المدير التنفيذي + أي مدير مشروع لديه مشروع ضمن هذا البرنامج)
+function getActorsForProgram(programCode){
+  if(programCode==="__admin__") return new Set([ADMIN_NAME]);
+  const program = PROGRAMS.find(p=>p.code===programCode);
+  const names = new Set();
+  if(program) names.add(program.govManager);
+  ALL_PROJECT_MANAGERS.forEach(pm=>{
+    const assigned = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId));
+    if(assigned.some(p=>p.programCode===programCode)) names.add(pm.name);
+  });
+  return names;
+}
 function buildActivityFilters(){
-  const fm = document.getElementById("activityManagerFilter");
-  fm.innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}">${m}</option>`).join("");
-  fm.onchange = renderActivityScreen;
+  const pf = document.getElementById("activityProgramFilter");
+  pf.innerHTML = "<option value=''>كل البرامج التنفيذية</option><option value='__admin__'>🔒 حساب Admin (قسم التخطيط)</option>" +
+    PROGRAMS.map(p=>`<option value="${p.code}">${p.code} — ${escapeHtml(p.name)} (${escapeHtml(p.govManager)})</option>`).join("");
+  pf.onchange = renderActivityScreen;
+  const pmf = document.getElementById("activityPMFilter");
+  pmf.innerHTML = "<option value=''>كل مدراء المشاريع</option>" +
+    ALL_PROJECT_MANAGERS.map(pm=>`<option value="${escapeAttr(pm.name)}">${escapeHtml(pm.name)}</option>`).join("");
+  pmf.onchange = renderActivityScreen;
   document.getElementById("activityActionFilter").onchange = renderActivityScreen;
+  document.getElementById("activityDateFrom").onchange = renderActivityScreen;
+  document.getElementById("activityDateTo").onchange = renderActivityScreen;
+  document.getElementById("activityFilterClearBtn").onclick = ()=>{
+    document.getElementById("activityProgramFilter").value = "";
+    document.getElementById("activityPMFilter").value = "";
+    document.getElementById("activityActionFilter").value = "";
+    document.getElementById("activityDateFrom").value = "";
+    document.getElementById("activityDateTo").value = "";
+    renderActivityScreen();
+  };
 }
 
 const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
 function renderActivityScreen(){
-  // ملخص آخر نشاط وعدد مرات الدخول/الإضافات لكل مدير
-  const summary = document.getElementById("activitySummaryGrid");
-  const totalLogins = ALL_ACTIVITY_LOG.filter(a=>a.action==="login").length;
-  const totalAdds = ALL_ACTIVITY_LOG.filter(a=>a.action==="add_project").length;
-  const activeManagers = new Set(ALL_ACTIVITY_LOG.map(a=>a.managerName)).size;
-  summary.innerHTML = `
-    <div class="summary-card"><div class="num">${ALL_ACTIVITY_LOG.length}</div><div class="lbl">إجمالي الأحداث المسجّلة</div></div>
-    <div class="summary-card"><div class="num">${totalLogins}</div><div class="lbl">إجمالي مرات الدخول</div></div>
-    <div class="summary-card"><div class="num">${totalAdds}</div><div class="lbl">إجمالي المشاريع المُضافة</div></div>
-    <div class="summary-card"><div class="num">${activeManagers} / ${GOV_MANAGERS.length}</div><div class="lbl">مدراء لديهم نشاط مسجّل</div></div>
-  `;
-
-  const mgrFilter = document.getElementById("activityManagerFilter").value;
+  const programFilter = document.getElementById("activityProgramFilter").value;
+  const pmFilter = document.getElementById("activityPMFilter").value;
   const actionFilter = document.getElementById("activityActionFilter").value;
+  const dateFrom = document.getElementById("activityDateFrom").value;
+  const dateTo = document.getElementById("activityDateTo").value;
+  const programActors = programFilter ? getActorsForProgram(programFilter) : null;
+
   let rows = ALL_ACTIVITY_LOG.filter(a=>{
-    if(mgrFilter && a.managerName!==mgrFilter) return false;
+    if(programActors && !programActors.has(a.managerName)) return false;
+    if(pmFilter && a.managerName!==pmFilter) return false;
     if(actionFilter && a.action!==actionFilter) return false;
+    if(dateFrom || dateTo){
+      const d = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : null;
+      if(!d) return false;
+      const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      if(dateFrom && dStr < dateFrom) return false;
+      if(dateTo && dStr > dateTo) return false;
+    }
     return true;
   });
   rows.sort((a,b)=>{
@@ -4151,6 +4233,20 @@ function renderActivityScreen(){
     const tb = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
     return tb - ta;
   });
+
+  // الملخص يعكس دائمًا النتائج المفلترة الحالية
+  const summary = document.getElementById("activitySummaryGrid");
+  const totalLogins = rows.filter(a=>a.action==="login").length;
+  const totalAdds = rows.filter(a=>a.action==="add_project").length;
+  const activeManagers = new Set(rows.map(a=>a.managerName)).size;
+  const hasFilters = programFilter || pmFilter || actionFilter || dateFrom || dateTo;
+  summary.innerHTML = `
+    <div class="summary-card"><div class="num">${rows.length}</div><div class="lbl">${hasFilters?"إجمالي الأحداث (ضمن الفلاتر المختارة)":"إجمالي الأحداث المسجّلة"}</div></div>
+    <div class="summary-card"><div class="num">${totalLogins}</div><div class="lbl">مرات الدخول</div></div>
+    <div class="summary-card"><div class="num">${totalAdds}</div><div class="lbl">المشاريع المُضافة</div></div>
+    <div class="summary-card"><div class="num">${activeManagers}</div><div class="lbl">أشخاص لديهم نشاط ضمن هذا الاختيار</div></div>
+  `;
+
   rows = rows.slice(0, 300);
 
   const tbody = document.getElementById("activityLogBody");
@@ -4598,7 +4694,7 @@ function renderAdmin(){
       <tr>
         <td><span class="goal-pill">${r.goalName}</span></td>
         <td>${r.programCode} — ${r.programName} <button class="card-btn ${ALL_PROGRAM_CARDS.some(c=>c.id===r.programCode)?'has-card':''}" data-code="${r.programCode}" title="بطاقة تعريف البرنامج">🪪${(()=>{ const c=ALL_PROGRAM_CARDS.find(c=>c.id===r.programCode); return c ? " "+computeProgramCardPct(c)+"%" : ""; })()}</button></td>
-        <td>${r.govManager}</td>
+        <td>${r.govManager}${Array.isArray(r.assignedProjectManagerIds) && r.assignedProjectManagerIds.length>0 ? `<div style="font-size:10.5px;color:#5B3EAF;font-weight:700;margin-top:2px;">👤 ${r.assignedProjectManagerIds.map(id=>{ const pm=ALL_PROJECT_MANAGERS.find(m=>m.employeeId===id); return pm?escapeHtml(pm.name):id; }).join("، ")}</div>` : ""}</td>
         <td>${escapeHtml(r.projectName)} ${detailBtn}</td>
         <td>${r.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(r.projectOwner)}</span>` : "—"}</td>
         <td>${r.notes ? `<span style="color:#8a6d1f;font-style:italic;">📝 ${escapeHtml(r.notes)}</span>` : "—"}</td>
@@ -4971,6 +5067,7 @@ function renderWeeklyReportScreen(){
                   ${totalFiles>0 ? `<span class="rpi-pct-badge high">📎 ${totalFiles} خطوة مرفَقة</span>` : ""}
                   ${detail && detail.documentsLink ? `<a href="${escapeAttr(detail.documentsLink)}" target="_blank" class="rpi-pct-badge high" style="text-decoration:none;">📁 المجلد</a>` : ""}
                 </div>
+                ${pmDelegationBadgeHTML(pr)}
               </div>
               <button class="rpi-open-btn" data-id="${pr.id}">📋 فتح الخطة التفصيلية</button>
             </div>`;
@@ -6351,7 +6448,10 @@ listenToDecisions(()=>{
 listenToRequests(()=>{
   updateRequestsBadge();
   if(!document.getElementById("requestsScreen").classList.contains("hidden")) renderRequestsScreen();
-  if(!document.getElementById("managerScreen").classList.contains("hidden") && !document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+  if(!document.getElementById("managerScreen").classList.contains("hidden")){
+    updateMgrCommsBadge();
+    if(!document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+  }
   if(!document.getElementById("projectManagerScreen").classList.contains("hidden") && !document.getElementById("pmCommsView").classList.contains("hidden")) renderPMComms();
 });
 listenToAnnouncements(()=>{
