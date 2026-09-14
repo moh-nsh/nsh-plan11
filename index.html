@@ -1969,7 +1969,7 @@ function sendDelayReminder(projectId, channel, recipientType, pmEmployeeId){
 
   if(channel==="whatsapp"){
     const msg = buildReminderMessage(project, lateSteps, recipientType, recipientName, true);
-    window.open(`https://wa.me/${cleanPhoneNumber(recipientContact)}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(recipientContact)}&text=${encodeURIComponent(msg)}`, "_blank");
   }else{
     const { subject, body } = buildReminderMessage(project, lateSteps, recipientType, recipientName, false);
     window.location.href = `mailto:${encodeURIComponent(recipientContact)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
