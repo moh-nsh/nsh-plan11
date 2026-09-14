@@ -1211,7 +1211,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="mgrHealthScoreContainer"></div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
-    <div id="mgrPerformanceChartWrap" style="position:relative;height:280px;margin-bottom:24px;"><canvas id="mgrPerformanceChart"></canvas></div>
+    <div id="mgrPerformanceChartWrap" style="margin-bottom:24px;"></div>
 
     <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
@@ -1281,7 +1281,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل خططها التفصيلية</div>
     <div id="pmHealthScoreContainer"></div>
-    <div id="pmPerformanceChartWrap" style="position:relative;height:260px;margin-bottom:24px;"><canvas id="pmPerformanceChart"></canvas></div>
+    <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
     <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
       <div id="pmUpcomingList"></div>
@@ -2855,21 +2855,24 @@ function renderPMOverview(){
   document.getElementById("pmHealthScoreContainer").innerHTML = healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة");
 
   const wrap = document.getElementById("pmPerformanceChartWrap");
-  if(pmPerformanceChartInstance) pmPerformanceChartInstance.destroy();
-  if(typeof Chart !== "undefined" && projects.length>0){
-    const sorted = [...projects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
-    const labels = sorted.map(p=>`${p.projectName} (${p.year})`);
-    const dataVals = sorted.map(p=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return d?computeOverallPct(d):0; });
-    const colors = dataVals.map(v=> v>=80?"#1E7A3D":(v>=30?"#C9962E":"#C8102E"));
-    wrap.style.height = Math.max(220, sorted.length*28)+"px";
-    pmPerformanceChartInstance = new Chart(document.getElementById("pmPerformanceChart"), {
-      type:"bar",
-      data:{ labels, datasets:[{label:"نسبة الإنجاز%", data:dataVals, backgroundColor:colors}] },
-      options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{legend:{display:false}, title:{display:true,text:"📈 أداء مشاريعك", font:{size:14}}}, scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+"%"}}} }
-    });
+  if(projects.length===0){
+    wrap.innerHTML = `<div class="empty-note">لا توجد مشاريع بعد.</div>`;
   }else{
-    wrap.style.height="70px";
-    wrap.innerHTML = `<div class="empty-note">${projects.length===0?"لا توجد مشاريع بعد.":"تعذر تحميل مكتبة الرسوم البيانية."}</div>`;
+    const sorted = [...projects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
+    wrap.innerHTML = `
+      <div class="comp-section-heading">📈 أداء مشاريعك</div>
+      <div class="comp-gauges-row">
+        ${sorted.map(p=>{
+          const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+          const pct = d ? computeOverallPct(d) : 0;
+          return `
+            <div class="comp-gauge-card">
+              ${gaugeSVG(pct, 110)}
+              <div class="cg-name">${escapeHtml(p.projectName)}</div>
+              <div class="cg-meta">سنة ${p.year}</div>
+            </div>`;
+        }).join("")}
+      </div>`;
   }
 
   const upcomingEntries = [], lateEntries = [];
@@ -3353,34 +3356,26 @@ function renderManagerOverview(){
     }
   }
 
-  // رسم بياني: نسبة الإنجاز لكل مشروع مجمّعة في رسم واحد (بدل النزول للأسفل لمتابعة كل مشروع على حدة)
-  const perfCanvas = document.getElementById("mgrPerformanceChart");
+  // شبكة مقاييس دائرية (Donut) لنسبة إنجاز كل مشروع — بنفس أسلوب تقرير المنافسة
   const perfWrap = document.getElementById("mgrPerformanceChartWrap");
-  if(mgrPerformanceChartInstance) mgrPerformanceChartInstance.destroy();
-  if(typeof Chart !== "undefined" && myProjects.length>0){
-    const sortedByPerf = [...myProjects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
-    const perfLabels = sortedByPerf.map(p=> `${p.projectName} (${p.year})`);
-    const perfData = sortedByPerf.map(p=>{
-      const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
-      return d ? computeOverallPct(d) : 0;
-    });
-    const perfColors = perfData.map(v=> v>=80 ? "#1E7A3D" : (v>=30 ? "#C9962E" : "#C8102E"));
-    perfWrap.style.height = Math.max(280, sortedByPerf.length*28) + "px";
-    mgrPerformanceChartInstance = new Chart(perfCanvas, {
-      type: "bar",
-      data: { labels: perfLabels, datasets: [{ label:"نسبة الإنجاز%", data: perfData, backgroundColor: perfColors }] },
-      options: {
-        indexAxis:"y",
-        maintainAspectRatio:false,
-        plugins:{ legend:{ display:false }, title:{ display:true, text:"📈 أداء كل مشروع — نسبة الإنجاز", font:{ size:14 } } },
-        scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+"%" } } }
-      }
-    });
-  }else if(typeof Chart === "undefined"){
-    perfWrap.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12.5px;">تعذر تحميل مكتبة الرسوم البيانية.</div>`;
-  }else{
-    perfWrap.style.height = "80px";
+  if(myProjects.length===0){
     perfWrap.innerHTML = `<div class="empty-note">لا توجد مشاريع بعد لعرض أدائها.</div>`;
+  }else{
+    const sortedByPerf = [...myProjects].sort((a,b)=> a.year-b.year || a.projectName.localeCompare(b.projectName,"ar"));
+    perfWrap.innerHTML = `
+      <div class="comp-section-heading">📈 أداء كل مشروع — نسبة الإنجاز</div>
+      <div class="comp-gauges-row">
+        ${sortedByPerf.map(p=>{
+          const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+          const pct = d ? computeOverallPct(d) : 0;
+          return `
+            <div class="comp-gauge-card">
+              ${gaugeSVG(pct, 110)}
+              <div class="cg-name">${escapeHtml(p.projectName)}</div>
+              <div class="cg-meta">سنة ${p.year}</div>
+            </div>`;
+        }).join("")}
+      </div>`;
   }
 
   // مراحل ستنتهي خلال أسبوع + مراحل متأخرة
@@ -3606,7 +3601,9 @@ function getProjectOwnerLabels(project){
       return pm ? pm.name : id;
     });
   }
-  return [project.projectOwner || "بدون مالك محدد"];
+  if(project.projectOwner) return [project.projectOwner];
+  // لا يوجد مدير مشروع مُسنَد ولا مالك نصّي — نعرض المدير التنفيذي للبرنامج كبديل بدل ترك الخانة بلا اسم
+  return [project.govManager || "بدون مالك محدد"];
 }
 function renderManagerPrograms(){
   const container = document.getElementById("programsContainer");
@@ -5607,8 +5604,6 @@ function renderCompetitionReport(){
       const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
       if(!detail || countPhasesStarted(detail)===0){
         notStartedProjects.push(pr);
-      }else{
-        (activeProjectsByProgram[pr.programCode] = activeProjectsByProgram[pr.programCode]||[]).push(pr);
       }
     });
 
@@ -5624,36 +5619,11 @@ function renderCompetitionReport(){
         </div>`;
     }).join("");
 
-    const phaseStatusCell = (detail, idx)=>{
-      const pct = detail ? computePhasePct(detail, idx) : null;
-      let statusClass, statusLabel;
-      if(pct===null || pct===0){ statusClass="cm-status-notstarted"; statusLabel="لم يبدأ"; }
-      else if(pct===100){ statusClass="cm-status-done"; statusLabel="مكتمل"; }
-      else{ statusClass="cm-status-progress"; statusLabel="قيد التنفيذ"; }
-      return `<td><span class="cm-pill ${statusClass}">${statusLabel}</span></td>`;
-    };
-
-    const matrixGroupsHtml = goalPrograms.map(prog=>{
-      const progActiveProjects = activeProjectsByProgram[prog.code] || [];
-      if(progActiveProjects.length===0) return "";
-      const rows = progActiveProjects.map(pr=>{
-        const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-        const overallPct = detail ? computeOverallPct(detail) : 0;
-        const cells = DETAIL_PHASES_DEF.map((ph,idx)=> phaseStatusCell(detail, idx)).join("");
-        return `<tr><td class="cm-proj-name">${escapeHtml(pr.projectName)}</td>${cells}<td class="cm-total-pct" style="color:${overallPct>=80?'#1E7A3D':overallPct>=30?'#8a6d1f':'#B3202E'};">${overallPct}%</td></tr>`;
-      }).join("");
-      return `
-        <tr class="cm-group-row"><td colspan="${DETAIL_PHASES_DEF.length+2}">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></td></tr>
-        ${rows}`;
-    }).join("");
-
     const notStartedHtml = notStartedProjects.length===0 ? "" : `
       <div class="comp-section-heading" style="margin-top:22px;color:#B3202E;">⛔ مشاريع لم يبدأ تنفيذها بعد (${notStartedProjects.length})</div>
       <div class="comp-notstarted-list">
         ${notStartedProjects.map(pr=>`<div class="ns-item">${pr.programCode} — ${escapeHtml(pr.projectName)}</div>`).join("")}
       </div>`;
-
-    const hasMatrixContent = goalPrograms.some(prog=> (activeProjectsByProgram[prog.code]||[]).length>0);
 
     return `
       <div class="comp-page comp-goal-page">
@@ -5662,12 +5632,6 @@ function renderCompetitionReport(){
           <div class="cph-sub">${goalPrograms.length} برنامج تنفيذي — ${goalProjects.length} مشروع</div>
         </div>
         <div class="comp-gauges-row">${gaugesHtml || `<div class="empty-note">لا توجد مشاريع مطابقة.</div>`}</div>
-        ${hasMatrixContent ? `
-        <div class="comp-section-heading" style="margin-top:26px;">مصفوفة تقدّم المراحل</div>
-        <table class="comp-matrix">
-          <thead><tr><th>المشروع</th>${DETAIL_PHASES_DEF.map(ph=>`<th>${ph.name}</th>`).join("")}<th>نسبة الإنجاز</th></tr></thead>
-          <tbody>${matrixGroupsHtml}</tbody>
-        </table>` : ""}
         ${notStartedHtml}
       </div>`;
   }).join("");
