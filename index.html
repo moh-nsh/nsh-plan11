@@ -463,10 +463,38 @@ input,select{font-family:inherit;}
 .lb-info{width:260px;flex-shrink:0;}
 .lb-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;color:var(--navy);}
 .lb-manager{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+/* منصة التتويج (المراكز الثلاثة الأولى) */
+.lb-podium{display:flex;align-items:flex-end;justify-content:center;gap:20px;margin-bottom:26px;flex-wrap:wrap;}
+.lb-podium-card{
+  background:#fff;border:2px solid var(--podium-color,#D4AF37);border-radius:16px;padding:18px 16px 16px;
+  text-align:center;width:170px;position:relative;box-shadow:0 4px 14px rgba(0,0,0,.06);
+}
+.lb-podium-first{width:200px;padding-top:24px;transform:translateY(-14px);box-shadow:0 6px 20px rgba(0,0,0,.1);}
+.lb-podium-rank{
+  position:absolute;top:-14px;right:50%;transform:translateX(50%);
+  width:30px;height:30px;line-height:30px;border-radius:50%;background:var(--podium-color,#D4AF37);color:#fff;
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;
+}
+.lb-podium-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:12.5px;color:var(--navy);margin-top:8px;min-height:34px;}
+.lb-podium-meta{font-size:10.5px;color:var(--text-muted);margin-top:4px;}
+/* قائمة بقية الترتيب — حلقات صغيرة بدل الأشرطة، لتناسق بصري مع باقي التقرير */
+.lb-rest-list{display:flex;flex-direction:column;gap:8px;}
+.lb-row-mini{display:flex;align-items:center;gap:14px;background:#F8F9FB;border-radius:10px;padding:8px 14px;}
+.lb-mini-rank{font-family:'Cairo',sans-serif;font-weight:800;font-size:13px;color:var(--text-muted);width:26px;text-align:center;flex-shrink:0;}
 .lb-bar-wrap{flex:1;height:14px;background:#EEF0F3;border-radius:7px;overflow:hidden;}
 .lb-bar{height:100%;border-radius:7px;}
 .lb-pct{width:50px;text-align:left;font-weight:800;color:var(--navy);flex-shrink:0;}
 .lb-notstarted-badge{display:inline-block;background:#EEF0F3;color:#6B7280;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;margin-right:6px;}
+/* بطاقات ترتيب المشروع مقارنة بالمحافظة (للمدير التنفيذي ومدير المشروع) */
+.proj-rank-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+.prc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.prc-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);}
+.prc-rank-badge{background:var(--navy);color:#fff;font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;padding:6px 14px;border-radius:10px;flex-shrink:0;}
+.prc-bar-wrap{height:10px;background:#EEF0F3;border-radius:5px;overflow:hidden;margin-bottom:8px;}
+.prc-bar{height:100%;background:linear-gradient(90deg,#C9962E,#1E7A3D);border-radius:5px;}
+.prc-sub{font-size:12.5px;color:var(--text-muted);margin-bottom:10px;}
+.prc-challenge{background:#FFF8E8;border:1px solid #F0DBA0;border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--navy);line-height:1.6;}
+.prc-challenge.prc-first{background:#E9F7EE;border-color:#9FD8AF;color:#1E7A3D;font-weight:700;text-align:center;}
 .comp-program-header{text-align:center;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--gold);}
 .cph-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);}
 .cph-sub{font-size:12.5px;color:var(--text-muted);margin-top:4px;}
@@ -1209,6 +1237,7 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="mgrHealthScoreContainer"></div>
+    <div id="mgrRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
     <div id="mgrPerformanceChartWrap" style="margin-bottom:24px;"></div>
@@ -1281,6 +1310,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل خططها التفصيلية</div>
     <div id="pmHealthScoreContainer"></div>
+    <div id="pmRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
     <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
@@ -2849,10 +2879,39 @@ function renderPMProjectsList(){
 }
 
 let pmPerformanceChartInstance = null;
+// يبني بطاقات "ترتيبك على مستوى المحافظة" + "التحدي القادم" لمشروع واحد — تُستخدم في لوحتي المدير التنفيذي ومدير المشروع
+function projectRankingCardHTML(project){
+  const ranking = ALL_PROJECTS.map(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    return { project: pr, pct: detail ? computeOverallPct(detail) : 0 };
+  }).sort((a,b)=> b.pct - a.pct);
+  const idx = ranking.findIndex(r=> r.project.id===project.id);
+  if(idx===-1) return "";
+  const rank = idx+1;
+  const total = ranking.length;
+  const myPct = ranking[idx].pct;
+  const betterThanPct = total>1 ? Math.round(((total-rank)/(total-1))*100) : 100;
+  const nextChallenge = idx>0 ? ranking[idx-1] : null;
+  const challengeHtml = !nextChallenge ? `<div class="prc-challenge prc-first">🏆 مشروعك في صدارة الترتيب على مستوى المحافظة!</div>` : `
+    <div class="prc-challenge">
+      🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — أنت قادر تتجاوزه!
+    </div>`;
+  return `
+    <div class="proj-rank-card">
+      <div class="prc-top">
+        <div class="prc-name">${escapeHtml(project.projectName)}</div>
+        <div class="prc-rank-badge">#${rank} <span style="font-weight:400;font-size:11px;">من ${total}</span></div>
+      </div>
+      <div class="prc-bar-wrap"><div class="prc-bar" style="width:${betterThanPct}%;"></div></div>
+      <div class="prc-sub">أفضل من <b>${betterThanPct}%</b> من مشاريع المحافظة</div>
+      ${challengeHtml}
+    </div>`;
+}
 function renderPMOverview(){
   const projects = getPMProjects();
   const health = computeHealthScore(projects, projects.length, false, true);
   document.getElementById("pmHealthScoreContainer").innerHTML = healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة");
+  document.getElementById("pmRankingCards").innerHTML = projects.map(p=> projectRankingCardHTML(p)).join("");
 
   const wrap = document.getElementById("pmPerformanceChartWrap");
   if(projects.length===0){
@@ -3317,6 +3376,7 @@ function renderManagerOverview(){
       </div>`;
   }
   document.getElementById("mgrHealthScoreContainer").innerHTML = healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط") + breakdownHtml;
+  document.getElementById("mgrRankingCards").innerHTML = myProjects.map(p=> projectRankingCardHTML(p)).join("");
 
   document.getElementById("mgrOverviewSummary").innerHTML = `
     <div class="summary-card"><div class="num">${myProjects.length}</div><div class="lbl">إجمالي المشاريع</div></div>
@@ -5557,19 +5617,42 @@ function renderCompetitionReport(){
   ].filter(Boolean).join(" | ") || "كل الخطة — كل السنوات";
 
   const rankColors = ["#D4AF37","#B0B7C0","#C08A4F"]; // ذهبي / فضي / برونزي
-  const leaderboardHtml = projectStats.length===0 ? `<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>` : projectStats.map(({project:pr, pct, notStarted}, i)=>{
+  const podiumOrder = [1,0,2]; // ترتيب العرض البصري: الثاني - الأول (وسط، أبرز) - الثالث
+  const top3 = projectStats.slice(0,3);
+  const rest = projectStats.slice(3);
+
+  const podiumHtml = top3.length===0 ? "" : `
+    <div class="lb-podium">
+      ${podiumOrder.filter(i=> i<top3.length).map(i=>{
+        const { project: pr, pct, notStarted } = top3[i];
+        const ownerLabels = getProjectOwnerLabels(pr);
+        const isFirst = i===0;
+        return `
+        <div class="lb-podium-card ${isFirst?'lb-podium-first':''}" style="--podium-color:${rankColors[i]};">
+          <div class="lb-podium-rank">${i+1}</div>
+          ${gaugeSVG(pct, isFirst?110:90)}
+          <div class="lb-podium-name">${escapeHtml(pr.projectName)}</div>
+          ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}
+          <div class="lb-podium-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  const restHtml = rest.length===0 ? "" : rest.map(({project:pr, pct, notStarted}, i)=>{
     const ownerLabels = getProjectOwnerLabels(pr);
+    const rank = i+4;
     return `
-    <div class="lb-row ${i<3?'lb-top':''}">
-      <div class="lb-rank" style="${i<3?`background:${rankColors[i]};color:#fff;`:''}">${i+1}</div>
+    <div class="lb-row-mini">
+      <div class="lb-mini-rank">${rank}</div>
+      ${gaugeSVG(pct, 46)}
       <div class="lb-info">
         <div class="lb-name">${escapeHtml(pr.projectName)} ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}</div>
         <div class="lb-manager">${pr.programCode} — ${escapeHtml(pr.programName)} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
       </div>
-      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%;background:${notStarted?'#9CA3AF':(pct>=80?'#1E7A3D':pct>=30?'#C9962E':'#C8102E')};"></div></div>
-      <div class="lb-pct">${pct}%</div>
     </div>`;
   }).join("");
+
+  const leaderboardHtml = projectStats.length===0 ? `<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>` : podiumHtml + `<div class="lb-rest-list">${restHtml}</div>`;
 
   const page1Html = `
     <div class="comp-page comp-infographic">
