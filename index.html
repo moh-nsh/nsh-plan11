@@ -417,44 +417,6 @@ input,select{font-family:inherit;}
 .summary-grid{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;
 }
-/* ==================== تقرير المنافسة التحفيزي ==================== */
-.comp-page{background:#fff;border-radius:16px;padding:30px 34px;margin-bottom:26px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
-.comp-hero{text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px dashed var(--border);}
-.comp-hero-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:24px;color:var(--navy);}
-.comp-hero-sub{font-size:13px;color:var(--text-muted);margin-top:6px;}
-.comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px;}
-.comp-stat-card{background:linear-gradient(160deg,var(--navy),#0d151f);border-radius:14px;padding:20px 10px;text-align:center;}
-.comp-stat-card .csc-num{font-family:'Cairo',sans-serif;font-weight:800;font-size:30px;color:var(--gold);}
-.comp-stat-card .csc-lbl{font-size:12px;color:#fff;margin-top:6px;}
-.comp-section-heading{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:14px;}
-.comp-leaderboard{display:flex;flex-direction:column;gap:10px;}
-.lb-row{display:flex;align-items:center;gap:14px;background:#F8F9FB;border-radius:12px;padding:12px 16px;}
-.lb-row.lb-top{background:#FFF8E8;border:1px solid #F0DBA0;}
-.lb-rank{font-size:16px;font-weight:800;width:36px;height:36px;line-height:36px;border-radius:50%;background:#EEF0F3;text-align:center;flex-shrink:0;color:var(--navy);}
-.lb-info{width:260px;flex-shrink:0;}
-.lb-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;color:var(--navy);}
-.lb-manager{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
-.lb-bar-wrap{flex:1;height:14px;background:#EEF0F3;border-radius:7px;overflow:hidden;}
-.lb-bar{height:100%;border-radius:7px;}
-.lb-pct{width:50px;text-align:left;font-weight:800;color:var(--navy);flex-shrink:0;}
-.comp-program-header{text-align:center;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--gold);}
-.cph-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);}
-.cph-sub{font-size:12.5px;color:var(--text-muted);margin-top:4px;}
-.comp-gauges-row{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;}
-.comp-gauge-card{width:160px;text-align:center;background:#FAFAFB;border-radius:14px;padding:14px 8px;}
-.cg-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;color:var(--navy);margin-top:6px;min-height:32px;}
-.cg-meta{font-size:10.5px;color:var(--text-muted);margin-top:2px;}
-.comp-matrix{width:100%;border-collapse:collapse;margin-top:8px;}
-.comp-matrix th{background:var(--navy);color:#fff;padding:9px 6px;font-size:12px;text-align:center;border:1px solid var(--navy-light);}
-.comp-matrix td{padding:9px 6px;text-align:center;font-size:12.5px;border:1px solid var(--border);}
-.cm-proj-name{text-align:right !important;font-weight:700;color:var(--navy);background:#FAFAFB;}
-@media print{
-  #competitionReportScreen .filters-bar,#competitionReportScreen #competitionPrintBtn{display:none;}
-  .comp-page{box-shadow:none;page-break-after:always;border-radius:0;}
-  .comp-gauge-card{page-break-inside:avoid;}
-  .comp-matrix tr{page-break-inside:avoid;}
-}
-
 .summary-card{
   background:#fff;border:1px solid var(--border);border-right:4px solid var(--gold);
   border-radius:12px;padding:16px 18px;
@@ -935,7 +897,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
-    <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">🏆 تقرير المنافسة</button>
   </div>
 </div>
 
@@ -1054,24 +1015,6 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="btn-primary" id="importPreviewConfirm">✓ تطبيق على النموذج</button>
     </div>
   </div>
-</div>
-
-<!-- ===================== COMPETITION / MOTIVATIONAL REPORT SCREEN ===================== -->
-<div id="competitionReportScreen" class="hidden">
-  <div class="dash-wrap">
-    <div class="section-title">🏆 تقرير وضع الخطة — نسخة تحفيزية قابلة للمشاركة</div>
-    <div class="section-desc">إنفوجرافيك شامل على مستوى المحافظة، ولوحة ترتيب، ومقاييس إنجاز مفصّلة لكل مشروع — جاهزة للتصدير كـ PDF ومشاركتها في مجموعة الخطة</div>
-    <div style="display:flex;gap:10px;margin-bottom:18px;">
-      <button class="print-btn" id="competitionPrintBtn">🖨️ طباعة / تصدير PDF</button>
-    </div>
-    <div class="filters-bar">
-      <select id="competitionFilterYear"><option value="">كل السنوات</option></select>
-      <select id="competitionFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
-      <select id="competitionFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
-      <select id="competitionFilterManager"><option value="">كل المدراء</option></select>
-    </div>
-  </div>
-  <div id="competitionReportContent"></div>
 </div>
 
 <!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
@@ -1894,51 +1837,14 @@ function computeOverallPct(detailData){
   });
   return Math.round(total*100);
 }
-// نسبة إنجاز مرحلة واحدة تحديدًا (0-100%) — تُستخدم في مصفوفة المراحل × المشاريع
-function computePhasePct(detailData, phaseIdx){
-  if(!detailData || !Array.isArray(detailData.phases) || !detailData.phases[phaseIdx]) return null;
-  const phase = detailData.phases[phaseIdx];
-  const steps = phase.steps || [];
-  const sumDur = steps.reduce((s,st)=> s+(Number(st.durationWeeks)||0), 0);
-  if(sumDur===0) return steps.length>0 ? 0 : null;
-  let total = 0;
-  steps.forEach(st=>{
-    const dur = Number(st.durationWeeks)||0;
-    const fraction = dur/sumDur;
-    const factor = st.status==="مكتمل" ? 1 : (st.status==="قيد التنفيذ" ? 0.5 : 0);
-    total += fraction*factor;
-  });
-  return Math.round(total*100);
-}
 
 // مؤشر "صحة الخطة" الإجمالي: يجمع ثلاثة أبعاد بأوزان متساوية (تعبئة الخطط التفصيلية، متوسط الإنجاز، الالتزام بالجدول)
 // ملاحظة: بُعد "تغطية البرامج" أُزيل نهائيًا من الحساب (لكل من مؤشر المدير الشخصي ومؤشر الإدارة العام) بقرار معتمد،
 // لأن عدم وجود مشروع لبرنامج معيّن في سنة ما قد يكون قرارًا إداريًا خارجًا عن سيطرة المدير التنفيذي، فلا يجب أن يُحسب ضده
-// الالتزام بالجدول الزمني: يُحسب بدقة كنسبة الخطوات غير المتأخرة من إجمالي الخطوات التي لها تاريخ انتهاء محدد
-// (وليس نسبة "المشاريع" التي لا تحتوي أي خطوة متأخرة، لتفادي معاقبة مشروع بخطوة واحدة متأخرة بنفس قسوة مشروع بعشر خطوات متأخرة)
-function computeScheduleAdherence(projects){
-  let totalSteps = 0, lateSteps = 0;
-  const today = new Date(); today.setHours(0,0,0,0);
-  projects.forEach(pr=>{
-    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-    if(!detail || !Array.isArray(detail.phases)) return;
-    detail.phases.forEach(ph=>{
-      (ph.steps||[]).forEach(st=>{
-        if(!st.endDate) return; // لا يمكن الحكم على الالتزام بخطوة بلا تاريخ انتهاء محدد
-        totalSteps++;
-        if(st.status!=="مكتمل"){
-          const end = new Date(st.endDate);
-          if(!isNaN(end) && end < today) lateSteps++;
-        }
-      });
-    });
-  });
-  return totalSteps>0 ? Math.max(1 - lateSteps/totalSteps, 0) : 1;
-}
-function computeHealthScore(projects, totalPrograms, includeCoverage, usePersonalWeights){
+function computeHealthScore(projects, totalPrograms, includeCoverage){
   includeCoverage = includeCoverage !== false; // افتراضيًا مفعّل (مؤشر الإدارة العام) — يُعطَّل لمؤشر المدير الشخصي حسب القرار المعتمد
   if((includeCoverage && totalPrograms===0) || projects.length===0){
-    return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0, includeCoverage, usePersonalWeights: !!usePersonalWeights };
+    return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0, includeCoverage };
   }
   const programsWithData = new Set(projects.map(p=>p.programCode)).size;
   const coverageScore = totalPrograms>0 ? Math.min(programsWithData/totalPrograms,1) : 0;
@@ -1947,24 +1853,18 @@ function computeHealthScore(projects, totalPrograms, includeCoverage, usePersona
   const avgCompletion = withDetail.length
     ? (withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)/100
     : 0;
-  const onScheduleScore = computeScheduleAdherence(projects);
-  let overall;
-  if(includeCoverage){
-    overall = Math.round(((coverageScore*0.25)+(detailScore*0.25)+(avgCompletion*0.25)+(onScheduleScore*0.25))*100);
-  }else if(usePersonalWeights){
-    // توزيع معتمد لمؤشر المدير التنفيذي/مدير المشروع الشخصي: تعبئة الخطط 15% + متوسط الإنجاز 65% + الالتزام بالجدول 20%
-    overall = Math.round(((detailScore*0.15)+(avgCompletion*0.65)+(onScheduleScore*0.20))*100);
-  }else{
-    overall = Math.round(((detailScore/3)+(avgCompletion/3)+(onScheduleScore/3))*100);
-  }
+  const lateCount = projects.filter(p=> findLateSteps(p).length>0).length;
+  const onScheduleScore = projects.length>0 ? Math.max(1 - lateCount/projects.length,0) : 1;
+  const overall = includeCoverage
+    ? Math.round(((coverageScore*0.25)+(detailScore*0.25)+(avgCompletion*0.25)+(onScheduleScore*0.25))*100)
+    : Math.round(((detailScore/3)+(avgCompletion/3)+(onScheduleScore/3))*100);
   let color, label;
   if(overall>=80){ color="#1E7A3D"; label="🟢 صحة الخطة ممتازة"; }
   else if(overall>=50){ color="#C9962E"; label="🟡 تحتاج متابعة"; }
   else { color="#C8102E"; label="🔴 تحتاج تدخّلًا عاجلاً"; }
-  return { score:overall, color, label, coverageScore, detailScore, avgCompletion, onScheduleScore, includeCoverage, usePersonalWeights: !!usePersonalWeights };
+  return { score:overall, color, label, coverageScore, detailScore, avgCompletion, onScheduleScore, includeCoverage };
 }
 function healthScoreCardHTML(health, subtitle){
-  const w = health.usePersonalWeights ? { detail:15, completion:65, schedule:20 } : (health.includeCoverage ? { detail:25, completion:25, schedule:25 } : { detail:33, completion:33, schedule:33 });
   return `
     <div class="health-score-card" style="border-color:${health.color};">
       <div class="health-score-ring" style="background:conic-gradient(${health.color} ${health.score*3.6}deg, #EEF0F3 0deg);">
@@ -1975,9 +1875,9 @@ function healthScoreCardHTML(health, subtitle){
         <div class="health-score-sub">${subtitle}</div>
         <div class="health-score-breakdown">
           ${health.includeCoverage ? `<span>تغطية البرامج: ${Math.round(health.coverageScore*100)}%</span>` : ""}
-          <span>تعبئة الخطط (${w.detail}%): ${Math.round(health.detailScore*100)}%</span>
-          <span>متوسط الإنجاز (${w.completion}%): ${Math.round(health.avgCompletion*100)}%</span>
-          <span>الالتزام بالجدول (${w.schedule}%): ${Math.round(health.onScheduleScore*100)}%</span>
+          <span>تعبئة الخطط: ${Math.round(health.detailScore*100)}%</span>
+          <span>متوسط الإنجاز: ${Math.round(health.avgCompletion*100)}%</span>
+          <span>الالتزام بالجدول: ${Math.round(health.onScheduleScore*100)}%</span>
         </div>
       </div>
     </div>`;
@@ -2657,7 +2557,7 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
-const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen"];
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen"];
 function showScreen(id){
   ["loginScreen","managerScreen","projectManagerScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
@@ -2803,7 +2703,7 @@ function renderPMProjectsList(){
 let pmPerformanceChartInstance = null;
 function renderPMOverview(){
   const projects = getPMProjects();
-  const health = computeHealthScore(projects, projects.length, false, true);
+  const health = computeHealthScore(projects, projects.length, false);
   document.getElementById("pmHealthScoreContainer").innerHTML = healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة");
 
   const wrap = document.getElementById("pmPerformanceChartWrap");
@@ -3247,7 +3147,7 @@ function renderManagerOverview(){
 
   const myProgramsList = PROGRAMS.filter(p=>p.govManager===currentManager);
   const myTotalPrograms = myProgramsList.length;
-  const mgrHealth = computeHealthScore(myProjects, myTotalPrograms, false, true);
+  const mgrHealth = computeHealthScore(myProjects, myTotalPrograms, false);
   let breakdownHtml = "";
   if(myProgramsList.length>1){
     breakdownHtml = `
@@ -3255,7 +3155,7 @@ function renderManagerOverview(){
         <div class="health-breakdown-title">📊 تفصيل المؤشر حسب كل برنامج — لمعرفة أي برنامج يحتاج تركيزًا أكبر</div>
         ${myProgramsList.map(prog=>{
           const progProjects = myProjects.filter(p=>p.programCode===prog.code);
-          const progHealth = computeHealthScore(progProjects, 1, false, true);
+          const progHealth = computeHealthScore(progProjects, 1, false);
           return `
             <div class="mini-health-row">
               <span class="mini-health-name">${prog.code} — ${escapeHtml(prog.name)}</span>
@@ -3521,42 +3421,6 @@ function renderReadOnlyGantt(detail){
 }
 
 // شارة توضح للمدير التنفيذي أن مشروعًا معيّنًا مُفوَّض لمدير/مدراء مشاريع مستقلين
-// يبني مقياسًا دائريًا (Gauge) بإبرة متحركة كصورة SVG — يُستخدم في تقرير المنافسة، خفيف الأداء (بدون Chart.js) ومناسب للطباعة/PDF
-function gaugeSVG(pct, size){
-  size = size || 150;
-  pct = Math.max(0, Math.min(100, Math.round(pct)));
-  const cx = size/2, cy = size/2;
-  const r = size*0.42;
-  const toRad = deg => (deg * Math.PI)/180;
-  const angleFor = p => 135 + (p/100)*270; // 0%=135° (أسفل يسار) → 100%=45° (أسفل يمين)، عبر الأعلى
-  const pointAt = (deg, radius) => {
-    const rad = toRad(deg);
-    return [ cx + radius*Math.cos(rad), cy + radius*Math.sin(rad) ];
-  };
-  const color = pct>=80 ? "#1E7A3D" : (pct>=30 ? "#C9962E" : "#C8102E");
-  const needleAngle = angleFor(pct);
-  const [nx, ny] = pointAt(needleAngle, r*0.72);
-  const [tailX, tailY] = pointAt(needleAngle+180, r*0.18);
-  // خط الأقواس المرجعية (خطوط صغيرة عند 0%، 50%، 100%)
-  const ticks = [0,50,100].map(p=>{
-    const a = angleFor(p);
-    const [x1,y1] = pointAt(a, r*0.92);
-    const [x2,y2] = pointAt(a, r*1.02);
-    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#9CA3AF" stroke-width="2"/>`;
-  }).join("");
-  const [zeroLx, zeroLy] = pointAt(angleFor(0), r*1.22);
-  const [hundredLx, hundredLy] = pointAt(angleFor(100), r*1.22);
-  return `
-    <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="overflow:visible;">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="#FAFAFA" stroke="#D9DCE1" stroke-width="3"/>
-      ${ticks}
-      <line x1="${tailX.toFixed(1)}" y1="${tailY.toFixed(1)}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${color}" stroke-width="${size*0.045}" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="${size*0.09}" fill="#0D6E6E"/>
-      <text x="${zeroLx.toFixed(1)}" y="${zeroLy.toFixed(1)}" font-size="${size*0.07}" fill="#6B7280" text-anchor="middle" font-family="Tajawal,sans-serif">0</text>
-      <text x="${hundredLx.toFixed(1)}" y="${hundredLy.toFixed(1)}" font-size="${size*0.07}" fill="#6B7280" text-anchor="middle" font-family="Tajawal,sans-serif">%100</text>
-      <text x="${cx}" y="${cy + r*0.75}" font-size="${size*0.22}" font-weight="800" fill="#1B2A3A" text-anchor="middle" font-family="Cairo,sans-serif">%${pct}</text>
-    </svg>`;
-}
 function pmDelegationBadgeHTML(project){
   if(!Array.isArray(project.assignedProjectManagerIds) || project.assignedProjectManagerIds.length===0) return "";
   const names = project.assignedProjectManagerIds.map(id=>{
@@ -4566,7 +4430,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه"
 };
 function getActorName(){ return currentManager || ADMIN_NAME; }
 
@@ -5472,145 +5336,6 @@ function renderWeeklyReportScreen(){
     btn.onclick = ()=> openProjectDetailForm(btn.dataset.id);
   });
 }
-
-/* ==================== تقرير المنافسة التحفيزي ==================== */
-const REPORT_PHASE_COLORS = ["#5B3EAF","#1E4E8C","#0D6E6E","#8a6d1f"];
-function buildCompetitionFilters(){
-  document.getElementById("competitionFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
-  document.getElementById("competitionFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
-  document.getElementById("competitionFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
-  document.getElementById("competitionFilterManager").innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}">${m}</option>`).join("");
-  ["competitionFilterYear","competitionFilterGoal","competitionFilterProgram","competitionFilterManager"].forEach(id=>{
-    document.getElementById(id).onchange = renderCompetitionReport;
-  });
-}
-function getCompetitionFilters(){
-  return {
-    year: document.getElementById("competitionFilterYear").value,
-    goalId: document.getElementById("competitionFilterGoal").value,
-    programCode: document.getElementById("competitionFilterProgram").value,
-    manager: document.getElementById("competitionFilterManager").value
-  };
-}
-function renderCompetitionReport(){
-  const filters = getCompetitionFilters();
-  const projects = ALL_PROJECTS.filter(pr=>{
-    if(filters.year && String(pr.year)!==filters.year) return false;
-    if(filters.goalId && String(pr.goalId)!==filters.goalId) return false;
-    if(filters.programCode && pr.programCode!==filters.programCode) return false;
-    if(filters.manager && pr.govManager!==filters.manager) return false;
-    return true;
-  });
-  const programCodes = [...new Set(projects.map(p=>p.programCode))];
-  const programs = PROGRAMS.filter(p=> programCodes.includes(p.code)).sort((a,b)=> a.code.localeCompare(b.code));
-
-  // ===== حساب بيانات لوحة الترتيب ولكل برنامج =====
-  const programStats = programs.map(prog=>{
-    const progProjects = projects.filter(p=>p.programCode===prog.code);
-    const withDetail = progProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
-    const avgCompletion = withDetail.length
-      ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
-      : 0;
-    const adherence = Math.round(computeScheduleAdherence(progProjects)*100);
-    return { program: prog, projects: progProjects, avgCompletion, adherence };
-  }).sort((a,b)=> b.avgCompletion - a.avgCompletion);
-
-  // ===== إحصاءات الصفحة الأولى (إنفوجرافيك المحافظة) =====
-  const totalProjects = projects.length;
-  const totalWithDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
-  const overallAvg = totalWithDetail.length
-    ? Math.round(totalWithDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/totalWithDetail.length)
-    : 0;
-  const overallAdherence = Math.round(computeScheduleAdherence(projects)*100);
-  const filterLabel = [
-    filters.year ? `سنة ${filters.year}` : "",
-    filters.goalId ? "هدف محدد" : "",
-    filters.programCode ? "برنامج محدد" : "",
-    filters.manager ? filters.manager : ""
-  ].filter(Boolean).join(" | ") || "كل الخطة — كل السنوات";
-
-  const rankColors = ["#D4AF37","#B0B7C0","#C08A4F"]; // ذهبي / فضي / برونزي — ثابت وموثوق (بديل عن رموز الميداليات لضمان ظهورها في كل بيئات الطباعة/PDF)
-  const leaderboardHtml = programStats.length===0 ? `<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>` : programStats.map((s,i)=>`
-    <div class="lb-row ${i<3?'lb-top':''}">
-      <div class="lb-rank" style="${i<3?`background:${rankColors[i]};color:#fff;`:''}">${i+1}</div>
-      <div class="lb-info">
-        <div class="lb-name">${s.program.code} — ${escapeHtml(s.program.name)}</div>
-        <div class="lb-manager">👤 ${escapeHtml(s.program.govManager)} — ${s.projects.length} مشروع</div>
-      </div>
-      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${s.avgCompletion}%;background:${s.avgCompletion>=80?'#1E7A3D':s.avgCompletion>=30?'#C9962E':'#C8102E'};"></div></div>
-      <div class="lb-pct">${s.avgCompletion}%</div>
-    </div>`).join("");
-
-  const page1Html = `
-    <div class="comp-page comp-infographic">
-      <div class="comp-hero">
-        <div class="comp-hero-title">رصد — الحالة العامة لخطة التنمية الخمسية الحادية عشرة</div>
-        <div class="comp-hero-sub">${escapeHtml(filterLabel)} — تحديث لحظي</div>
-      </div>
-      <div class="comp-stats-grid">
-        <div class="comp-stat-card"><div class="csc-num">${programs.length}</div><div class="csc-lbl">برنامج تنفيذي نشط</div></div>
-        <div class="comp-stat-card"><div class="csc-num">${totalProjects}</div><div class="csc-lbl">مشروعًا ومبادرة</div></div>
-        <div class="comp-stat-card"><div class="csc-num">${overallAvg}%</div><div class="csc-lbl">متوسط الإنجاز العام</div></div>
-        <div class="comp-stat-card"><div class="csc-num">${overallAdherence}%</div><div class="csc-lbl">الالتزام بالجدول الزمني</div></div>
-      </div>
-      <div class="comp-leaderboard">
-        <div class="comp-section-heading">🏆 لوحة الريادة — ترتيب البرامج حسب نسبة الإنجاز</div>
-        ${leaderboardHtml}
-      </div>
-    </div>`;
-
-  // ===== صفحات كل برنامج: مقاييس المشاريع + مصفوفة المراحل =====
-  const programPagesHtml = programStats.map(({program, projects: progProjects})=>{
-    const gaugesHtml = progProjects.map(pr=>{
-      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-      const pct = detail ? computeOverallPct(detail) : 0;
-      const ownerLabels = getProjectOwnerLabels(pr);
-      return `
-        <div class="comp-gauge-card">
-          ${gaugeSVG(pct, 130)}
-          <div class="cg-name">${escapeHtml(pr.projectName)}</div>
-          <div class="cg-meta">👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
-          <div class="cg-meta">سنة ${pr.year}</div>
-        </div>`;
-    }).join("");
-
-    const matrixRows = progProjects.map(pr=>{
-      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-      const cells = DETAIL_PHASES_DEF.map((ph,idx)=>{
-        const pct = detail ? computePhasePct(detail, idx) : null;
-        const display = pct===null ? "—" : pct+"%";
-        const bg = pct===null ? "#F4F1FA" : (pct>=80?"#E9F7EE":pct>=30?"#FBF3E3":"#FDEAEA");
-        const fg = pct===null ? "#9CA3AF" : (pct>=80?"#1E7A3D":pct>=30?"#8a6d1f":"#B3202E");
-        return `<td style="background:${bg};color:${fg};font-weight:800;">${display}</td>`;
-      }).join("");
-      return `<tr><td class="cm-proj-name">${escapeHtml(pr.projectName)}</td>${cells}</tr>`;
-    }).join("");
-
-    return `
-      <div class="comp-page comp-program-page">
-        <div class="comp-program-header">
-          <div class="cph-title">${program.code} — ${escapeHtml(program.name)}</div>
-          <div class="cph-sub">👤 المدير التنفيذي: ${escapeHtml(program.govManager)} — ${progProjects.length} مشروع</div>
-        </div>
-        <div class="comp-gauges-row">${gaugesHtml || `<div class="empty-note">لا توجد مشاريع مطابقة.</div>`}</div>
-        ${progProjects.length>0 ? `
-        <div class="comp-section-heading" style="margin-top:26px;">مصفوفة تقدّم المراحل</div>
-        <table class="comp-matrix">
-          <thead><tr><th>المشروع</th>${DETAIL_PHASES_DEF.map(ph=>`<th>${ph.name}</th>`).join("")}</tr></thead>
-          <tbody>${matrixRows}</tbody>
-        </table>` : ""}
-      </div>`;
-  }).join("");
-
-  document.getElementById("competitionReportContent").innerHTML = page1Html + programPagesHtml;
-}
-document.getElementById("navCompetitionReportBtn").onclick = ()=>{
-  showScreen("competitionReportScreen");
-  buildCompetitionFilters();
-  renderCompetitionReport();
-  logActivity(ADMIN_NAME, "view_competition_report", "");
-};
-document.getElementById("competitionPrintBtn").onclick = ()=> window.print();
 
 async function exportBackupExcel(){
   const btn = document.getElementById("exportBackupBtn");
