@@ -489,6 +489,7 @@ input,select{font-family:inherit;}
 .proj-rank-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
 .prc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .prc-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);}
+.prc-year-tag{display:inline-block;background:#EEF0F3;color:var(--text-muted);font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:8px;margin-right:6px;vertical-align:middle;}
 .prc-rank-badge{background:var(--navy);color:#fff;font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;padding:6px 14px;border-radius:10px;flex-shrink:0;}
 .prc-bar-wrap{height:10px;background:#EEF0F3;border-radius:5px;overflow:hidden;margin-bottom:8px;}
 .prc-bar{height:100%;background:linear-gradient(90deg,#C9962E,#1E7A3D);border-radius:5px;}
@@ -2881,7 +2882,8 @@ function renderPMProjectsList(){
 let pmPerformanceChartInstance = null;
 // يبني بطاقات "ترتيبك على مستوى المحافظة" + "التحدي القادم" لمشروع واحد — تُستخدم في لوحتي المدير التنفيذي ومدير المشروع
 function projectRankingCardHTML(project){
-  const ranking = ALL_PROJECTS.map(pr=>{
+  // الترتيب يكون بين مشاريع نفس السنة فقط — مقارنة عادلة (مشروع سنته الأولى لا يُقارَن بمشروع في سنته الرابعة)
+  const ranking = ALL_PROJECTS.filter(pr=> pr.year===project.year).map(pr=>{
     const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
     return { project: pr, pct: detail ? computeOverallPct(detail) : 0 };
   }).sort((a,b)=> b.pct - a.pct);
@@ -2892,18 +2894,18 @@ function projectRankingCardHTML(project){
   const myPct = ranking[idx].pct;
   const betterThanPct = total>1 ? Math.round(((total-rank)/(total-1))*100) : 100;
   const nextChallenge = idx>0 ? ranking[idx-1] : null;
-  const challengeHtml = !nextChallenge ? `<div class="prc-challenge prc-first">🏆 مشروعك في صدارة الترتيب على مستوى المحافظة!</div>` : `
+  const challengeHtml = !nextChallenge ? `<div class="prc-challenge prc-first">🏆 مشروعك في صدارة ترتيب سنة ${project.year}!</div>` : `
     <div class="prc-challenge">
       🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — أنت قادر تتجاوزه!
     </div>`;
   return `
     <div class="proj-rank-card">
       <div class="prc-top">
-        <div class="prc-name">${escapeHtml(project.projectName)}</div>
+        <div class="prc-name">${escapeHtml(project.projectName)} <span class="prc-year-tag">سنة ${project.year}</span></div>
         <div class="prc-rank-badge">#${rank} <span style="font-weight:400;font-size:11px;">من ${total}</span></div>
       </div>
       <div class="prc-bar-wrap"><div class="prc-bar" style="width:${betterThanPct}%;"></div></div>
-      <div class="prc-sub">أفضل من <b>${betterThanPct}%</b> من مشاريع المحافظة</div>
+      <div class="prc-sub">أفضل من <b>${betterThanPct}%</b> من مشاريع سنة ${project.year} (${total} مشروعًا)</div>
       ${challengeHtml}
     </div>`;
 }
