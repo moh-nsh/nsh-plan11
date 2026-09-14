@@ -431,6 +431,24 @@ input,select{font-family:inherit;}
 .cm-status-progress{background:#FBF3E3;color:#8a6d1f;}
 .cm-status-notstarted{background:#FDEAEA;color:#B3202E;}
 .cm-total-pct{font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;}
+/* ==================== مصفوفة الخطة الشاملة (عرض إكسل مطابق) ==================== */
+.fm-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px;}
+.fm-table th{background:var(--navy);color:#fff;padding:8px 6px;text-align:center;border:1px solid var(--navy-light);font-family:'Cairo',sans-serif;font-weight:700;position:sticky;top:0;z-index:5;}
+.fm-table td{padding:7px 6px;text-align:center;border:1px solid #C9CED6;}
+.fm-goal-cell{background:#EAF4F0;font-weight:700;color:var(--navy);writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;}
+.fm-prog-cell{background:#F8F9FB;font-weight:700;color:var(--navy);text-align:right !important;white-space:nowrap;padding-right:10px !important;}
+.fm-proj-cell{text-align:right !important;padding-right:10px !important;white-space:nowrap;}
+.fm-total-cell{font-family:'Cairo',sans-serif;font-weight:800;background:#F4F1FA;color:var(--navy);}
+.fm-legend{display:flex;gap:20px;margin-top:16px;}
+.fm-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--navy);font-weight:700;}
+.fm-legend-swatch{width:16px;height:16px;border-radius:4px;display:inline-block;}
+@media print{
+  #fullMatrixScreen .filters-bar,#fullMatrixScreen #fullMatrixPrintBtn,#fullMatrixScreen .section-desc{display:none;}
+  .fm-table{font-size:9.5px;}
+  .fm-table th{position:static;}
+  .fm-table tr{page-break-inside:avoid;}
+  @page{ margin:10mm; }
+}
 @media print{ .comp-no-print{display:none !important;} }
 
 .comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px;}
@@ -948,6 +966,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
     <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">🏆 تقرير المنافسة</button>
+    <button class="meeting-btn" id="navFullMatrixBtn" style="background:#5B3EAF;color:#fff;">📐 المصفوفة الشاملة</button>
   </div>
 </div>
 
@@ -1084,6 +1103,22 @@ tr.rejected-row td{background:#FDF6F6;}
     </div>
   </div>
   <div id="competitionReportContent"></div>
+</div>
+
+<!-- ===================== FULL PLAN MATRIX SCREEN (نظرة شاملة تفصيلية لكل الخطة) ===================== -->
+<div id="fullMatrixScreen" class="hidden">
+  <div class="dash-wrap">
+    <div class="section-title">📐 مصفوفة الخطة الشاملة</div>
+    <div class="section-desc">جميع البرامج والمشاريع بكل مراحلها في عرض واحد متصل — لاستعراض الخطة كاملة ورصد أي مشروع متعثّر بنظرة واحدة</div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <button class="print-btn" id="fullMatrixPrintBtn">🖨️ طباعة / تصدير PDF</button>
+    </div>
+    <div class="filters-bar">
+      <select id="fullMatrixFilterYear"><option value="">كل السنوات</option></select>
+      <select id="fullMatrixFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+    </div>
+  </div>
+  <div id="fullMatrixContent" style="padding:0 24px 30px;"></div>
 </div>
 
 <!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
@@ -2669,7 +2704,7 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
-const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen"];
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen"];
 function showScreen(id){
   ["loginScreen","managerScreen","projectManagerScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
@@ -5660,6 +5695,92 @@ document.getElementById("navCompetitionReportBtn").onclick = ()=>{
   logActivity(ADMIN_NAME, "view_competition_report", "");
 };
 document.getElementById("competitionPrintBtn").onclick = ()=> window.print();
+
+/* ==================== مصفوفة الخطة الشاملة (عرض تفصيلي كامل مطابق للإكسل) ==================== */
+function buildFullMatrixFilters(){
+  document.getElementById("fullMatrixFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  document.getElementById("fullMatrixFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  ["fullMatrixFilterYear","fullMatrixFilterGoal"].forEach(id=>{
+    document.getElementById(id).onchange = renderFullMatrix;
+  });
+}
+function phaseExcelCell(detail, idx){
+  const pct = detail ? computePhasePct(detail, idx) : null;
+  const val = (pct===null) ? 0 : pct;
+  const bg = val===100 ? "#8FCB9B" : (val>0 ? "#F6CD7C" : "#F1A19E");
+  return `<td style="background:${bg};font-weight:700;">${val}%</td>`;
+}
+function renderFullMatrix(){
+  const year = document.getElementById("fullMatrixFilterYear").value;
+  const goalId = document.getElementById("fullMatrixFilterGoal").value;
+  const projects = ALL_PROJECTS.filter(pr=>{
+    if(year && String(pr.year)!==year) return false;
+    if(goalId && String(pr.goalId)!==goalId) return false;
+    return true;
+  });
+  const goalIds = [...new Set(projects.map(p=>p.goalId))];
+  const goals = STRATEGIC_GOALS.filter(g=> goalIds.includes(g.id)).sort((a,b)=> a.id-b.id);
+
+  if(goals.length===0){
+    document.getElementById("fullMatrixContent").innerHTML = `<div class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</div>`;
+    return;
+  }
+
+  const bodyRows = [];
+  goals.forEach(goal=>{
+    const goalProjects = projects.filter(p=>p.goalId===goal.id);
+    const goalPrograms = PROGRAMS.filter(p=> p.goalId===goal.id && goalProjects.some(pr=>pr.programCode===p.code)).sort((a,b)=> a.code.localeCompare(b.code));
+    let goalRowCount = 0;
+    goalPrograms.forEach(prog=> goalRowCount += goalProjects.filter(pr=>pr.programCode===prog.code).length);
+    let goalCellWritten = false;
+
+    goalPrograms.forEach(prog=>{
+      const progProjects = goalProjects.filter(pr=>pr.programCode===prog.code).sort((a,b)=> a.projectName.localeCompare(b.projectName,"ar"));
+      progProjects.forEach(pr=>{
+        const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+        const overallPct = detail ? computeOverallPct(detail) : 0;
+        const goalCell = goalCellWritten ? "" : `<td class="fm-goal-cell" rowspan="${goalRowCount}">${goal.id}. ${escapeHtml(goal.name)}</td>`;
+        goalCellWritten = true;
+        bodyRows.push(`
+          <tr>
+            ${goalCell}
+            <td class="fm-prog-cell">${prog.code} — ${escapeHtml(prog.name)}</td>
+            <td class="fm-proj-cell">${escapeHtml(pr.projectName)}</td>
+            ${DETAIL_PHASES_DEF.map((ph,idx)=> phaseExcelCell(detail, idx)).join("")}
+            <td class="fm-total-cell">${overallPct}%</td>
+          </tr>`);
+      });
+    });
+  });
+
+  const phaseHeaders = DETAIL_PHASES_DEF.map(ph=>`<th>${ph.name}</th>`).join("");
+  const html = `
+    <table class="fm-table">
+      <thead>
+        <tr>
+          <th>البرنامج الاستراتيجي</th>
+          <th>البرنامج التنفيذي</th>
+          <th>المشروع</th>
+          ${phaseHeaders}
+          <th>نسبة الإنجاز الإجمالية</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows.join("")}</tbody>
+    </table>
+    <div class="fm-legend">
+      <span class="fm-legend-item"><span class="fm-legend-swatch" style="background:#8FCB9B;"></span> مكتمل (100%)</span>
+      <span class="fm-legend-item"><span class="fm-legend-swatch" style="background:#F6CD7C;"></span> قيد التنفيذ</span>
+      <span class="fm-legend-item"><span class="fm-legend-swatch" style="background:#F1A19E;"></span> لم يبدأ</span>
+    </div>`;
+  document.getElementById("fullMatrixContent").innerHTML = html;
+}
+document.getElementById("navFullMatrixBtn").onclick = ()=>{
+  showScreen("fullMatrixScreen");
+  buildFullMatrixFilters();
+  renderFullMatrix();
+  logActivity(ADMIN_NAME, "view_full_matrix", "");
+};
+document.getElementById("fullMatrixPrintBtn").onclick = ()=> window.print();
 
 async function exportBackupExcel(){
   const btn = document.getElementById("exportBackupBtn");
