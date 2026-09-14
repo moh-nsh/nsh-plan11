@@ -1100,7 +1100,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="mgrOverviewYearFilter"><option value="">كل السنوات</option></select>
       <select id="mgrOverviewSort">
         <option value="year">فرز حسب السنة</option>
-        <option value="owner">فرز حسب مالك المشروع</option>
+        <option value="owner">فرز حسب المسؤول عن المشروع</option>
       </select>
     </div>
     <div id="mgrHealthScoreContainer"></div>
@@ -3181,15 +3181,16 @@ function renderManagerOverview(){
     chartCanvas.parentElement.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12.5px;">تعذر تحميل مكتبة الرسوم البيانية. تأكد من اتصال الإنترنت وأعد تحميل الصفحة (Ctrl+F5).</div>`;
   }else if(myProjects.length>0){
     if(sortBy==="owner"){
-      // عدد المشاريع حسب مالك المشروع (بنفس فكرة عرض قسم التخطيط والدراسات)
-      const owners = [...new Set(myProjects.map(p=>p.projectOwner||"بدون مالك محدد"))];
-      const ownerCounts = owners.map(o=> myProjects.filter(p=>(p.projectOwner||"بدون مالك محدد")===o).length);
+      // عدد المشاريع حسب المسؤول عنها: أولوية لمدير المشروع الحقيقي إن وُجد، وإلا مالك المشروع (النص الحر)
+      const allLabels = myProjects.flatMap(p=> getProjectOwnerLabels(p));
+      const owners = [...new Set(allLabels)];
+      const ownerCounts = owners.map(o=> allLabels.filter(l=>l===o).length);
       mgrOverviewChartInstance = new Chart(chartCanvas, {
         type: "bar",
         data: { labels: owners, datasets: [{ label:"عدد المشاريع", data: ownerCounts, backgroundColor:"#1E4E8C" }] },
         options: {
           indexAxis:"y",
-          plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب مالك المشروع", font:{ size:14 } } },
+          plugins:{ legend:{ display:false }, title:{ display:true, text:"عدد المشاريع حسب المسؤول عنها", font:{ size:14 } } },
           scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } }
         }
       });
@@ -3281,7 +3282,7 @@ function renderManagerOverview(){
     let projectsInProgram = myProjects.filter(p=>p.programCode===program.code);
     if(projectsInProgram.length===0) return "";
     projectsInProgram = [...projectsInProgram].sort((a,b)=>{
-      if(sortBy==="owner") return (a.projectOwner||"").localeCompare(b.projectOwner||"","ar") || a.year-b.year;
+      if(sortBy==="owner") return getProjectOwnerLabels(a)[0].localeCompare(getProjectOwnerLabels(b)[0],"ar") || a.year-b.year;
       return a.year-b.year || a.projectName.localeCompare(b.projectName,"ar");
     });
     const rowsHtml = projectsInProgram.map(pr=>{
@@ -3427,6 +3428,17 @@ function pmDelegationBadgeHTML(project){
     return pm ? pm.name : id;
   });
   return `<div class="pnote" style="color:#5B3EAF;">👤 يُدار من: ${names.map(n=>escapeHtml(n)).join("، ")}</div>`;
+}
+// يُعيد أسماء "المسؤول" عن المشروع لأغراض التجميع/الرسوم البيانية: أولوية لمدير المشروع الحقيقي إن وُجد، وإلا النص الحر (مالك المشروع)
+// يُعيد مصفوفة لأن المشروع قد يكون له أكثر من مدير مشروع مُسنَد (يُحسَب المشروع لكل واحد منهم في الرسم)
+function getProjectOwnerLabels(project){
+  if(Array.isArray(project.assignedProjectManagerIds) && project.assignedProjectManagerIds.length>0){
+    return project.assignedProjectManagerIds.map(id=>{
+      const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===id);
+      return pm ? pm.name : id;
+    });
+  }
+  return [project.projectOwner || "بدون مالك محدد"];
 }
 function renderManagerPrograms(){
   const container = document.getElementById("programsContainer");
