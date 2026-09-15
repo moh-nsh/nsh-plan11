@@ -200,6 +200,12 @@ input,select{font-family:inherit;}
 .late-proj-info .lp-name{font-weight:700;font-size:13px;color:var(--navy);}
 .late-proj-info .lp-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
 .late-proj-info .lp-steps{font-size:11.5px;color:var(--red);margin-top:4px;}
+.incomplete-step-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:9px 12px;border:1px solid #EFE0B8;border-radius:8px;background:#FFFBF0;font-size:12.5px;color:var(--navy);
+}
+.rpi-rename-btn{background:#EEF0F3;color:var(--navy);font-size:12px;font-weight:700;padding:8px 10px;border-radius:8px;}
+.rpi-rename-btn:hover{background:#e2e5ea;}
 .remind-btn{
   background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:7px 10px;border-radius:8px;flex-shrink:0;text-align:center;white-space:normal;line-height:1.3;
 }
@@ -1400,23 +1406,11 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="lateProjectsList"></div>
     </div>
 
-    <div class="table-scroll-wrap">
-    <table class="results">
-      <thead>
-        <tr>
-          <th>الهدف الاستراتيجي</th>
-          <th>البرنامج التنفيذي</th>
-          <th>مدير المحافظة</th>
-          <th>اسم المشروع / المبادرة</th>
-          <th>مالك المشروع</th>
-          <th>ملاحظات</th>
-          <th>السنة</th>
-          <th>القفل النهائي</th>
-          <th>إغلاق المشروع</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
+    <div class="pending-list">
+      <h3>📋 خطوات ناقصة البيانات</h3>
+      <div class="section-desc" style="margin-bottom:6px;">خطوات ينقصها أحد الحقول الأساسية (الاسم، الوثائق الداعمة، تاريخ البدء، تاريخ الانتهاء، أو الحالة) — بحسب نفس الفلاتر أعلاه</div>
+      <div id="incompleteStepsSummary" style="font-weight:700;color:var(--navy);margin-bottom:10px;"></div>
+      <div id="incompleteStepsList"></div>
     </div>
   </div>
 </div>
@@ -2112,6 +2106,26 @@ function findLateSteps(project){
     });
   });
   return late;
+}
+// يجمع كل الخطوات الناقصة (اسم/وثائق/تاريخ بدء/تاريخ انتهاء/حالة) ضمن مشروع واحد
+function findIncompleteSteps(project){
+  const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
+  if(!detailRec || !Array.isArray(detailRec.phases)) return [];
+  const incomplete = [];
+  detailRec.phases.forEach((ph,phaseIdx)=>{
+    (ph.steps||[]).forEach((st,stepIdx)=>{
+      if(isStepIncomplete(st)){
+        const missing = [];
+        if(!st.name) missing.push("اسم الخطوة");
+        if(!st.docs) missing.push("الوثائق الداعمة");
+        if(!st.startDate) missing.push("تاريخ البدء");
+        if(!st.endDate) missing.push("تاريخ الانتهاء");
+        if(!st.status) missing.push("الحالة");
+        incomplete.push({ phaseName: ph.name, stepName: st.name||"(بدون اسم)", missing, seq: `${phaseIdx+1}.${stepIdx+1}`, phaseIdx, stepIdx });
+      }
+    });
+  });
+  return incomplete;
 }
 
 // يبني نص الرسالة (طويل للبريد، مختصر لواتساب) حسب المستلم (المدير التنفيذي أو مدير مشروع محدد)
@@ -5201,42 +5215,33 @@ function renderAdmin(){
     });
   }
 
-  // table
-  const rows = filteredProjects;
-  const tbody = document.getElementById("resultsBody");
-  if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#6B7688;padding:20px;">لا توجد نتائج مطابقة</td></tr>`;
-  }else{
-    tbody.innerHTML = rows.map(r=>{
-      const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===r.id);
-      const detailBtn = detailRec
-        ? `<button class="detail-btn has-detail" data-id="${r.id}" title="الخطة التفصيلية">📋 ${computeOverallPct(detailRec)}%</button>`
-        : `<button class="detail-btn" data-id="${r.id}" title="إضافة خطة تفصيلية">📋</button>`;
-      return `
-      <tr>
-        <td><span class="goal-pill">${r.goalName}</span></td>
-        <td>${r.programCode} — ${r.programName} <button class="card-btn ${ALL_PROGRAM_CARDS.some(c=>c.id===r.programCode)?'has-card':''}" data-code="${r.programCode}" title="بطاقة تعريف البرنامج">🪪${(()=>{ const c=ALL_PROGRAM_CARDS.find(c=>c.id===r.programCode); return c ? " "+computeProgramCardPct(c)+"%" : ""; })()}</button></td>
-        <td>${r.govManager}${Array.isArray(r.assignedProjectManagerIds) && r.assignedProjectManagerIds.length>0 ? `<div style="font-size:10.5px;color:#5B3EAF;font-weight:700;margin-top:2px;">👤 ${r.assignedProjectManagerIds.map(id=>{ const pm=ALL_PROJECT_MANAGERS.find(m=>m.employeeId===id); return pm?escapeHtml(pm.name):id; }).join("، ")}</div>` : ""}</td>
-        <td>${escapeHtml(r.projectName)} ${detailBtn}</td>
-        <td>${r.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(r.projectOwner)}</span>` : "—"}</td>
-        <td>${r.notes ? `<span style="color:#8a6d1f;font-style:italic;">📝 ${escapeHtml(r.notes)}</span>` : "—"}</td>
-        <td><span class="year-pill">${r.year}</span></td>
-        <td><button class="lock-toggle-btn ${r.locked?'is-locked':''}" data-id="${r.id}" ${r.closed?'disabled title="مغلق - افتح المشروع أولاً"':''}>${r.locked ? "🔒 مقفل" : "🔓 فتح"}</button></td>
-        <td>${r.closed
-          ? `<button class="reopen-btn" data-id="${r.id}" title="${r.closedNote?escapeAttr(r.closedNote):''}">✅ مغلق - إعادة فتح</button>`
-          : `<button class="close-proj-btn" data-id="${r.id}">إغلاق المشروع</button>`}</td>
-      </tr>`;
-    }).join("");
-    tbody.querySelectorAll(".lock-toggle-btn").forEach(btn=>{
-      btn.onclick = ()=>{
-        setProjectLocked(btn.dataset.id, !btn.classList.contains("is-locked"));
-      };
-    });
-    tbody.querySelectorAll(".close-proj-btn").forEach(btn=>{
-      btn.onclick = ()=> openCloseProjectModal(btn.dataset.id);
-    });
-    tbody.querySelectorAll(".reopen-btn").forEach(btn=>{
-      btn.onclick = ()=> reopenProject(btn.dataset.id);
+  // قائمة الخطوات الناقصة (تحل محل الجدول التفصيلي القديم) — تعكس نفس الفلاتر المستخدمة أعلاه تمامًا
+  const incompleteBox = document.getElementById("incompleteStepsList");
+  if(incompleteBox){
+    const projectsWithIncomplete = filteredProjects.map(pr=>({ project: pr, steps: findIncompleteSteps(pr) })).filter(x=> x.steps.length>0);
+    const totalIncompleteSteps = projectsWithIncomplete.reduce((s,x)=> s+x.steps.length, 0);
+    document.getElementById("incompleteStepsSummary").textContent = projectsWithIncomplete.length===0
+      ? "لا توجد خطوات ناقصة ضمن هذا الاختيار ✅"
+      : `${totalIncompleteSteps} خطوة ناقصة ضمن ${projectsWithIncomplete.length} مشروعًا`;
+    incompleteBox.innerHTML = projectsWithIncomplete.length===0 ? `<div class="empty-note">لا توجد خطوات ناقصة ضمن هذا الاختيار ✅</div>` : projectsWithIncomplete.map(({project:pr, steps})=>`
+      <div class="late-proj-row">
+        <div class="late-proj-info" style="width:100%;">
+          <div class="lp-name">${escapeHtml(pr.projectName)} <span style="font-weight:400;color:var(--text-muted);">— ${pr.programCode} — ${escapeHtml(pr.govManager)}</span></div>
+          <div class="lp-meta">سنة ${pr.year} | ${steps.length} خطوة ناقصة</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+            ${steps.map(s=>`
+              <div class="incomplete-step-row" data-project-id="${pr.id}" data-phase-idx="${s.phaseIdx}" data-step-idx="${s.stepIdx}">
+                <div>
+                  <b>[${s.seq}]</b> ${escapeHtml(s.phaseName)}: ${escapeHtml(s.stepName)}
+                  <div style="font-size:11px;color:var(--red);margin-top:2px;">⚠️ ناقص: ${s.missing.join("، ")}</div>
+                </div>
+                <button class="open-incomplete-btn" data-project-id="${pr.id}" data-phase-idx="${s.phaseIdx}" data-step-idx="${s.stepIdx}">🔓 فتح الخطوة</button>
+              </div>`).join("")}
+          </div>
+        </div>
+      </div>`).join("");
+    incompleteBox.querySelectorAll(".open-incomplete-btn").forEach(btn=>{
+      btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId, Number(btn.dataset.phaseIdx), Number(btn.dataset.stepIdx));
     });
   }
 }
@@ -5591,7 +5596,16 @@ function renderWeeklyReportScreen(){
                 </div>
                 ${pmDelegationBadgeHTML(pr)}
               </div>
-              <button class="rpi-open-btn" data-id="${pr.id}">📋 فتح الخطة التفصيلية</button>
+              <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                <button class="rpi-open-btn" data-id="${pr.id}">📋 فتح الخطة التفصيلية</button>
+                <div style="display:flex;gap:6px;">
+                  <button class="rpi-rename-btn" data-id="${pr.id}" title="إعادة تسمية المشروع">✎</button>
+                  <button class="lock-toggle-btn ${pr.locked?'is-locked':''}" data-id="${pr.id}" ${pr.closed?'disabled title="مغلق - أعد فتحه أولاً"':''}>${pr.locked?"🔒":"🔓"}</button>
+                  ${pr.closed
+                    ? `<button class="reopen-btn" data-id="${pr.id}" title="${pr.closedNote?escapeAttr(pr.closedNote):''}">✅ إعادة فتح</button>`
+                    : `<button class="close-proj-btn" data-id="${pr.id}">إغلاق</button>`}
+                </div>
+              </div>
             </div>`;
         }).join("");
 
@@ -5607,6 +5621,24 @@ function renderWeeklyReportScreen(){
 
   programsContainer.querySelectorAll(".rpi-open-btn").forEach(btn=>{
     btn.onclick = ()=> openProjectDetailForm(btn.dataset.id);
+  });
+  programsContainer.querySelectorAll(".rpi-rename-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const project = ALL_PROJECTS.find(p=>p.id===btn.dataset.id);
+      const newName = prompt("الاسم الجديد للمشروع:", project?project.projectName:"");
+      if(newName===null || !newName.trim()) return;
+      updateProject(btn.dataset.id, { projectName: newName.trim() });
+      logActivity(ADMIN_NAME, "edit_project", newName.trim());
+    };
+  });
+  programsContainer.querySelectorAll(".lock-toggle-btn").forEach(btn=>{
+    btn.onclick = ()=> setProjectLocked(btn.dataset.id, !btn.classList.contains("is-locked"));
+  });
+  programsContainer.querySelectorAll(".close-proj-btn").forEach(btn=>{
+    btn.onclick = ()=> openCloseProjectModal(btn.dataset.id);
+  });
+  programsContainer.querySelectorAll(".reopen-btn").forEach(btn=>{
+    btn.onclick = ()=> reopenProject(btn.dataset.id);
   });
 }
 
@@ -5985,16 +6017,20 @@ function detailFieldHTML(f, data){
   return `<div class="detail-field"><label>${f.label}</label><input type="${f.type||"text"}" data-key="${f.key}" placeholder="${escapeAttr(f.placeholder||"")}" value="${escapeAttr(val)}"></div>`;
 }
 
+// يتحقق من وجود نقص في أي حقل أساسي بالخطوة: الاسم، الوثائق، تاريخ البدء، تاريخ الانتهاء، أو الحالة
+function isStepIncomplete(step){
+  return !step.name || !step.docs || !step.startDate || !step.endDate || !step.status;
+}
 function stepRowHTML(step, locked, seqLabel){
   step = step || {};
   const ro = locked ? "readonly disabled" : "";
   const roClass = locked ? "field-locked" : "";
-  const datesIncomplete = (!!step.startDate) !== (!!step.endDate); // أحد التاريخين موجود والآخر مفقود
+  const stepIncomplete = isStepIncomplete(step);
   return `
     <div class="step-row">
       <div class="step-field">
         <span class="step-field-label">التسلسل</span>
-        <span class="step-seq ${datesIncomplete?'step-seq-incomplete':''}" title="${datesIncomplete?'تاريخ البدء أو الانتهاء ناقص لهذه الخطوة':''}">${seqLabel||""}</span>
+        <span class="step-seq ${stepIncomplete?'step-seq-incomplete':''}" title="${stepIncomplete?'يوجد حقل ناقص في هذه الخطوة (الاسم/الوثائق/التواريخ/الحالة)':''}">${seqLabel||""}</span>
       </div>
       <div class="step-field">
         <span class="step-field-label">اسم الخطوة</span>
@@ -6385,27 +6421,43 @@ function copyTextToClipboard(text, btnEl){
 }
 function wireDetailModalStaticEvents(){
   const body = document.getElementById("detailModalBody");
+// يقرأ الحقول الخمسة لصف خطوة من الـ DOM ويحدّث لون شارة التسلسل حسب اكتمالها
+function updateStepIncompleteBadge(row){
+  const seqEl = row.querySelector(".step-seq");
+  if(!seqEl) return;
+  const name = row.querySelector(".step-name").value.trim();
+  const docs = row.querySelector(".step-docs").value.trim();
+  const start = row.querySelector(".step-start").value;
+  const end = row.querySelector(".step-end").value;
+  const status = row.querySelector(".step-status").value;
+  const incomplete = !name || !docs || !start || !end || !status;
+  seqEl.classList.toggle("step-seq-incomplete", incomplete);
+  seqEl.title = incomplete ? "يوجد حقل ناقص في هذه الخطوة (الاسم/الوثائق/التواريخ/الحالة)" : "";
+}
   body.addEventListener("input", e=>{
     if(e.target.classList.contains("step-duration")){
       const pi = Number(e.target.closest(".phase-steps").dataset.phase);
       recalcPhase(pi);
     }
+    if(e.target.classList.contains("step-name") || e.target.classList.contains("step-docs")){
+      const row = e.target.closest(".step-row");
+      if(row) updateStepIncompleteBadge(row);
+    }
     triggerDetailAutoSave();
   });
   body.addEventListener("change", e=>{
-    if(e.target.classList.contains("step-status")) recalcOverallOnly();
+    if(e.target.classList.contains("step-status")){
+      recalcOverallOnly();
+      const row = e.target.closest(".step-row");
+      if(row) updateStepIncompleteBadge(row);
+    }
     if(e.target.classList.contains("step-start") || e.target.classList.contains("step-end")){
       const row = e.target.closest(".step-row");
       const startInput = row.querySelector(".step-start");
       const endInput = row.querySelector(".step-end");
       const startVal = startInput.value;
       const endVal = endInput.value;
-      const seqEl = row.querySelector(".step-seq");
-      if(seqEl){
-        const incomplete = (!!startVal) !== (!!endVal);
-        seqEl.classList.toggle("step-seq-incomplete", incomplete);
-        seqEl.title = incomplete ? "تاريخ البدء أو الانتهاء ناقص لهذه الخطوة" : "";
-      }
+      updateStepIncompleteBadge(row);
       if(startVal && endVal && new Date(endVal) < new Date(startVal)){
         endInput.classList.add("date-invalid");
         endInput.title = "تاريخ الانتهاء أسبق من تاريخ البدء! الرجاء تصحيح التاريخ.";
@@ -7220,11 +7272,13 @@ listenToProjects(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
+  if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
 });
 listenToProjectDetails(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
+  if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
 });
 listenToProgramCards(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
