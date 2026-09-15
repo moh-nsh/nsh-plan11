@@ -1037,7 +1037,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navPasswordsBtn" style="background:#5B3EAF;color:#fff;">🔑 كلمات المرور</button>
     <button class="meeting-btn" id="navActivityBtn" style="background:#1E4E8C;color:#fff;">📜 سجل النشاط</button>
     <button class="meeting-btn" id="navBackupBtn" style="background:#1E7A3D;color:#fff;">💾 نسخة احتياطية</button>
-    <button class="meeting-btn" id="navDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 سجل القرارات</button>
+    <button class="meeting-btn" id="navDecisionLogBtn" style="background:#B3202E;color:#fff;">📝 إدارة الملاحظات والقرارات</button>
     <button class="meeting-btn" id="navRequestsBtn" style="background:#0D6E6E;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#5B3EAF;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#8a6d1f;color:#fff;">📊 المشاريع</button>
@@ -1482,12 +1482,21 @@ tr.rejected-row td{background:#FDF6F6;}
       </div>
     </div>
 
-    <div class="section-title" style="margin-top:40px;">كلمات مرور المدراء التنفيذيين</div>
+    <div class="section-title" style="margin-top:40px;">👤 حسابات المدراء</div>
     <div class="section-desc">يمكنك إعادة تعيين كلمة مرور أي مدير في أي وقت، وتحديث بريده الإلكتروني ورقم جواله (لأغراض التذكير عبر البريد وواتساب)</div>
+    <div class="filters-bar">
+      <select id="pwGroupFilter">
+        <option value="">كل المدراء (تنفيذيون + مدراء مشاريع)</option>
+        <option value="exec">المدراء التنفيذيون فقط</option>
+        <option value="pm">مدراء المشاريع فقط</option>
+      </select>
+      <select id="pwGoalFilter"><option value="">كل الأهداف الاستراتيجية</option></select>
+    </div>
+
+    <div class="section-title" style="margin-top:26px;">كلمات مرور المدراء التنفيذيين</div>
     <div id="managerAuthList"></div>
 
-    <div class="section-title" style="margin-top:40px;">👤 مدراء المشاريع</div>
-    <div class="section-desc">إدارة كلمات المرور وبيانات التواصل (بريد وجوال) لكل مدير مشروع مُسجَّل</div>
+    <div class="section-title" style="margin-top:40px;">مدراء المشاريع</div>
     <div id="projectManagersAuthList"></div>
   </div>
 </div>
@@ -1607,6 +1616,9 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== DECISION LOG SCREEN ===================== -->
 <div id="decisionLogScreen" class="hidden">
   <div class="dash-wrap">
+    <div class="section-title" style="font-size:20px;">📝 إدارة الملاحظات والقرارات</div>
+    <div class="section-desc" style="margin-bottom:22px;">كل قرارات وملاحظات البرامج، وملاحظات الخطط التفصيلية لكل المشاريع، ورسائل التنبيه — في صفحة واحدة</div>
+
     <div class="section-title">تسجيل قرار أو ملاحظة جديدة</div>
     <div class="section-desc">اختر البرنامج التنفيذي المعني (ومشروعًا محددًا اختياريًا) واكتب القرار أو الملاحظة — تصل مباشرة لمن يعنيه الأمر لمتابعتها وتنفيذها. تحديد مشروع معيّن يُرسل نسخة تلقائية للمدير التنفيذي أيضًا.</div>
     <div class="pending-list">
@@ -1629,6 +1641,21 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="decisionLogList"></div>
+
+    <div class="section-title" style="margin-top:40px;">📝 ملاحظات الخطط التفصيلية — كل المشاريع</div>
+    <div class="section-desc">كل نقاط الملاحظات المُدخَلة على الخطط التفصيلية للمشاريع، مجمَّعة في مكان واحد — يمكنك التأكيد أو الإرجاع أو الحذف، وفتح الخطة التفصيلية مباشرة</div>
+    <div id="planningNotesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="pnFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="pnFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+      <select id="pnFilterStatus">
+        <option value="">كل الحالات</option>
+        <option value="unmarked">لم تُنفَّذ بعد</option>
+        <option value="marked">تم التعديل (بانتظار التأكيد)</option>
+        <option value="confirmed">تم التأكيد</option>
+      </select>
+    </div>
+    <div id="allPlanningNotesList"></div>
 
     <div class="section-title" style="margin-top:40px;">📢 رسالة تنبيه منبثقة</div>
     <div class="section-desc">تظهر تلقائيًا عند الدخول — للجميع افتراضيًا، أو حدّد مستلمين معيّنين (مدراء تنفيذيين و/أو مدراء مشاريع)</div>
@@ -2041,6 +2068,87 @@ function refreshOpenPlanningNotesIfNeeded(){
   container.innerHTML = notesToShow.length===0
     ? (isAdminContext ? `<div class="empty-note">لا توجد نقاط مسجَّلة بعد.</div>` : "")
     : notesToShow.map(n=> noteRowHTML(n, isAdminContext)).join("");
+}
+// يجمع كل نقاط ملاحظات الخطط التفصيلية عبر كل المشاريع في مكان واحد لقسم التخطيط، مع الفلاتر النشطة
+function renderAllPlanningNotes(){
+  const goalFilter = document.getElementById("pnFilterGoal").value;
+  const programFilter = document.getElementById("pnFilterProgram").value;
+  const statusFilter = document.getElementById("pnFilterStatus").value;
+
+  const allEntries = [];
+  ALL_PROJECT_DETAILS.forEach(detail=>{
+    if(!Array.isArray(detail.planningNotesList)) return;
+    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
+    if(!project) return;
+    detail.planningNotesList.forEach(note=> allEntries.push({ project, note }));
+  });
+
+  const filtered = allEntries.filter(({project, note})=>{
+    if(goalFilter && String(project.goalId)!==goalFilter) return false;
+    if(programFilter && project.programCode!==programFilter) return false;
+    if(statusFilter && note.status!==statusFilter) return false;
+    return true;
+  });
+
+  const unmarkedCount = allEntries.filter(e=>e.note.status==="unmarked").length;
+  const markedCount = allEntries.filter(e=>e.note.status==="marked").length;
+  const confirmedCount = allEntries.filter(e=>e.note.status==="confirmed").length;
+  document.getElementById("planningNotesSummaryGrid").innerHTML = `
+    <div class="summary-card"><div class="num">${allEntries.length}</div><div class="lbl">إجمالي النقاط</div></div>
+    <div class="summary-card"><div class="num">${unmarkedCount}</div><div class="lbl">⚪ لم تُنفَّذ بعد</div></div>
+    <div class="summary-card"><div class="num">${markedCount}</div><div class="lbl">🟡 بانتظار التأكيد</div></div>
+    <div class="summary-card"><div class="num">${confirmedCount}</div><div class="lbl">🟢 تم التأكيد</div></div>
+  `;
+
+  // ترتيب: بانتظار التأكيد أولًا (أكثر إلحاحًا)، ثم غير المنفَّذة، ثم المؤكَّدة أخيرًا
+  const statusOrder = { marked:0, unmarked:1, confirmed:2 };
+  filtered.sort((a,b)=> statusOrder[a.note.status]-statusOrder[b.note.status]);
+
+  const list = document.getElementById("allPlanningNotesList");
+  list.innerHTML = filtered.length===0 ? `<div class="empty-note">لا توجد نقاط مطابقة لهذا الاختيار.</div>` : filtered.map(({project, note})=>{
+    const statusInfo = {
+      unmarked: { icon:"⚪", label:"لم تُنفَّذ بعد" },
+      marked: { icon:"🟡", label:"تم التعديل" },
+      confirmed: { icon:"🟢", label:"تم التأكيد" }
+    }[note.status] || { icon:"⚪", label:"" };
+    const revertHtml = (note.status==="unmarked" && note.revertReason)
+      ? `<div class="note-revert-reason">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : "";
+    const markedInfo = note.markedBy ? `<div class="note-meta">عُلِّمت بواسطة ${escapeHtml(note.markedBy)}</div>` : "";
+    const confirmedInfo = note.confirmedBy ? `<div class="note-meta">أُكِّدت بواسطة ${escapeHtml(note.confirmedBy)}</div>` : "";
+    return `
+      <div class="planning-note-row" style="flex-wrap:wrap;">
+        <div class="note-body">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${project.programCode} — ${escapeHtml(project.programName)} | 👤 ${escapeHtml(project.govManager)}</div>
+          <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${statusInfo.icon} ${escapeHtml(note.text)}</div>
+          ${revertHtml}${markedInfo}${confirmedInfo}
+        </div>
+        <div class="note-actions">
+          <button class="apn-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
+          ${note.status==="marked" ? `<button class="apn-confirm-btn" data-project-id="${project.id}" data-note-id="${note.id}">✅ تأكيد</button><button class="apn-revert-btn" data-project-id="${project.id}" data-note-id="${note.id}">↩️ إرجاع</button>` : ""}
+          <button class="apn-delete-btn" data-project-id="${project.id}" data-note-id="${note.id}" title="حذف نهائي">🗑️</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  list.querySelectorAll(".apn-open-btn").forEach(btn=>{
+    btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId, null, null, true);
+  });
+  list.querySelectorAll(".apn-confirm-btn").forEach(btn=>{
+    btn.onclick = ()=> confirmPlanningNote(btn.dataset.projectId, btn.dataset.noteId);
+  });
+  list.querySelectorAll(".apn-revert-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const reason = prompt("سبب إرجاع هذه النقطة (سيظهر لمدير المشروع/المدير التنفيذي):", "");
+      if(reason===null) return;
+      revertPlanningNote(btn.dataset.projectId, btn.dataset.noteId, reason.trim());
+    };
+  });
+  list.querySelectorAll(".apn-delete-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("هل أنت متأكد من حذف هذه النقطة نهائيًا؟")) return;
+      deletePlanningNote(btn.dataset.projectId, btn.dataset.noteId);
+    };
+  });
 }
 // نسبة اكتمال بطاقة تعريف البرنامج التنفيذي (8 خانات أساسية)
 function computeProgramCardPct(card){
@@ -4579,6 +4687,18 @@ function buildDecisionLogScreen(){
   document.getElementById("decisionFilterProgram").innerHTML = "<option value=''>كل البرامج</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   document.getElementById("decisionFilterProgram").onchange = renderDecisionLogScreen;
   document.getElementById("decisionFilterStatus").onchange = renderDecisionLogScreen;
+
+  document.getElementById("pnFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("pnFilterGoal").onchange = ()=>{
+    const goalId = document.getElementById("pnFilterGoal").value;
+    const progSel = document.getElementById("pnFilterProgram");
+    const progs = goalId ? PROGRAMS.filter(p=>String(p.goalId)===goalId) : PROGRAMS;
+    progSel.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    renderDecisionLogScreen();
+  };
+  document.getElementById("pnFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  document.getElementById("pnFilterProgram").onchange = renderDecisionLogScreen;
+  document.getElementById("pnFilterStatus").onchange = renderDecisionLogScreen;
   document.getElementById("addDecisionBtn").onclick = ()=>{
     const programCode = document.getElementById("decisionProgramSelect").value;
     const projectId = document.getElementById("decisionProjectSelect").value;
@@ -4701,6 +4821,7 @@ function renderAnnouncementsList(){
 
 function renderDecisionLogScreen(){
   renderAnnouncementsList();
+  renderAllPlanningNotes();
   const totalCount = ALL_DECISIONS.length;
   const resolvedCount = ALL_DECISIONS.filter(d=>d.resolved).length;
   document.getElementById("decisionSummaryGrid").innerHTML = `
@@ -4760,9 +4881,32 @@ document.getElementById("backupSelectNone").onclick = ()=>{
 };
 document.getElementById("exportBackupBtn").onclick = exportBackupExcel;
 
+// يُعيد أسماء البرامج (أهداف) التي يتبعها مدير تنفيذي معيّن، لاستخدامها في فلترة صفحة كلمات المرور
+function getExecManagerGoalIds(name){
+  return new Set(PROGRAMS.filter(p=>p.govManager===name).map(p=>p.goalId));
+}
+function getPMGoalIds(employeeId){
+  const assignedProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId));
+  return new Set(assignedProjects.map(p=>p.goalId));
+}
 function renderPasswordsScreen(){
+  document.getElementById("pwGoalFilter").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" +
+    STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("pwGroupFilter").onchange = renderPasswordsScreen;
+  document.getElementById("pwGoalFilter").onchange = renderPasswordsScreen;
+  const groupFilter = document.getElementById("pwGroupFilter").value;
+  const goalFilter = document.getElementById("pwGoalFilter").value;
+  const showExec = !groupFilter || groupFilter==="exec";
+  const showPM = !groupFilter || groupFilter==="pm";
+
+  document.getElementById("managerAuthList").previousElementSibling.style.display = showExec ? "" : "none";
+  document.getElementById("managerAuthList").style.display = showExec ? "" : "none";
+  document.getElementById("projectManagersAuthList").previousElementSibling.style.display = showPM ? "" : "none";
+  document.getElementById("projectManagersAuthList").style.display = showPM ? "" : "none";
+
+  const filteredManagers = GOV_MANAGERS.filter(name=> !goalFilter || getExecManagerGoalIds(name).has(Number(goalFilter)));
   const authList = document.getElementById("managerAuthList");
-  authList.innerHTML = GOV_MANAGERS.map(name=>{
+  authList.innerHTML = filteredManagers.length===0 ? `<div class="empty-note">لا يوجد مدراء مطابقون لهذا الاختيار.</div>` : filteredManagers.map(name=>{
     const rec = ALL_MANAGER_AUTH.find(a=>a.id===name);
     const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
     const emailText = rec && rec.email ? rec.email : "لا يوجد بريد مسجَّل";
@@ -4808,9 +4952,10 @@ function renderPasswordsScreen(){
   // مدراء المشاريع
   const pmList = document.getElementById("projectManagersAuthList");
   if(pmList){
-    pmList.innerHTML = ALL_PROJECT_MANAGERS.length===0
-      ? `<div class="empty-note">لا يوجد مدراء مشاريع مُسجَّلون بعد.</div>`
-      : ALL_PROJECT_MANAGERS.map(pm=>{
+    const filteredPMs = ALL_PROJECT_MANAGERS.filter(pm=> !goalFilter || getPMGoalIds(pm.employeeId).has(Number(goalFilter)));
+    pmList.innerHTML = filteredPMs.length===0
+      ? `<div class="empty-note">لا يوجد مدراء مشاريع مطابقون لهذا الاختيار.</div>`
+      : filteredPMs.map(pm=>{
           const emailText = pm.email ? pm.email : "لا يوجد بريد مسجَّل";
           const phoneText = pm.phone ? pm.phone : "لا يوجد جوال مسجَّل";
           return `
@@ -4820,13 +4965,13 @@ function renderPasswordsScreen(){
                 <div class="mupdated">📧 ${escapeHtml(emailText)} | 📱 ${escapeHtml(phoneText)}</div>
               </div>
               <div style="display:flex;gap:8px;">
-                <button class="pm-contact-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="email" style="background:#1E4E8C;">✎ البريد</button>
-                <button class="pm-contact-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="phone" style="background:#1E7A3D;">✎ الجوال</button>
-                <button class="pm-contact-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="resetpw">إعادة تعيين كلمة المرور</button>
+                <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="email" style="background:#1E4E8C;">✎ البريد</button>
+                <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="phone" style="background:#1E7A3D;">✎ الجوال</button>
+                <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="resetpw">إعادة تعيين</button>
               </div>
             </div>`;
         }).join("");
-    pmList.querySelectorAll(".pm-contact-btn[data-action='resetpw']").forEach(btn=>{
+    pmList.querySelectorAll(".reset-pw-btn[data-action='resetpw']").forEach(btn=>{
       btn.onclick = ()=>{
         pendingResetManager = btn.dataset.id;
         pendingContactRole = "pm";
@@ -4836,7 +4981,7 @@ function renderPasswordsScreen(){
         document.getElementById("resetPwModal").classList.remove("hidden");
       };
     });
-    pmList.querySelectorAll(".pm-contact-btn[data-field]").forEach(btn=>{
+    pmList.querySelectorAll(".reset-pw-btn[data-field]").forEach(btn=>{
       btn.onclick = ()=>{
         const field = btn.dataset.field;
         pendingEmailManager = btn.dataset.id;
@@ -7548,6 +7693,7 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
   if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
+  if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllPlanningNotes();
   refreshOpenPlanningNotesIfNeeded();
 });
 listenToProgramCards(()=>{
