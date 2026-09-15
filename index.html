@@ -521,6 +521,11 @@ input,select{font-family:inherit;}
 .comp-program-header{text-align:center;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--gold);}
 .cph-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);}
 .cph-sub{font-size:12.5px;color:var(--text-muted);margin-top:4px;}
+.comp-program-group{margin-bottom:28px;}
+.comp-goal-heading{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold);}
+.comp-program-subheading{font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;color:var(--navy);margin-bottom:12px;}
+.comp-gauge-clickable{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.comp-gauge-clickable:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
 .comp-gauges-row{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;}
 .comp-gauge-card{width:160px;text-align:center;background:#FAFAFB;border-radius:14px;padding:14px 8px;}
 .cg-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;color:var(--navy);margin-top:6px;min-height:32px;}
@@ -532,8 +537,10 @@ input,select{font-family:inherit;}
 .cm-proj-name{text-align:right !important;font-weight:700;color:var(--navy);background:#FAFAFB;}
 @media print{
   #competitionReportScreen .filters-bar,#competitionReportScreen #competitionPrintBtn{display:none;}
-  .comp-page{box-shadow:none;page-break-after:always;border-radius:0;}
+  .comp-page{box-shadow:none;border-radius:0;}
+  .comp-page:not(:last-child){page-break-after:always;}
   .comp-gauge-card{page-break-inside:avoid;}
+  .comp-program-group{page-break-inside:avoid;}
   .lb-mini-card,.lb-podium-card{page-break-inside:avoid;}
   .comp-matrix tr{page-break-inside:avoid;}
 }
@@ -5749,7 +5756,8 @@ function renderCompetitionReport(){
 
   const leaderboardHtml = projectStats.length===0 ? `<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>` : podiumHtml + `<div class="lb-rest-grid">${restHtml}</div>`;
 
-  const page1Html = `
+  // ===== الصفحة الأولى: المؤشرات الأربعة فقط =====
+  const statsPageHtml = `
     <div class="comp-page comp-infographic">
       <div class="comp-hero">
         <div class="comp-hero-title">رصد — الحالة العامة لخطة التنمية الخمسية الحادية عشرة</div>
@@ -5763,58 +5771,67 @@ function renderCompetitionReport(){
         <div class="comp-stat-card"><div class="csc-num">${overallAvg}%</div><div class="csc-lbl">متوسط الإنجاز العام</div></div>
         <div class="comp-stat-card"><div class="csc-num">${overallAdherence}%</div><div class="csc-lbl">الالتزام بالجدول الزمني</div></div>
       </div>
+    </div>`;
+
+  // ===== الصفحة الثانية: لوحة الريادة فقط =====
+  const leaderboardPageHtml = `
+    <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
         <div class="comp-section-heading">🏆 لوحة الريادة — ترتيب المشاريع حسب نسبة الإنجاز</div>
         ${leaderboardHtml}
       </div>
     </div>`;
 
-  // ===== صفحة لكل هدف استراتيجي: صف مقاييس موحّد + مصفوفة واحدة لكل برامجه ومشاريعه =====
-  const goalPagesHtml = goals.map(goal=>{
-    const goalProjects = projects.filter(p=>p.goalId===goal.id);
-    const goalPrograms = PROGRAMS.filter(p=> p.goalId===goal.id && goalProjects.some(pr=>pr.programCode===p.code)).sort((a,b)=> a.code.localeCompare(b.code));
-
-    // فصل المشاريع التي لم يبدأ تنفيذها إطلاقًا (لا توجد أي بيانات مراحل) عن باقي المصفوفة لتفادي الخلط
-    const notStartedProjects = [];
-    const activeProjectsByProgram = {};
-    goalPrograms.forEach(prog=> activeProjectsByProgram[prog.code] = []);
-    goalProjects.forEach(pr=>{
-      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-      if(!detail || countPhasesStarted(detail)===0){
-        notStartedProjects.push(pr);
-      }
+  // ===== من الصفحة الثالثة: مقاييس المشاريع مُجمَّعة حسب البرنامج التنفيذي (مشاريع نفس البرنامج تبقى معًا دون تقطيع) =====
+  const notStartedProjects = [];
+  const programGroupsHtml = [];
+  let currentGoalId = null;
+  goals.forEach(goal=>{
+    const goalPrograms = PROGRAMS.filter(p=> p.goalId===goal.id && projects.some(pr=>pr.programCode===p.code)).sort((a,b)=> a.code.localeCompare(b.code));
+    goalPrograms.forEach(prog=>{
+      const progProjects = projects.filter(pr=>pr.programCode===prog.code);
+      const activeProjects = progProjects.filter(pr=>{
+        const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+        if(!detail || countPhasesStarted(detail)===0){ notStartedProjects.push(pr); return false; }
+        return true;
+      });
+      if(activeProjects.length===0) return;
+      const goalHeadingHtml = currentGoalId!==goal.id ? `<div class="comp-goal-heading">${goal.id}. ${escapeHtml(goal.name)}</div>` : "";
+      currentGoalId = goal.id;
+      const gaugesHtml = activeProjects.map(pr=>{
+        const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+        const pct = detail ? computeOverallPct(detail) : 0;
+        const ownerLabels = getProjectOwnerLabels(pr);
+        return `
+          <div class="comp-gauge-card comp-gauge-clickable" data-project-id="${pr.id}" title="فتح الخطة التفصيلية">
+            ${gaugeSVG(pct, 120)}
+            <div class="cg-name">${escapeHtml(pr.projectName)}</div>
+            <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
+          </div>`;
+      }).join("");
+      programGroupsHtml.push(`
+        <div class="comp-program-group">
+          ${goalHeadingHtml}
+          <div class="comp-program-subheading">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>
+          <div class="comp-gauges-row">${gaugesHtml}</div>
+        </div>`);
     });
+  });
 
-    const gaugesHtml = goalProjects.map(pr=>{
-      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
-      const pct = detail ? computeOverallPct(detail) : 0;
-      const ownerLabels = getProjectOwnerLabels(pr);
-      return `
-        <div class="comp-gauge-card">
-          ${gaugeSVG(pct, 120)}
-          <div class="cg-name">${escapeHtml(pr.projectName)}</div>
-          <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
-        </div>`;
-    }).join("");
+  const gaugesPageHtml = programGroupsHtml.length===0 ? "" : `<div class="comp-page comp-gauges-page">${programGroupsHtml.join("")}</div>`;
 
-    const notStartedHtml = notStartedProjects.length===0 ? "" : `
-      <div class="comp-section-heading" style="margin-top:22px;color:#B3202E;">⛔ مشاريع لم يبدأ تنفيذها بعد (${notStartedProjects.length})</div>
+  const notStartedHtml = notStartedProjects.length===0 ? "" : `
+    <div class="comp-page comp-notstarted-page">
+      <div class="comp-section-heading" style="color:#B3202E;">⛔ مشاريع لم يبدأ تنفيذها بعد (${notStartedProjects.length})</div>
       <div class="comp-notstarted-list">
         ${notStartedProjects.map(pr=>`<div class="ns-item">${pr.programCode} — ${escapeHtml(pr.projectName)}</div>`).join("")}
-      </div>`;
+      </div>
+    </div>`;
 
-    return `
-      <div class="comp-page comp-goal-page">
-        <div class="comp-program-header">
-          <div class="cph-title">${goal.id}. ${escapeHtml(goal.name)}</div>
-          <div class="cph-sub">${goalPrograms.length} برنامج تنفيذي — ${goalProjects.length} مشروع</div>
-        </div>
-        <div class="comp-gauges-row">${gaugesHtml || `<div class="empty-note">لا توجد مشاريع مطابقة.</div>`}</div>
-        ${notStartedHtml}
-      </div>`;
-  }).join("");
-
-  document.getElementById("competitionReportContent").innerHTML = page1Html + goalPagesHtml;
+  document.getElementById("competitionReportContent").innerHTML = statsPageHtml + leaderboardPageHtml + gaugesPageHtml + notStartedHtml;
+  document.querySelectorAll(".comp-gauge-clickable").forEach(card=>{
+    card.onclick = ()=> openProjectDetailForm(card.dataset.projectId);
+  });
 }
 document.getElementById("navCompetitionReportBtn").onclick = ()=>{
   showScreen("competitionReportScreen");
