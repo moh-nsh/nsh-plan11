@@ -1290,6 +1290,10 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="mgrPerformanceChartWrap" style="margin-bottom:24px;"></div>
 
     <div class="pending-list">
+      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+      <div id="mgrPendingNotesList"></div>
+    </div>
+    <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
       <div id="mgrUpcomingList"></div>
     </div>
@@ -1359,6 +1363,10 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="pmHealthScoreContainer"></div>
     <div id="pmRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
+    <div class="pending-list">
+      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+      <div id="pmPendingNotesList"></div>
+    </div>
     <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
       <div id="pmUpcomingList"></div>
@@ -2008,6 +2016,18 @@ function deletePlanningNote(projectId, noteId){
   });
 }
 // إذا كانت نافذة الخطة التفصيلية مفتوحة حاليًا لهذا المشروع، يحدّث قائمة الملاحظات فقط دون التأثير على باقي الاستمارة
+// يجمع كل نقاط الملاحظات التي تحتاج إجراء من مالك المشروع/المدير التنفيذي (غير مُعلَّمة بعد ⚪ — تشمل الجديدة والمُرجَعة بسبب)
+function getPendingPlanningNotes(projects){
+  const pending = [];
+  projects.forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.planningNotesList)) return;
+    detail.planningNotesList.forEach(n=>{
+      if(n.status==="unmarked") pending.push({ project: pr, note: n });
+    });
+  });
+  return pending;
+}
 function refreshOpenPlanningNotesIfNeeded(){
   const overlay = document.getElementById("detailModalOverlay");
   if(!overlay || overlay.classList.contains("hidden")) return;
@@ -3084,6 +3104,23 @@ function renderPMOverview(){
       </div>`;
   }
 
+  // ملاحظات قسم التخطيط التي تحتاج إجراء
+  const pmPendingNotesBox = document.getElementById("pmPendingNotesList");
+  const pmPendingNotes = getPendingPlanningNotes(projects);
+  pmPendingNotesBox.innerHTML = pmPendingNotes.length===0
+    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
+    : pmPendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
+      </div>`).join("");
+  pmPendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
+  });
+
   const upcomingEntries = [], lateEntries = [];
   projects.forEach(pr=>{
     findUpcomingSteps(pr,7).forEach(s=> upcomingEntries.push({project:pr, step:s}));
@@ -3103,7 +3140,7 @@ function renderPMOverview(){
         <div><b>${escapeHtml(project.projectName)}</b> — [${step.seq}] ${escapeHtml(step.phaseName)}: ${escapeHtml(step.stepName)}</div>
         <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
       </div>`).join("");
-  document.querySelectorAll("#pmOverviewView .phase-alert-row").forEach(row=>{
+  document.querySelectorAll("#pmOverviewView .phase-alert-row:not(.pending-note-alert)").forEach(row=>{
     row.onclick = ()=>{
       const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
       const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
@@ -3192,8 +3229,9 @@ function checkAndShowLateStepsPopup(){
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
   const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
   const activeAnnouncements = getActiveAnnouncementsFor(currentManager);
+  const pendingNotes = getPendingPlanningNotes(myProjects);
 
-  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0) return;
+  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
   let html = "";
   if(activeAnnouncements.length>0){
@@ -3201,6 +3239,17 @@ function checkAndShowLateStepsPopup(){
     html += activeAnnouncements.map(a=>`
       <div class="phase-alert-row announcement-alert">
         <div>${escapeHtml(a.text)}</div>
+      </div>`).join("");
+  }
+  if(pendingNotes.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
+    html += pendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'}" data-project-id="${project.id}" data-scroll-notes="1">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
       </div>`).join("");
   }
   if(lateEntries.length>0){
@@ -3223,6 +3272,10 @@ function checkAndShowLateStepsPopup(){
   list.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
       document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
+      if(row.dataset.scrollNotes){
+        openProjectDetailForm(row.dataset.projectId, null, null, true);
+        return;
+      }
       const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
       const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
       openProjectDetailForm(row.dataset.projectId, pIdx, sIdx);
@@ -3255,8 +3308,9 @@ function checkAndShowPMPopup(){
     findLateSteps(pr).forEach(s=> lateEntries.push({ project: pr, step: s }));
   });
   const activeAnnouncements = getActiveAnnouncementsFor(currentProjectManagerName);
+  const pendingNotes = getPendingPlanningNotes(myProjects);
 
-  if(lateEntries.length===0 && activeAnnouncements.length===0) return;
+  if(lateEntries.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
   let html = "";
   if(activeAnnouncements.length>0){
@@ -3264,6 +3318,17 @@ function checkAndShowPMPopup(){
     html += activeAnnouncements.map(a=>`
       <div class="phase-alert-row announcement-alert">
         <div>${escapeHtml(a.text)}</div>
+      </div>`).join("");
+  }
+  if(pendingNotes.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
+    html += pendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'}" data-project-id="${project.id}" data-scroll-notes="1">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
       </div>`).join("");
   }
   if(lateEntries.length>0){
@@ -3278,6 +3343,10 @@ function checkAndShowPMPopup(){
   list.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
       document.getElementById("lateStepsPopupOverlay").classList.add("hidden");
+      if(row.dataset.scrollNotes){
+        openProjectDetailForm(row.dataset.projectId, null, null, true);
+        return;
+      }
       const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
       const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
       openProjectDetailForm(row.dataset.projectId, pIdx, sIdx);
@@ -3588,6 +3657,23 @@ function renderManagerOverview(){
       </div>`;
   }
 
+  // ملاحظات قسم التخطيط التي تحتاج إجراء
+  const pendingNotesBox = document.getElementById("mgrPendingNotesList");
+  const pendingNotes = getPendingPlanningNotes(myProjects);
+  pendingNotesBox.innerHTML = pendingNotes.length===0
+    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
+    : pendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
+      </div>`).join("");
+  pendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
+  });
+
   // مراحل ستنتهي خلال أسبوع + مراحل متأخرة
   const upcomingBox = document.getElementById("mgrUpcomingList");
   const lateBox = document.getElementById("mgrLateList");
@@ -3615,7 +3701,7 @@ function renderManagerOverview(){
         <span class="phase-alert-badge late">متأخر ${step.daysLate} يوم</span>
       </div>`).join("");
   }
-  document.querySelectorAll(".phase-alert-row[data-project-id]").forEach(row=>{
+  document.querySelectorAll(".phase-alert-row[data-project-id]:not(.pending-note-alert)").forEach(row=>{
     row.onclick = ()=>{
       const pIdx = row.dataset.phaseIdx!==undefined ? Number(row.dataset.phaseIdx) : null;
       const sIdx = row.dataset.stepIdx!==undefined ? Number(row.dataset.stepIdx) : null;
@@ -6232,7 +6318,7 @@ function renumberStepsInPhase(phaseIdx){
   });
 }
 
-function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
+function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, scrollToNotes){
   const project = ALL_PROJECTS.find(p=>p.id===projectId);
   if(!project) return;
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId) || {};
@@ -6324,6 +6410,14 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
       targetRow.classList.add("step-row-highlight");
       setTimeout(()=>{ targetRow.scrollIntoView({ behavior:"smooth", block:"center" }); }, 150);
       setTimeout(()=>{ targetRow.classList.remove("step-row-highlight"); }, 6000);
+    }
+  }
+  if(scrollToNotes){
+    const notesBox = document.querySelector(".planning-notes-box");
+    if(notesBox){
+      notesBox.classList.add("step-row-highlight");
+      setTimeout(()=>{ notesBox.scrollIntoView({ behavior:"smooth", block:"center" }); }, 150);
+      setTimeout(()=>{ notesBox.classList.remove("step-row-highlight"); }, 6000);
     }
   }
   const clearBtn = document.getElementById("detailClearBtn");
