@@ -435,8 +435,9 @@ input,select{font-family:inherit;}
 .fm-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px;}
 .fm-table th{background:var(--navy);color:#fff;padding:8px 6px;text-align:center;border:1px solid var(--navy-light);font-family:'Cairo',sans-serif;font-weight:700;position:sticky;top:0;z-index:5;}
 .fm-table td{padding:7px 6px;text-align:center;border:1px solid #C9CED6;}
-.fm-goal-cell{background:#EAF4F0;font-weight:700;color:var(--navy);writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;}
+.fm-goal-cell{background:#EAF4F0;font-weight:700;color:var(--navy);white-space:normal;word-wrap:break-word;max-width:120px;line-height:1.5;}
 .fm-prog-cell{background:#F8F9FB;font-weight:700;color:var(--navy);text-align:right !important;white-space:nowrap;padding-right:10px !important;}
+.fm-manager-cell{background:#FBFBFC;font-weight:600;color:var(--navy);white-space:nowrap;font-size:11px;}
 .fm-proj-cell{text-align:right !important;padding-right:10px !important;white-space:nowrap;}
 .fm-total-cell{font-family:'Cairo',sans-serif;font-weight:800;background:#F4F1FA;color:var(--navy);}
 .fm-legend{display:flex;gap:20px;margin-top:16px;}
@@ -918,6 +919,7 @@ tr.rejected-row td{background:#FDF6F6;}
   display:inline-block;background:var(--navy);color:#fff;font-size:11px;font-weight:800;
   padding:4px 8px;border-radius:6px;text-align:center;margin-top:8px;
 }
+.step-seq-incomplete{background:var(--red) !important;}
 .step-field{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .step-field-label{display:none;}
 .step-remove-btn{background:#FDEAEA;color:var(--red);width:24px;height:24px;border-radius:6px;font-size:12px;margin-top:2px;}
@@ -2820,6 +2822,7 @@ function enterManager(name){
   renderManagerPrograms();
   renderCountdownBar("mgrCountdownBar", false);
   updateMgrCommsBadge();
+  pickSessionMotivationalPhrases();
   logActivity(name, "login", "");
   setTimeout(checkAndShowLateStepsPopup, 500);
 }
@@ -2838,6 +2841,7 @@ function enterProjectManager(employeeId, name){
   document.getElementById("pmWho").textContent = name;
   showScreen("projectManagerScreen");
   switchPMTab("input");
+  pickSessionMotivationalPhrases();
   logActivity(name, "login", "");
   setTimeout(checkAndShowPMPopup, 500);
 }
@@ -2896,6 +2900,30 @@ function renderPMProjectsList(){
 }
 
 let pmPerformanceChartInstance = null;
+// عبارات تحفيزية متنوعة — تُختار عشوائيًا مرة واحدة فقط عند كل تسجيل دخول جديد، وتبقى ثابتة خلال نفس الجلسة
+const CHALLENGE_PHRASES = [
+  "أنت قادر تتجاوزه!",
+  "خطوة وحدة تفصلك عن التقدّم!",
+  "الفارق بسيط... هيا نطلع فوق!",
+  "قريب جدًا من التفوّق عليه!",
+  "شدّ الحيل، الفرصة قريبة!",
+  "تقدر تسبقه بجهد بسيط إضافي!",
+  "المنافسة مفتوحة... تقدر تتقدّم!",
+  "دفعة صغيرة وتتخطاه!"
+];
+const FIRST_PLACE_PHRASES = [
+  "🏆 مشروعك في صدارة ترتيب سنة {year}!",
+  "🥇 أنت في القمة! حافظ على مركزك.",
+  "🌟 أداء متميّز يضعك في الصدارة!",
+  "🚀 لا أحد يتقدّم عليك حاليًا — استمر بنفس الزخم!",
+  "👏 إنجاز رائع! مشروعك الأفضل هذه السنة."
+];
+let SESSION_CHALLENGE_PHRASE = CHALLENGE_PHRASES[0];
+let SESSION_FIRST_PLACE_PHRASE = FIRST_PLACE_PHRASES[0];
+function pickSessionMotivationalPhrases(){
+  SESSION_CHALLENGE_PHRASE = CHALLENGE_PHRASES[Math.floor(Math.random()*CHALLENGE_PHRASES.length)];
+  SESSION_FIRST_PLACE_PHRASE = FIRST_PLACE_PHRASES[Math.floor(Math.random()*FIRST_PLACE_PHRASES.length)];
+}
 // يبني بطاقات "ترتيبك على مستوى المحافظة" + "التحدي القادم" لمشروع واحد — تُستخدم في لوحتي المدير التنفيذي ومدير المشروع
 function projectRankingCardHTML(project){
   // الترتيب يكون بين مشاريع نفس السنة فقط — مقارنة عادلة (مشروع سنته الأولى لا يُقارَن بمشروع في سنته الرابعة)
@@ -2910,9 +2938,11 @@ function projectRankingCardHTML(project){
   const myPct = ranking[idx].pct;
   const betterThanPct = total>1 ? Math.round(((total-rank)/(total-1))*100) : 100;
   const nextChallenge = idx>0 ? ranking[idx-1] : null;
-  const challengeHtml = !nextChallenge ? `<div class="prc-challenge prc-first">🏆 مشروعك في صدارة ترتيب سنة ${project.year}!</div>` : `
+  const challengeHtml = !nextChallenge
+    ? `<div class="prc-challenge prc-first">${SESSION_FIRST_PLACE_PHRASE.replace("{year}", project.year)}</div>`
+    : `
     <div class="prc-challenge">
-      🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — أنت قادر تتجاوزه!
+      🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — ${SESSION_CHALLENGE_PHRASE}
     </div>`;
   return `
     <div class="proj-rank-card">
@@ -5810,6 +5840,7 @@ function renderFullMatrix(){
           <tr>
             ${goalCell}
             <td class="fm-prog-cell">${prog.code} — ${escapeHtml(prog.name)}</td>
+            <td class="fm-manager-cell">${escapeHtml(prog.govManager)}</td>
             <td class="fm-proj-cell">${escapeHtml(pr.projectName)}</td>
             ${DETAIL_PHASES_DEF.map((ph,idx)=> phaseExcelCell(detail, idx)).join("")}
             <td class="fm-total-cell">${overallPct}%</td>
@@ -5825,6 +5856,7 @@ function renderFullMatrix(){
         <tr>
           <th>البرنامج الاستراتيجي</th>
           <th>البرنامج التنفيذي</th>
+          <th>مدير البرنامج</th>
           <th>المشروع</th>
           ${phaseHeaders}
           <th>نسبة الإنجاز الإجمالية</th>
@@ -5957,11 +5989,12 @@ function stepRowHTML(step, locked, seqLabel){
   step = step || {};
   const ro = locked ? "readonly disabled" : "";
   const roClass = locked ? "field-locked" : "";
+  const datesIncomplete = (!!step.startDate) !== (!!step.endDate); // أحد التاريخين موجود والآخر مفقود
   return `
     <div class="step-row">
       <div class="step-field">
         <span class="step-field-label">التسلسل</span>
-        <span class="step-seq">${seqLabel||""}</span>
+        <span class="step-seq ${datesIncomplete?'step-seq-incomplete':''}" title="${datesIncomplete?'تاريخ البدء أو الانتهاء ناقص لهذه الخطوة':''}">${seqLabel||""}</span>
       </div>
       <div class="step-field">
         <span class="step-field-label">اسم الخطوة</span>
@@ -6367,6 +6400,12 @@ function wireDetailModalStaticEvents(){
       const endInput = row.querySelector(".step-end");
       const startVal = startInput.value;
       const endVal = endInput.value;
+      const seqEl = row.querySelector(".step-seq");
+      if(seqEl){
+        const incomplete = (!!startVal) !== (!!endVal);
+        seqEl.classList.toggle("step-seq-incomplete", incomplete);
+        seqEl.title = incomplete ? "تاريخ البدء أو الانتهاء ناقص لهذه الخطوة" : "";
+      }
       if(startVal && endVal && new Date(endVal) < new Date(startVal)){
         endInput.classList.add("date-invalid");
         endInput.title = "تاريخ الانتهاء أسبق من تاريخ البدء! الرجاء تصحيح التاريخ.";
