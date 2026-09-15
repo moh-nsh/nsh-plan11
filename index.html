@@ -450,6 +450,12 @@ input,select{font-family:inherit;}
   @page{ margin:10mm; }
 }
 @media print{ .comp-no-print{display:none !important;} }
+/* الشريط العلوي الثابت (يشمل قائمة الجوال المنسدلة) يجب أن يختفي دائمًا عند الطباعة —
+   على الجوال قد يتصرّف position:sticky أثناء الطباعة كأنه position:fixed ويغطي محتوى التقرير بالكامل */
+@media print{
+  #adminPersistentNav{display:none !important;}
+  body{padding-top:0 !important;}
+}
 
 .comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px;}
 .comp-stat-card{background:linear-gradient(160deg,var(--navy),#0d151f);border-radius:14px;padding:20px 10px;text-align:center;}
