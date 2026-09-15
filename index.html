@@ -901,6 +901,21 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .planning-notes-box.readonly{background:#F1EEFB;}
 .planning-notes-box .planning-notes-text{font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;}
+.planning-note-add-row{display:flex;gap:8px;margin-bottom:14px;}
+.planning-note-add-row input{flex:1;padding:9px 12px;border:1px solid #D8CCEF;border-radius:8px;font-size:13px;font-family:inherit;}
+.planning-note-add-row button{background:#5B3EAF;color:#fff;font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:8px;white-space:nowrap;}
+.planning-note-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#fff;border:1px solid #E4DEF5;border-radius:10px;padding:11px 14px;margin-bottom:8px;flex-wrap:wrap;}
+.planning-note-row.note-status-marked{background:#FFFBEF;border-color:#F0DBA0;}
+.planning-note-row.note-status-confirmed{background:#F1F8F4;border-color:#B9DFC4;opacity:.85;}
+.note-body{flex:1;min-width:180px;}
+.note-text{font-size:13px;color:#2b2b2b;line-height:1.6;}
+.note-revert-reason{font-size:11.5px;color:var(--red);margin-top:4px;font-weight:700;}
+.note-meta{font-size:10.5px;color:var(--text-muted);margin-top:3px;}
+.note-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.note-mark-btn{background:#1E7A3D;color:#fff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:8px;white-space:nowrap;}
+.note-confirm-btn{background:#1E7A3D;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;}
+.note-revertback-btn{background:#EEF0F3;color:var(--navy);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;}
+.note-delete-btn{background:#FDEAEA;color:#B3202E;font-size:12px;padding:5px 9px;border-radius:8px;}
 
 .docs-link-box{
   background:#EAF4FB;border:1px solid #B8DCF0;border-radius:10px;padding:14px 16px;margin-bottom:18px;
@@ -1950,6 +1965,62 @@ function saveProjectDetail(projectId, data){
       alert("تعذّر حفظ الخطة التفصيلية. على الأغلب قواعد الأمان في Firestore لا تسمح بالوصول لمجموعة \"" + DETAILS_COLLECTION + "\". راجع مع قسم التخطيط لإضافتها. تفاصيل الخطأ: " + err.message);
       return false;
     });
+}
+/* ==================== نقاط ملاحظات قسم التخطيط (دورة عمل: غير منفَّذة ⚪ ← تم التعديل 🟡 ← تم التأكيد 🟢) ==================== */
+function addPlanningNote(projectId, text){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const note = { id: "n"+Date.now()+Math.random().toString(36).slice(2,7), text, status:"unmarked", createdBy: ADMIN_NAME, createdAt: new Date().toISOString(), markedBy:null, markedAt:null, confirmedBy:null, confirmedAt:null, revertReason:null };
+  saveProjectDetail(projectId, { planningNotesList: [...list, note] }).then(ok=>{
+    if(ok) logActivity(ADMIN_NAME, "add_planning_note", text.slice(0,60));
+  });
+}
+function markPlanningNoteEdited(projectId, noteId, actorName){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const updated = list.map(n=> n.id===noteId ? { ...n, status:"marked", markedBy:actorName, markedAt:new Date().toISOString(), revertReason:null } : n);
+  saveProjectDetail(projectId, { planningNotesList: updated }).then(ok=>{
+    if(ok) logActivity(actorName, "mark_planning_note_edited", noteId);
+  });
+}
+function confirmPlanningNote(projectId, noteId){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const updated = list.map(n=> n.id===noteId ? { ...n, status:"confirmed", confirmedBy:ADMIN_NAME, confirmedAt:new Date().toISOString() } : n);
+  saveProjectDetail(projectId, { planningNotesList: updated }).then(ok=>{
+    if(ok) logActivity(ADMIN_NAME, "confirm_planning_note", noteId);
+  });
+}
+function revertPlanningNote(projectId, noteId, reason){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const updated = list.map(n=> n.id===noteId ? { ...n, status:"unmarked", markedBy:null, markedAt:null, revertReason: reason||"" } : n);
+  saveProjectDetail(projectId, { planningNotesList: updated }).then(ok=>{
+    if(ok) logActivity(ADMIN_NAME, "revert_planning_note", `${noteId} — ${reason||""}`);
+  });
+}
+function deletePlanningNote(projectId, noteId){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const updated = list.filter(n=> n.id!==noteId);
+  saveProjectDetail(projectId, { planningNotesList: updated }).then(ok=>{
+    if(ok) logActivity(ADMIN_NAME, "delete_planning_note", noteId);
+  });
+}
+// إذا كانت نافذة الخطة التفصيلية مفتوحة حاليًا لهذا المشروع، يحدّث قائمة الملاحظات فقط دون التأثير على باقي الاستمارة
+function refreshOpenPlanningNotesIfNeeded(){
+  const overlay = document.getElementById("detailModalOverlay");
+  if(!overlay || overlay.classList.contains("hidden")) return;
+  const projectId = overlay.dataset.projectId;
+  const container = document.getElementById("planningNotesListContainer");
+  if(!container || !projectId) return;
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const isAdminContext = currentManager===null && currentProjectManagerId===null;
+  const allNotes = (existing && Array.isArray(existing.planningNotesList)) ? existing.planningNotesList : [];
+  const notesToShow = isAdminContext ? allNotes : allNotes.filter(n=> n.status!=="confirmed");
+  container.innerHTML = notesToShow.length===0
+    ? (isAdminContext ? `<div class="empty-note">لا توجد نقاط مسجَّلة بعد.</div>` : "")
+    : notesToShow.map(n=> noteRowHTML(n, isAdminContext)).join("");
 }
 // نسبة اكتمال بطاقة تعريف البرنامج التنفيذي (8 خانات أساسية)
 function computeProgramCardPct(card){
@@ -4734,9 +4805,41 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة"
 };
-function getActorName(){ return currentManager || ADMIN_NAME; }
+function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
+// يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
+function noteRowHTML(note, isAdmin){
+  const statusInfo = {
+    unmarked: { icon:"⚪", label:"لم تُنفَّذ بعد", cls:"note-status-unmarked" },
+    marked: { icon:"🟡", label:"تم التعديل", cls:"note-status-marked" },
+    confirmed: { icon:"🟢", label:"تم التأكيد", cls:"note-status-confirmed" }
+  }[note.status] || { icon:"⚪", label:"", cls:"" };
+  const revertHtml = (note.status==="unmarked" && note.revertReason)
+    ? `<div class="note-revert-reason">🔁 أُعيدت من قسم التخطيط — السبب: ${escapeHtml(note.revertReason)}</div>`
+    : "";
+  const markedInfo = note.markedBy ? `<div class="note-meta">عُلِّمت بواسطة ${escapeHtml(note.markedBy)}</div>` : "";
+  const confirmedInfo = note.confirmedBy ? `<div class="note-meta">أُكِّدت بواسطة ${escapeHtml(note.confirmedBy)}</div>` : "";
+  let actionsHtml = "";
+  if(isAdmin){
+    actionsHtml = `<div class="note-actions">
+      ${note.status==="marked" ? `<button class="note-confirm-btn" data-id="${note.id}">✅ تأكيد</button><button class="note-revertback-btn" data-id="${note.id}">↩️ إرجاع</button>` : ""}
+      <button class="note-delete-btn" data-id="${note.id}" title="حذف نهائي">🗑️</button>
+    </div>`;
+  }else if(note.status==="unmarked"){
+    actionsHtml = `<div class="note-actions"><button class="note-mark-btn" data-id="${note.id}">✓ تم التعديل</button></div>`;
+  }else if(note.status==="marked"){
+    actionsHtml = `<div class="note-actions"><span style="font-size:11px;color:var(--text-muted);">بانتظار تأكيد قسم التخطيط</span></div>`;
+  }
+  return `
+    <div class="planning-note-row ${statusInfo.cls}">
+      <div class="note-body">
+        <div class="note-text">${statusInfo.icon} ${escapeHtml(note.text)}</div>
+        ${revertHtml}${markedInfo}${confirmedInfo}
+      </div>
+      ${actionsHtml}
+    </div>`;
+}
 
 function renderActivityScreen(){
   const programFilter = document.getElementById("activityProgramFilter").value;
@@ -6145,17 +6248,29 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx){
     bodyHtml += `<div class="structure-lock-banner">🔒 المراحل الحالية مقفلة هيكليًا من قسم التخطيط والدراسات — يمكن فقط تحديث "الحالة" لكل خطوة موجودة. يمكنك إضافة خطوات جديدة استجدّت بعد الإغلاق عبر زر "+ إضافة خطوة" أسفل كل مرحلة.</div>`;
   }
   if(isAdminContext){
+    const notesList = Array.isArray(existing.planningNotesList) ? existing.planningNotesList : [];
     bodyHtml += `
       <div class="planning-notes-box">
-        <label>📝 ملاحظات قسم التخطيط والدراسات <span style="font-weight:400;color:var(--text-muted);">(تظهر لمدير البرنامج داخل استمارة المشروع)</span></label>
-        <textarea data-key="planningNotes" rows="3" placeholder="مثال: تمت المراجعة والاعتماد بتاريخ ... / المرحلة الثانية تحتاج تعديل التواريخ...">${escapeHtml(existing.planningNotes||"")}</textarea>
+        <label>📝 ملاحظات قسم التخطيط والدراسات <span style="font-weight:400;color:var(--text-muted);">(نقاط قابلة للتتبع — تظهر لمدير المشروع حتى يعلّمها "تم التعديل"، وتُؤرشف تلقائيًا فور تأكيدك)</span></label>
+        <div class="planning-note-add-row">
+          <input type="text" id="newPlanningNoteInput" placeholder="أضف نقطة/ملاحظة جديدة...">
+          <button type="button" id="addPlanningNoteBtn">➕ إضافة</button>
+        </div>
+        <div id="planningNotesListContainer">
+          ${notesList.length===0 ? `<div class="empty-note">لا توجد نقاط مسجَّلة بعد.</div>` : notesList.map(n=> noteRowHTML(n, true)).join("")}
+        </div>
       </div>`;
-  }else if(existing.planningNotes){
-    bodyHtml += `
-      <div class="planning-notes-box readonly">
-        <label>📝 ملاحظات قسم التخطيط والدراسات</label>
-        <div class="planning-notes-text">${escapeHtml(existing.planningNotes)}</div>
-      </div>`;
+  }else{
+    const notesList = (Array.isArray(existing.planningNotesList) ? existing.planningNotesList : []).filter(n=> n.status!=="confirmed");
+    if(notesList.length>0){
+      bodyHtml += `
+        <div class="planning-notes-box readonly">
+          <label>📝 ملاحظات قسم التخطيط والدراسات</label>
+          <div id="planningNotesListContainer">
+            ${notesList.map(n=> noteRowHTML(n, false)).join("")}
+          </div>
+        </div>`;
+    }
   }
 
   // رابط مجلد الوثائق الداعمة (Google Drive) — التعديل لقسم التخطيط فقط، الفتح متاح للجميع
@@ -6545,6 +6660,33 @@ function updateStepIncompleteBadge(row){
       if(!project) return;
       const suggested = `${project.programCode} - ${project.projectName} - ${project.year}`;
       copyTextToClipboard(suggested, e.target);
+    }
+    if(e.target.id==="addPlanningNoteBtn"){
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      const input = document.getElementById("newPlanningNoteInput");
+      const text = input.value.trim();
+      if(!text){ input.focus(); return; }
+      addPlanningNote(projectId, text);
+      input.value = "";
+    }
+    if(e.target.classList.contains("note-mark-btn")){
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      markPlanningNoteEdited(projectId, e.target.dataset.id, getActorName());
+    }
+    if(e.target.classList.contains("note-confirm-btn")){
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      confirmPlanningNote(projectId, e.target.dataset.id);
+    }
+    if(e.target.classList.contains("note-revertback-btn")){
+      const reason = prompt("سبب إرجاع هذه النقطة (سيظهر لمدير المشروع/المدير التنفيذي):", "");
+      if(reason===null) return;
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      revertPlanningNote(projectId, e.target.dataset.id, reason.trim());
+    }
+    if(e.target.classList.contains("note-delete-btn")){
+      if(!confirm("هل أنت متأكد من حذف هذه النقطة نهائيًا؟")) return;
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      deletePlanningNote(projectId, e.target.dataset.id);
     }
   });
   document.getElementById("detailModalCloseX").onclick = flushAndCloseDetailModal;
@@ -7312,6 +7454,7 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
   if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
+  refreshOpenPlanningNotesIfNeeded();
 });
 listenToProgramCards(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
