@@ -1409,6 +1409,16 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="pending-list">
       <h3>📋 خطوات ناقصة البيانات</h3>
       <div class="section-desc" style="margin-bottom:6px;">خطوات ينقصها أحد الحقول الأساسية (الاسم، الوثائق الداعمة، تاريخ البدء، تاريخ الانتهاء، أو الحالة) — بحسب نفس الفلاتر أعلاه</div>
+      <div style="margin-bottom:12px;">
+        <select id="incompleteTypeFilter">
+          <option value="">كل أنواع النقص</option>
+          <option value="اسم الخطوة">اسم الخطوة</option>
+          <option value="الوثائق الداعمة">الوثائق الداعمة</option>
+          <option value="تاريخ البدء">تاريخ البدء</option>
+          <option value="تاريخ الانتهاء">تاريخ الانتهاء</option>
+          <option value="الحالة">الحالة</option>
+        </select>
+      </div>
       <div id="incompleteStepsSummary" style="font-weight:700;color:var(--navy);margin-bottom:10px;"></div>
       <div id="incompleteStepsList"></div>
     </div>
@@ -5218,7 +5228,12 @@ function renderAdmin(){
   // قائمة الخطوات الناقصة (تحل محل الجدول التفصيلي القديم) — تعكس نفس الفلاتر المستخدمة أعلاه تمامًا
   const incompleteBox = document.getElementById("incompleteStepsList");
   if(incompleteBox){
-    const projectsWithIncomplete = filteredProjects.map(pr=>({ project: pr, steps: findIncompleteSteps(pr) })).filter(x=> x.steps.length>0);
+    const incompleteTypeFilter = document.getElementById("incompleteTypeFilter").value;
+    const projectsWithIncomplete = filteredProjects.map(pr=>{
+      let steps = findIncompleteSteps(pr);
+      if(incompleteTypeFilter) steps = steps.filter(s=> s.missing.includes(incompleteTypeFilter));
+      return { project: pr, steps };
+    }).filter(x=> x.steps.length>0);
     const totalIncompleteSteps = projectsWithIncomplete.reduce((s,x)=> s+x.steps.length, 0);
     document.getElementById("incompleteStepsSummary").textContent = projectsWithIncomplete.length===0
       ? "لا توجد خطوات ناقصة ضمن هذا الاختيار ✅"
@@ -5243,6 +5258,7 @@ function renderAdmin(){
     incompleteBox.querySelectorAll(".open-incomplete-btn").forEach(btn=>{
       btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId, Number(btn.dataset.phaseIdx), Number(btn.dataset.stepIdx));
     });
+    document.getElementById("incompleteTypeFilter").onchange = renderAdmin;
   }
 }
 
