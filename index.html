@@ -6075,7 +6075,7 @@ function renderCompetitionReport(){
       }).join("")}
     </div>`;
 
-  const restHtml = rest.length===0 ? "" : rest.map(({project:pr, pct, notStarted}, i)=>{
+  const restCards = rest.map(({project:pr, pct, notStarted}, i)=>{
     const ownerLabels = getProjectOwnerLabels(pr);
     const rank = i+4;
     return `
@@ -6086,9 +6086,7 @@ function renderCompetitionReport(){
       ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}
       <div class="lb-mini-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
     </div>`;
-  }).join("");
-
-  const leaderboardHtml = projectStats.length===0 ? `<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>` : podiumHtml + `<div class="lb-rest-grid">${restHtml}</div>`;
+  });
 
   // ===== الصفحة الأولى: المؤشرات الأربعة فقط =====
   const statsPageHtml = `
@@ -6107,18 +6105,32 @@ function renderCompetitionReport(){
       </div>
     </div>`;
 
-  // ===== الصفحة الثانية: لوحة الريادة فقط =====
-  const leaderboardPageHtml = `
+  // ===== صفحات لوحة الريادة: مقسّمة برمجيًا بعدد ثابت من البطاقات لكل صفحة (لا نعتمد على التفاف المتصفح التلقائي) =====
+  const REST_CARDS_PER_PAGE = 12;
+  const leaderboardPages = [];
+  if(projectStats.length===0){
+    leaderboardPages.push(`<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>`);
+  }else{
+    const restChunks = [];
+    for(let i=0;i<restCards.length;i+=REST_CARDS_PER_PAGE) restChunks.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
+    if(restChunks.length===0) restChunks.push([]);
+    restChunks.forEach((chunk, idx)=>{
+      leaderboardPages.push(`
+        ${idx===0 ? podiumHtml : ""}
+        <div class="lb-rest-grid">${chunk.join("")}</div>`);
+    });
+  }
+  const leaderboardPageHtml = leaderboardPages.map((pageContent, idx)=> `
     <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
-        <div class="comp-section-heading">🏆 لوحة الريادة — ترتيب المشاريع حسب نسبة الإنجاز</div>
-        ${leaderboardHtml}
+        <div class="comp-section-heading">🏆 لوحة الريادة — ترتيب المشاريع حسب نسبة الإنجاز${idx>0?" (تابع)":""}</div>
+        ${pageContent}
       </div>
-    </div>`;
+    </div>`).join("");
 
-  // ===== من الصفحة الثالثة: مقاييس المشاريع مُجمَّعة حسب البرنامج التنفيذي (مشاريع نفس البرنامج تبقى معًا دون تقطيع) =====
+  // ===== من الصفحة الثالثة: مقاييس المشاريع مُجمَّعة حسب البرنامج التنفيذي — تُوزَّع على صفحات محسوبة برمجيًا (لا نعتمد على تلميحات المتصفح لتجنّب أي تقطيع غير متوقع) =====
   const notStartedProjects = [];
-  const programGroupsHtml = [];
+  const programGroups = []; // { html, gaugeCount }
   let currentGoalId = null;
   goals.forEach(goal=>{
     const goalPrograms = PROGRAMS.filter(p=> p.goalId===goal.id && projects.some(pr=>pr.programCode===p.code)).sort((a,b)=> a.code.localeCompare(b.code));
@@ -6143,16 +6155,33 @@ function renderCompetitionReport(){
             <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
           </div>`;
       }).join("");
-      programGroupsHtml.push(`
-        <div class="comp-program-group">
-          ${goalHeadingHtml}
-          <div class="comp-program-subheading">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>
-          <div class="comp-gauges-row">${gaugesHtml}</div>
-        </div>`);
+      programGroups.push({
+        gaugeCount: activeProjects.length,
+        html: `
+          <div class="comp-program-group">
+            ${goalHeadingHtml}
+            <div class="comp-program-subheading">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>
+            <div class="comp-gauges-row">${gaugesHtml}</div>
+          </div>`
+      });
     });
   });
 
-  const gaugesPageHtml = programGroupsHtml.length===0 ? "" : `<div class="comp-page comp-gauges-page">${programGroupsHtml.join("")}</div>`;
+  // تجميع البرامج في صفحات فعلية — أقصى ~8 مقاييس بالصفحة الواحدة (صفّان تقريبًا)، وبرنامج واحد لا يُقسَّم أبدًا بين صفحتين
+  const GAUGES_PER_PAGE = 8;
+  const gaugePages = [];
+  let currentPageGroups = [], currentPageCount = 0;
+  programGroups.forEach(group=>{
+    if(currentPageCount>0 && currentPageCount+group.gaugeCount>GAUGES_PER_PAGE){
+      gaugePages.push(currentPageGroups.join(""));
+      currentPageGroups = []; currentPageCount = 0;
+    }
+    currentPageGroups.push(group.html);
+    currentPageCount += group.gaugeCount;
+  });
+  if(currentPageGroups.length>0) gaugePages.push(currentPageGroups.join(""));
+
+  const gaugesPageHtml = gaugePages.map(pageContent=> `<div class="comp-page comp-gauges-page">${pageContent}</div>`).join("");
 
   const notStartedHtml = notStartedProjects.length===0 ? "" : `
     <div class="comp-page comp-notstarted-page">
