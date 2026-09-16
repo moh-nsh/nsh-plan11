@@ -942,6 +942,7 @@ tr.rejected-row td{background:#FDF6F6;}
 .copy-filename-btn:hover{background:#e2e5ea;}
 
 .step-row input.date-invalid{border-color:var(--red);background:#FDEAEA;}
+.step-row input.date-order-warning{border-color:var(--red);background:#FDEAEA;box-shadow:0 0 0 2px rgba(200,16,30,.15);}
 .step-pct{font-size:11px;font-weight:700;color:var(--navy);text-align:center;padding-top:8px;}
 .step-seq{
   display:inline-block;background:var(--navy);color:#fff;font-size:11px;font-weight:800;
@@ -1973,10 +1974,17 @@ function setProjectLocked(id, locked){
 // إغلاق المشروع بعد اكتماله ومناقشته مع المدير العام (يقفله تلقائيًا أيضًا)
 function setProjectClosed(id, closed, note){
   const now = firebase.firestore.FieldValue.serverTimestamp();
+  let closedType = null;
+  if(closed){
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===id);
+    const pctAtClose = detail ? computeOverallPct(detail) : 0;
+    closedType = pctAtClose>=100 ? "success" : "early";
+  }
   updateProject(id, {
     closed: !!closed,
     closedNote: closed ? (note||"") : null,
     closedAt: closed ? now : null,
+    closedType: closed ? closedType : null,
     locked: !!closed
   });
 }
@@ -2224,6 +2232,7 @@ function computePhasePct(detailData, phaseIdx){
 // الالتزام بالجدول الزمني: يُحسب بدقة كنسبة الخطوات غير المتأخرة من إجمالي الخطوات التي لها تاريخ انتهاء محدد
 // (وليس نسبة "المشاريع" التي لا تحتوي أي خطوة متأخرة، لتفادي معاقبة مشروع بخطوة واحدة متأخرة بنفس قسوة مشروع بعشر خطوات متأخرة)
 function computeScheduleAdherence(projects){
+  projects = projects.filter(p=> !p.closed);
   let totalSteps = 0, lateSteps = 0;
   const today = new Date(); today.setHours(0,0,0,0);
   projects.forEach(pr=>{
@@ -2244,12 +2253,16 @@ function computeScheduleAdherence(projects){
 }
 function computeHealthScore(projects, totalPrograms, includeCoverage, usePersonalWeights){
   includeCoverage = includeCoverage !== false; // افتراضيًا مفعّل (مؤشر الإدارة العام) — يُعطَّل لمؤشر المدير الشخصي حسب القرار المعتمد
+  projects = projects.filter(p=> !p.closed); // المشاريع المغلقة (منتهية بنجاح أو مبكرًا) تُستبعد من مؤشرات الأداء النشط
   if((includeCoverage && totalPrograms===0) || projects.length===0){
     return { score:0, color:"#9CA3AF", label:"لا توجد بيانات كافية بعد", coverageScore:0, detailScore:0, avgCompletion:0, onScheduleScore:0, includeCoverage, usePersonalWeights: !!usePersonalWeights };
   }
   const programsWithData = new Set(projects.map(p=>p.programCode)).size;
   const coverageScore = totalPrograms>0 ? Math.min(programsWithData/totalPrograms,1) : 0;
-  const withDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const withDetail = projects.filter(p=>{
+    const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+    return countPhasesStarted(d)>0; // يستبعد السجلات "الوهمية" التي أُنشئت فقط لحمل ملاحظة قسم التخطيط بدون أي بيانات مراحل فعلية
+  });
   const detailScore = projects.length>0 ? withDetail.length/projects.length : 0;
   const avgCompletion = withDetail.length
     ? (withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)/100
@@ -2289,6 +2302,20 @@ function healthScoreCardHTML(health, subtitle){
       </div>
     </div>`;
 }
+// بطاقة مؤشر مبسّطة بنفس شكل بطاقة مؤشر الصحة — لعرض رقم واحد فقط (مثل متوسط الإنجاز) بشكل بارز ومستقل
+function simpleIndicatorCardHTML(pct, label, subtitle){
+  const color = pct>=80 ? "#1E7A3D" : (pct>=30 ? "#C9962E" : "#C8102E");
+  return `
+    <div class="health-score-card" style="border-color:${color};">
+      <div class="health-score-ring" style="background:conic-gradient(${color} ${pct*3.6}deg, #EEF0F3 0deg);">
+        <div class="health-score-inner"><span>${pct}%</span></div>
+      </div>
+      <div class="health-score-info">
+        <div class="health-score-label" style="color:${color};">${label}</div>
+        <div class="health-score-sub">${subtitle}</div>
+      </div>
+    </div>`;
+}
 
 // يكتشف خطوات العمل التي تجاوزت تاريخ انتهائها المستهدف دون اكتمال (لأغراض التذكير بالبريد)
 // بحث شامل: اسم المشروع، مالك المشروع، ملاحظات، البرنامج، المدير، وحتى أسماء خطوات الخطة التفصيلية
@@ -2306,6 +2333,7 @@ function projectMatchesSearch(project, q){
 }
 
 function findLateSteps(project){
+  if(project.closed) return []; // مشروع مغلق (منتهٍ) لا يُحتسب ضمن المراحل المتأخرة النشطة
   const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
   if(!detailRec || !Array.isArray(detailRec.phases)) return [];
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2325,6 +2353,7 @@ function findLateSteps(project){
 }
 // يجمع كل الخطوات الناقصة (اسم/وثائق/تاريخ بدء/تاريخ انتهاء/حالة) ضمن مشروع واحد
 function findIncompleteSteps(project){
+  if(project.closed) return []; // مشروع مغلق لا يحتاج متابعة نواقص بيانات نشطة
   const detailRec = ALL_PROJECT_DETAILS.find(d=>d.id===project.id);
   if(!detailRec || !Array.isArray(detailRec.phases)) return [];
   const incomplete = [];
@@ -3188,7 +3217,11 @@ function projectRankingCardHTML(project){
 function renderPMOverview(){
   const projects = getPMProjects();
   const health = computeHealthScore(projects, projects.length, false, true);
-  document.getElementById("pmHealthScoreContainer").innerHTML = healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة");
+  document.getElementById("pmHealthScoreContainer").innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      ${healthScoreCardHTML(health, "مؤشر صحة خاص بمشاريعك المُسنَدة")}
+      ${simpleIndicatorCardHTML(Math.round(health.avgCompletion*100), "متوسط الإنجاز", "متوسط نسبة إنجاز مشاريعك التي لديها خطة تفصيلية")}
+    </div>`;
   document.getElementById("pmRankingCards").innerHTML = projects.map(p=> projectRankingCardHTML(p)).join("");
 
   const wrap = document.getElementById("pmPerformanceChartWrap");
@@ -3676,7 +3709,7 @@ function renderManagerOverview(){
   if(progFilter) myProjects = myProjects.filter(p=>p.programCode===progFilter);
   if(yearFilter) myProjects = myProjects.filter(p=> String(p.year)===yearFilter);
 
-  const withDetail = myProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const withDetail = myProjects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
   const avgPct = withDetail.length
     ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
     : 0;
@@ -3702,7 +3735,11 @@ function renderManagerOverview(){
         }).join("")}
       </div>`;
   }
-  document.getElementById("mgrHealthScoreContainer").innerHTML = healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط") + breakdownHtml;
+  document.getElementById("mgrHealthScoreContainer").innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      ${healthScoreCardHTML(mgrHealth, "مؤشر صحة خاص ببرامجك ومشاريعك أنت فقط")}
+      ${simpleIndicatorCardHTML(Math.round(mgrHealth.avgCompletion*100), "متوسط الإنجاز", "متوسط نسبة إنجاز مشاريعك التي لديها خطة تفصيلية")}
+    </div>` + breakdownHtml;
   document.getElementById("mgrRankingCards").innerHTML = myProjects.map(p=> projectRankingCardHTML(p)).join("");
 
   document.getElementById("mgrOverviewSummary").innerHTML = `
@@ -5344,7 +5381,10 @@ function renderExecSummary(){
   const totalProjects = projects.length;
   const programsWithData = new Set(projects.map(p=>p.programCode)).size;
   const closedCount = projects.filter(p=>p.closed).length;
-  const withDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const withDetail = projects.filter(p=>{
+    const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+    return countPhasesStarted(d)>0;
+  });
   const avgPct = withDetail.length
     ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
     : 0;
@@ -5413,7 +5453,7 @@ function renderAdminCharts(filteredProjects){
   destroyAdminChart("goalWeighted");
   const goalWeightedPct = STRATEGIC_GOALS.map(g=>{
     const goalProjects = filteredProjects.filter(p=>p.goalId===g.id);
-    const withDetail = goalProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+    const withDetail = goalProjects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
     if(withDetail.length===0) return 0;
     return Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length);
   });
@@ -5434,7 +5474,7 @@ function renderAdminCharts(filteredProjects){
 
   // 4) حالة الخطة التفصيلية
   destroyAdminChart("detail");
-  const withDetailN = filteredProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id)).length;
+  const withDetailN = filteredProjects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; }).length;
   adminChartInstances.detail = new Chart(document.getElementById("adminDetailChart"), {
     type: "doughnut",
     data: { labels:["لديها خطة تفصيلية","بدون خطة تفصيلية"], datasets:[{ data:[withDetailN, filteredProjects.length-withDetailN], backgroundColor:["#1E4E8C","#EEF0F3"] }] },
@@ -5488,7 +5528,7 @@ function renderAdmin(){
   // summary (تعكس الفلاتر أعلاه)
   const totalProjects = filteredProjects.length;
   const programsWithData = new Set(filteredProjects.map(p=>p.programCode)).size;
-  const withDetailCount = filteredProjects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id)).length;
+  const withDetailCount = filteredProjects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; }).length;
   const closedCount = filteredProjects.filter(p=>p.closed).length;
   const summary = document.getElementById("summaryGrid");
   summary.innerHTML = `
@@ -6041,7 +6081,7 @@ function renderCompetitionReport(){
   // ===== إحصاءات الصفحة الأولى (إنفوجرافيك المحافظة) =====
   const programCodesAll = [...new Set(projects.map(p=>p.programCode))];
   const totalProjects = projects.length;
-  const totalWithDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const totalWithDetail = projects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
   const overallAvg = totalWithDetail.length
     ? Math.round(totalWithDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/totalWithDetail.length)
     : 0;
@@ -6231,7 +6271,7 @@ function renderFullMatrix(){
 
   // ===== المؤشرات الأربعة (نفس مؤشرات تقرير المنافسة) =====
   const programCodesAll = [...new Set(projects.map(p=>p.programCode))];
-  const totalWithDetail = projects.filter(p=> ALL_PROJECT_DETAILS.some(d=>d.id===p.id));
+  const totalWithDetail = projects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
   const overallAvg = totalWithDetail.length
     ? Math.round(totalWithDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/totalWithDetail.length)
     : 0;
@@ -6594,6 +6634,7 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, s
       setTimeout(()=>{ notesBox.classList.remove("step-row-highlight"); }, 6000);
     }
   }
+  validateAllStepDateOrder();
   const clearBtn = document.getElementById("detailClearBtn");
   clearBtn.disabled = structureLocked;
   clearBtn.title = structureLocked ? "لا يمكن المسح أثناء قفل هيكل المراحل - افتح القفل أولاً من قسم التخطيط" : "مسح جميع بيانات الخطة التفصيلية لهذا المشروع";
@@ -6835,8 +6876,6 @@ function copyTextToClipboard(text, btnEl){
     showConfirm();
   }
 }
-function wireDetailModalStaticEvents(){
-  const body = document.getElementById("detailModalBody");
 // يقرأ الحقول الخمسة لصف خطوة من الـ DOM ويحدّث لون شارة التسلسل حسب اكتمالها
 function updateStepIncompleteBadge(row){
   const seqEl = row.querySelector(".step-seq");
@@ -6850,6 +6889,28 @@ function updateStepIncompleteBadge(row){
   seqEl.classList.toggle("step-seq-incomplete", incomplete);
   seqEl.title = incomplete ? "يوجد حقل ناقص في هذه الخطوة (الاسم/الوثائق/التواريخ/الحالة)" : "";
 }
+// يتحقق أن تاريخ بدء كل خطوة ليس أسبق من تاريخ بدء الخطوة التي تسبقها في التسلسل العام (عبر كل المراحل) — تنبيه بصري فقط، لا يمنع الحفظ
+function validateAllStepDateOrder(){
+  const phaseContainers = document.querySelectorAll(".phase-steps");
+  const allStartInputs = [];
+  phaseContainers.forEach(container=>{
+    container.querySelectorAll(".step-row .step-start").forEach(input=> allStartInputs.push(input));
+  });
+  allStartInputs.forEach((input, idx)=>{
+    if(idx===0){ input.classList.remove("date-order-warning"); input.title = input.title==="تاريخ بدء هذه الخطوة أسبق من تاريخ بدء الخطوة السابقة لها في التسلسل!" ? "" : input.title; return; }
+    const prevVal = allStartInputs[idx-1].value;
+    const curVal = input.value;
+    if(prevVal && curVal && curVal < prevVal){
+      input.classList.add("date-order-warning");
+      input.title = "تاريخ بدء هذه الخطوة أسبق من تاريخ بدء الخطوة السابقة لها في التسلسل!";
+    }else{
+      input.classList.remove("date-order-warning");
+      if(input.title==="تاريخ بدء هذه الخطوة أسبق من تاريخ بدء الخطوة السابقة لها في التسلسل!") input.title = "";
+    }
+  });
+}
+function wireDetailModalStaticEvents(){
+  const body = document.getElementById("detailModalBody");
   body.addEventListener("input", e=>{
     if(e.target.classList.contains("step-duration")){
       const pi = Number(e.target.closest(".phase-steps").dataset.phase);
@@ -6885,6 +6946,7 @@ function updateStepIncompleteBadge(row){
         startInput.classList.remove("date-invalid");
         startInput.title = "";
       }
+      validateAllStepDateOrder();
       const weeks = calcWeeksBetween(startVal, endVal);
       if(weeks !== null){
         row.querySelector(".step-duration").value = weeks;
