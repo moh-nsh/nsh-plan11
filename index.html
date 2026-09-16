@@ -464,7 +464,8 @@ input,select{font-family:inherit;}
   body{padding-top:0 !important;}
 }
 
-.comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px;}
+.comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:14px;}
+.comp-stats-grid-closed{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px;max-width:520px;}
 .comp-stat-card{background:linear-gradient(160deg,var(--navy),#0d151f);border-radius:14px;padding:20px 10px;text-align:center;}
 .comp-stat-card .csc-num{font-family:'Cairo',sans-serif;font-weight:800;font-size:30px;color:var(--gold);}
 .comp-stat-card .csc-lbl{font-size:12px;color:#fff;margin-top:6px;}
@@ -1712,20 +1713,33 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== PROGRAMS & MANAGERS ADMIN SCREEN ===================== -->
 <div id="programsAdminScreen" class="hidden">
   <div class="dash-wrap">
-    <div class="section-title">👤 مدراء البرامج التنفيذية بالمحافظة</div>
-    <div class="section-desc">إضافة مدير جديد، إعادة تسمية، أو حذف (لا يمكن حذف مدير لا يزال مسؤولًا عن برنامج)</div>
-    <button class="add-btn" id="addManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير جديد</button>
-    <div id="managersAdminList"></div>
+    <div class="filters-bar">
+      <select id="pgaGroupFilter">
+        <option value="">كل المدراء (تنفيذيون + مدراء مشاريع)</option>
+        <option value="exec">المدراء التنفيذيون فقط</option>
+        <option value="pm">مدراء المشاريع فقط</option>
+      </select>
+      <select id="pgaGoalFilter"><option value="">كل الأهداف الاستراتيجية</option></select>
+    </div>
+
+    <div id="execManagersSection">
+      <div class="section-title">👤 مدراء البرامج التنفيذية بالمحافظة</div>
+      <div class="section-desc">إضافة مدير جديد، إعادة تسمية، أو حذف (لا يمكن حذف مدير لا يزال مسؤولًا عن برنامج)</div>
+      <button class="add-btn" id="addManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير جديد</button>
+      <div id="managersAdminList"></div>
+    </div>
 
     <div class="section-title" style="margin-top:40px;" id="programsAdminCountTitle">📂 البرامج التنفيذية</div>
     <div class="section-desc">تعديل بيانات أي برنامج، أو إعادة تعيين مديره المسؤول مباشرة — عند تغيير المدير تنتقل كل مشاريع البرنامج له تلقائيًا</div>
     <button class="add-btn" id="addProgramBtn" style="margin-bottom:16px;">➕ إضافة برنامج تنفيذي جديد</button>
     <div id="programsAdminList"></div>
 
-    <div class="section-title" style="margin-top:40px;">👤 مدراء المشاريع</div>
-    <div class="section-desc">حسابات مستقلة لأصحاب مشاريع مُحدَّدة — لا يحتاج المدير التنفيذي مشاركة كلمة مروره الخاصة، وقد يُسنَد المشروع لأكثر من مدير مشروع، ومدير المشروع الواحد لعدد غير محدود من المشاريع</div>
-    <button class="add-btn" id="addProjectManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير مشروع جديد</button>
-    <div id="projectManagersAdminList"></div>
+    <div id="pmManagersSection" style="margin-top:40px;">
+      <div class="section-title">👤 مدراء المشاريع</div>
+      <div class="section-desc">حسابات مستقلة لأصحاب مشاريع مُحدَّدة — لا يحتاج المدير التنفيذي مشاركة كلمة مروره الخاصة، وقد يُسنَد المشروع لأكثر من مدير مشروع، ومدير المشروع الواحد لعدد غير محدود من المشاريع</div>
+      <button class="add-btn" id="addProjectManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير مشروع جديد</button>
+      <div id="projectManagersAdminList"></div>
+    </div>
   </div>
 </div>
 
@@ -1739,6 +1753,12 @@ tr.rejected-row td{background:#FDF6F6;}
     <input type="text" id="pmeEmployeeId" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">المسمى الوظيفي (اختياري)</label>
     <input type="text" id="pmeJobTitle" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الجنس (لتخصيص تحية رسائل التذكير)</label>
+    <select id="pmeGender" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+      <option value="">غير محدد</option>
+      <option value="male">♂ ذكر (Mr)</option>
+      <option value="female">♀ أنثى (Ms)</option>
+    </select>
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">كلمة المرور</label>
     <input type="text" id="pmePassword" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;" value="plan2026">
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:14px 0 4px;">المشاريع المُسنَدة</label>
@@ -2375,9 +2395,10 @@ function findIncompleteSteps(project){
 
 // يبني نص الرسالة (طويل للبريد، مختصر لواتساب) حسب المستلم (المدير التنفيذي أو مدير مشروع محدد)
 const PLATFORM_URL = "https://moh-nsh.github.io/nsh-plan11/"; // رابط المنصة الحيّة — يُضمَّن في رسائل التذكير
-function buildReminderMessage(project, lateSteps, recipientLabel, recipientName, isWhatsapp){
+function buildReminderMessage(project, lateSteps, recipientLabel, recipientName, isWhatsapp, gender){
+  const greeting = gender==="male" ? "الفاضل" : (gender==="female" ? "الفاضلة" : "الفاضل/الفاضلة");
   if(isWhatsapp){
-    let msg = `الفاضل/الفاضلة ${recipientName}،\nتذكير بوجود تأخر في مشروع "${project.projectName}" (${project.programCode}):\n`;
+    let msg = `${greeting} ${recipientName}،\nتذكير بوجود تأخر في مشروع "${project.projectName}" (${project.programCode}):\n`;
     lateSteps.slice(0,5).forEach(s=>{
       msg += `• [${s.seq}] ${s.stepName} — متأخر ${s.daysLate} يوم\n`;
     });
@@ -2386,7 +2407,7 @@ function buildReminderMessage(project, lateSteps, recipientLabel, recipientName,
     return msg;
   }
   const subject = `تذكير: تأخر في تنفيذ مشروع "${project.projectName}" — ${project.programCode}`;
-  let body = `الفاضل/الفاضلة ${recipientName}،\n\n`;
+  let body = `${greeting} ${recipientName}،\n\n`;
   if(recipientLabel==="pm"){
     body += `بصفتك مسؤولًا عن متابعة مشروع "${project.projectName}" (${project.programCode} — ${project.programName}) للسنة ${project.year}، نود تذكيركم بوجود تأخر في تنفيذ البند/البنود التالية:\n\n`;
   }else{
@@ -2406,16 +2427,18 @@ function sendDelayReminder(projectId, channel, recipientType, pmEmployeeId){
   const lateSteps = findLateSteps(project);
   if(lateSteps.length===0){ alert("لا توجد بنود متأخرة حاليًا لهذا المشروع."); return; }
 
-  let recipientName, recipientContact;
+  let recipientName, recipientContact, recipientGender;
   if(recipientType==="pm"){
     const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===pmEmployeeId);
     if(!pm){ alert("تعذّر العثور على مدير المشروع."); return; }
     recipientName = pm.name;
     recipientContact = channel==="email" ? pm.email : pm.phone;
+    recipientGender = pm.gender;
   }else{
     const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
     recipientName = project.govManager;
     recipientContact = channel==="email" ? (authRec&&authRec.email) : (authRec&&authRec.phone);
+    recipientGender = authRec && authRec.gender;
   }
   if(!recipientContact){ alert("لا يوجد " + (channel==="email"?"بريد إلكتروني":"رقم جوال") + " مسجَّل لهذا الشخص. أضفه من صفحة كلمات المرور."); return; }
 
@@ -2424,10 +2447,10 @@ function sendDelayReminder(projectId, channel, recipientType, pmEmployeeId){
   if(!senderName.trim()){ alert("الرجاء كتابة الاسم."); return; }
 
   if(channel==="whatsapp"){
-    const msg = buildReminderMessage(project, lateSteps, recipientType, recipientName, true);
+    const msg = buildReminderMessage(project, lateSteps, recipientType, recipientName, true, recipientGender);
     window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(recipientContact)}&text=${encodeURIComponent(msg)}`, "_blank");
   }else{
-    const { subject, body } = buildReminderMessage(project, lateSteps, recipientType, recipientName, false);
+    const { subject, body } = buildReminderMessage(project, lateSteps, recipientType, recipientName, false, recipientGender);
     window.location.href = `mailto:${encodeURIComponent(recipientContact)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
@@ -2854,7 +2877,7 @@ function listenToProjectManagers(cb){
   }
 }
 // إضافة مدير مشروع جديد + إسناد المشاريع المُحدَّدة له مباشرة
-async function addProjectManager(name, employeeId, password, projectIds, jobTitle){
+async function addProjectManager(name, employeeId, password, projectIds, jobTitle, gender){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return false; }
   name = name.trim(); employeeId = employeeId.trim(); jobTitle = (jobTitle||"").trim();
   if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return false; }
@@ -2863,7 +2886,7 @@ async function addProjectManager(name, employeeId, password, projectIds, jobTitl
   }
   try{
     await db.collection(PROJECT_MANAGERS_COLLECTION).doc(employeeId).set({
-      name, password, jobTitle, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      name, password, jobTitle, gender: gender||null, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     for(const pid of (projectIds||[])){
       await addProjectManagerToProject(pid, employeeId);
@@ -3198,10 +3221,10 @@ function projectRankingCardHTML(project){
   const betterThanPct = total>1 ? Math.round(((total-rank)/(total-1))*100) : 100;
   const nextChallenge = idx>0 ? ranking[idx-1] : null;
   const challengeHtml = !nextChallenge
-    ? `<div class="prc-challenge prc-first">${SESSION_FIRST_PLACE_PHRASE.replace("{year}", project.year)}</div>`
+    ? `<div class="prc-challenge prc-first">${FIRST_PLACE_PHRASES[Math.floor(Math.random()*FIRST_PLACE_PHRASES.length)].replace("{year}", project.year)}</div>`
     : `
     <div class="prc-challenge">
-      🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — ${SESSION_CHALLENGE_PHRASE}
+      🎯 التحدي القادم: <b>"${escapeHtml(nextChallenge.project.projectName)}"</b> في المركز #${rank-1} بفارق <b>${nextChallenge.pct-myPct}%</b> فقط — ${CHALLENGE_PHRASES[Math.floor(Math.random()*CHALLENGE_PHRASES.length)]}
     </div>`;
   return `
     <div class="proj-rank-card">
@@ -3883,7 +3906,6 @@ function renderManagerOverview(){
             <div>
               <div class="rpi-name">${statusIcons ? statusIcons+" " : ""}${escapeHtml(pr.projectName)}</div>
               <div class="rpi-meta">
-                ${pr.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(pr.projectOwner)}</span>` : ""}
                 <span>سنة ${pr.year}</span>
                 <span class="rpi-pct-badge ${pctClass}">${detailRec ? pct+"%" : "لا توجد خطة"}</span>
               </div>
@@ -4031,9 +4053,9 @@ function pmDelegationBadgeHTML(project){
     const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===id);
     return pm ? pm.name : id;
   });
-  return `<div class="pnote" style="color:#5B3EAF;">👤 يُدار من: ${names.map(n=>escapeHtml(n)).join("، ")}</div>`;
+  return `<div class="pnote" style="color:#5B3EAF;">👤 مدير المشروع: ${names.map(n=>escapeHtml(n)).join("، ")}</div>`;
 }
-// يُعيد أسماء "المسؤول" عن المشروع لأغراض التجميع/الرسوم البيانية: أولوية لمدير المشروع الحقيقي إن وُجد، وإلا النص الحر (مالك المشروع)
+// يُعيد أسماء "المسؤول" عن المشروع لأغراض التجميع/الرسوم البيانية: مدير المشروع الرسمي إن وُجد، وإلا المدير التنفيذي — لا اعتماد على أي نص حر قديم
 // يُعيد مصفوفة لأن المشروع قد يكون له أكثر من مدير مشروع مُسنَد (يُحسَب المشروع لكل واحد منهم في الرسم)
 function getProjectOwnerLabels(project){
   if(Array.isArray(project.assignedProjectManagerIds) && project.assignedProjectManagerIds.length>0){
@@ -4042,8 +4064,7 @@ function getProjectOwnerLabels(project){
       return pm ? pm.name : id;
     });
   }
-  if(project.projectOwner) return [project.projectOwner];
-  // لا يوجد مدير مشروع مُسنَد ولا مالك نصّي — نعرض المدير التنفيذي للبرنامج كبديل بدل ترك الخانة بلا اسم
+  // لا يوجد مدير مشروع رسمي مُسنَد — نعرض المدير التنفيذي للبرنامج مباشرة (النص الحر القديم "مالك المشروع" أُلغي ولا يُعتمَد عليه)
   return [project.govManager || "بدون مالك محدد"];
 }
 function renderManagerPrograms(){
@@ -4100,7 +4121,6 @@ function renderYearPanel(panelEl, program){
           <div class="idx">${i+1}</div>
           <div class="info edit-fields">
             <input type="text" class="editName" value="${escapeAttr(it.projectName)}" placeholder="اسم المشروع / المبادرة">
-            <input type="text" class="editOwner" value="${escapeAttr(it.projectOwner||"")}" placeholder="مالك المشروع (اختياري)">
             <input type="text" class="editNotes" value="${escapeAttr(it.notes||"")}" placeholder="ملاحظات (اختياري)">
           </div>
           <button class="save-btn" data-id="${it.id}" title="حفظ">✓</button>
@@ -4118,7 +4138,6 @@ function renderYearPanel(panelEl, program){
             <div class="idx">${i+1}</div>
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
-              ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
               ${pmDelegationBadgeHTML(it)}
               ${it.closedNote ? `<div class="pnote">📌 ملاحظة الإغلاق: ${escapeHtml(it.closedNote)}</div>` : ""}
             </div>
@@ -4131,7 +4150,6 @@ function renderYearPanel(panelEl, program){
             <div class="idx">${i+1}</div>
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
-              ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
               ${pmDelegationBadgeHTML(it)}
               ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
             </div>
@@ -4144,7 +4162,6 @@ function renderYearPanel(panelEl, program){
             <div class="idx">${i+1}</div>
             <div class="info">
               <div class="pname2">${escapeHtml(it.projectName)}</div>
-              ${it.projectOwner ? `<div class="powner"><span class="owner-badge">👤 ${escapeHtml(it.projectOwner)}</span></div>` : ""}
               ${pmDelegationBadgeHTML(it)}
               ${it.notes ? `<div class="pnote">📝 ${escapeHtml(it.notes)}</div>` : ""}
             </div>
@@ -4159,7 +4176,6 @@ function renderYearPanel(panelEl, program){
   html += `
     <div class="add-form">
       <input type="text" placeholder="اسم المشروع / المبادرة" class="newProjName">
-      <input type="text" placeholder="مالك المشروع (اختياري)" class="newProjOwner">
       <input type="text" placeholder="ملاحظات (اختياري)" class="newProjNotes">
       <button class="add-btn">إضافة</button>
     </div>`;
@@ -4185,10 +4201,9 @@ function renderYearPanel(panelEl, program){
     btn.onclick = ()=>{
       const row = btn.closest(".project-row");
       const nm = row.querySelector(".editName").value.trim();
-      const ow = row.querySelector(".editOwner").value.trim();
       const nt = row.querySelector(".editNotes").value.trim();
       if(!nm){ row.querySelector(".editName").focus(); return; }
-      updateProject(btn.dataset.id, { projectName: nm, projectOwner: ow, notes: nt });
+      updateProject(btn.dataset.id, { projectName: nm, notes: nt });
       logActivity(getActorName(), "edit_project", nm);
       editingProjectId = null;
       renderManagerPrograms();
@@ -4196,7 +4211,6 @@ function renderYearPanel(panelEl, program){
   });
   const addBtn = panelEl.querySelector(".add-btn");
   const nameInput = panelEl.querySelector(".newProjName");
-  const ownerInput = panelEl.querySelector(".newProjOwner");
   const notesInput = panelEl.querySelector(".newProjNotes");
   const doAdd = ()=>{
     const nm = nameInput.value.trim();
@@ -4208,15 +4222,13 @@ function renderYearPanel(panelEl, program){
       goalName: STRATEGIC_GOALS.find(g=>g.id===program.goalId).name,
       govManager: currentManager,
       projectName: nm,
-      projectOwner: ownerInput.value.trim(),
       notes: notesInput.value.trim(),
       year: y
     });
-    nameInput.value=""; ownerInput.value=""; notesInput.value="";
+    nameInput.value=""; notesInput.value="";
   };
   addBtn.onclick = doAdd;
   nameInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
-  ownerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
   notesInput.addEventListener("keydown", e=>{ if(e.key==="Enter") doAdd(); });
 }
 
@@ -4313,28 +4325,47 @@ document.getElementById("navRequestsBtn").onclick = ()=>{ showScreen("requestsSc
 document.getElementById("navProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
 
 function renderProgramsAdminScreen(){
+  const prevPgaGoalFilter = document.getElementById("pgaGoalFilter").value;
+  document.getElementById("pgaGoalFilter").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("pgaGoalFilter").value = prevPgaGoalFilter;
+  document.getElementById("pgaGroupFilter").onchange = renderProgramsAdminScreen;
+  document.getElementById("pgaGoalFilter").onchange = renderProgramsAdminScreen;
+  const groupFilter = document.getElementById("pgaGroupFilter").value;
+  const showExec = !groupFilter || groupFilter==="exec";
+  const showPM = !groupFilter || groupFilter==="pm";
+  document.getElementById("execManagersSection").style.display = showExec ? "" : "none";
+  document.getElementById("pmManagersSection").style.display = showPM ? "" : "none";
   renderManagersAdminList();
   renderProgramsAdminList();
   renderProjectManagersAdminList();
 }
 
 function renderManagersAdminList(){
+  const goalFilter = document.getElementById("pgaGoalFilter").value;
+  const filteredManagers = GOV_MANAGERS.filter(name=> !goalFilter || getExecManagerGoalIds(name).has(Number(goalFilter)));
   const list = document.getElementById("managersAdminList");
-  if(GOV_MANAGERS.length===0){
-    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مُسجَّلون بعد.</div>`;
+  if(filteredManagers.length===0){
+    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مطابقون لهذا الاختيار.</div>`;
     return;
   }
-  list.innerHTML = GOV_MANAGERS.map(name=>{
+  list.innerHTML = filteredManagers.map(name=>{
     const authRec = ALL_MANAGER_AUTH.find(a=>a.id===name);
     const fullRec = ALL_MANAGERS_FULL.find(m=>m.name===name);
-    const programCount = PROGRAMS.filter(p=>p.govManager===name).length;
+    const myPrograms = PROGRAMS.filter(p=>p.govManager===name);
+    const programCount = myPrograms.length;
+    const programNames = myPrograms.map(p=>p.code).join("، ");
     return `
       <div class="program-admin-row">
         <div>
           <div class="pa-name">👤 ${escapeHtml(name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}${fullRec && fullRec.jobTitle ? " — " + escapeHtml(fullRec.jobTitle) : ""}</span></div>
-          <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج</div>
+          <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج${programNames?` (${programNames})`:""}</div>
         </div>
         <div class="pa-actions">
+          <select class="pa-gender-select" data-name="${escapeAttr(name)}" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border);font-size:12px;">
+            <option value="" ${!authRec||!authRec.gender?"selected":""}>الجنس؟</option>
+            <option value="male" ${authRec&&authRec.gender==="male"?"selected":""}>♂ ذكر (Mr)</option>
+            <option value="female" ${authRec&&authRec.gender==="female"?"selected":""}>♀ أنثى (Ms)</option>
+          </select>
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="editid">🔢 الرقم الوظيفي</button>
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="editjob">💼 المسمى الوظيفي</button>
           <button class="pa-edit-btn" data-name="${escapeAttr(name)}" data-action="rename">✎ إعادة تسمية</button>
@@ -4342,6 +4373,11 @@ function renderManagersAdminList(){
         </div>
       </div>`;
   }).join("");
+  list.querySelectorAll(".pa-gender-select").forEach(sel=>{
+    sel.onchange = ()=>{
+      db.collection(MANAGER_AUTH_COLLECTION).doc(sel.dataset.name).set({ gender: sel.value||null }, { merge:true });
+    };
+  });
   list.querySelectorAll("[data-action='editid']").forEach(btn=>{
     btn.onclick = async ()=>{
       const name = btn.dataset.name;
@@ -4451,11 +4487,13 @@ function renderProgramsAdminList(){
 function renderProjectManagersAdminList(){
   const list = document.getElementById("projectManagersAdminList");
   if(!list) return;
-  if(ALL_PROJECT_MANAGERS.length===0){
-    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مشاريع مُسجَّلون بعد.</div>`;
+  const goalFilter = document.getElementById("pgaGoalFilter").value;
+  const filteredPMs = ALL_PROJECT_MANAGERS.filter(pm=> !goalFilter || getPMGoalIds(pm.employeeId).has(Number(goalFilter)));
+  if(filteredPMs.length===0){
+    list.innerHTML = `<div class="empty-note">لا يوجد مدراء مشاريع مطابقون لهذا الاختيار.</div>`;
     return;
   }
-  list.innerHTML = ALL_PROJECT_MANAGERS.map(pm=>{
+  list.innerHTML = filteredPMs.map(pm=>{
     const assignedProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId));
     return `
       <div class="program-admin-row">
@@ -4510,6 +4548,7 @@ function openProjectManagerEditModal(employeeId){
   document.getElementById("pmeEmployeeId").value = pm ? pm.employeeId : "";
   document.getElementById("pmeEmployeeId").disabled = !!pm;
   document.getElementById("pmeJobTitle").value = pm ? (pm.jobTitle||"") : "";
+  document.getElementById("pmeGender").value = pm ? (pm.gender||"") : "";
   document.getElementById("pmePassword").value = pm ? pm.password : "plan2026";
   document.getElementById("pmeProjectSearch").value = "";
   const currentlyAssigned = pm ? ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId)).map(p=>p.id) : [];
@@ -4530,6 +4569,7 @@ document.getElementById("pmEditSave").onclick = async ()=>{
   const name = document.getElementById("pmeName").value.trim();
   const employeeId = document.getElementById("pmeEmployeeId").value.trim();
   const jobTitle = document.getElementById("pmeJobTitle").value.trim();
+  const gender = document.getElementById("pmeGender").value;
   const password = document.getElementById("pmePassword").value.trim();
   const selectedProjectIds = [...document.querySelectorAll("#pmeProjectsChecklist input:checked")].map(cb=>cb.value);
   if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return; }
@@ -4537,10 +4577,10 @@ document.getElementById("pmEditSave").onclick = async ()=>{
   btn.disabled = true;
   let ok;
   if(mode==="add"){
-    ok = await addProjectManager(name, employeeId, password, selectedProjectIds, jobTitle);
+    ok = await addProjectManager(name, employeeId, password, selectedProjectIds, jobTitle, gender);
   }else{
     const oldEmployeeId = modal.dataset.employeeId;
-    await db.collection(PROJECT_MANAGERS_COLLECTION).doc(oldEmployeeId).update({ name, jobTitle, password });
+    await db.collection(PROJECT_MANAGERS_COLLECTION).doc(oldEmployeeId).update({ name, jobTitle, password, gender: gender||null });
     await updateProjectManagerAssignments(oldEmployeeId, selectedProjectIds);
     ok = true;
   }
@@ -4927,8 +4967,10 @@ function getPMGoalIds(employeeId){
   return new Set(assignedProjects.map(p=>p.goalId));
 }
 function renderPasswordsScreen(){
+  const prevGoalFilter = document.getElementById("pwGoalFilter").value;
   document.getElementById("pwGoalFilter").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" +
     STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("pwGoalFilter").value = prevGoalFilter;
   document.getElementById("pwGroupFilter").onchange = renderPasswordsScreen;
   document.getElementById("pwGoalFilter").onchange = renderPasswordsScreen;
   const groupFilter = document.getElementById("pwGroupFilter").value;
@@ -4948,10 +4990,11 @@ function renderPasswordsScreen(){
     const statusText = rec && rec.password ? "تم تغييرها من الافتراضية" : "لم تُغيَّر بعد (الافتراضية)";
     const emailText = rec && rec.email ? rec.email : "لا يوجد بريد مسجَّل";
     const phoneText = rec && rec.phone ? rec.phone : "لا يوجد جوال مسجَّل";
+    const myPrograms = PROGRAMS.filter(p=>p.govManager===name).map(p=>p.code).join("، ");
     return `
       <div class="mgr-auth-row">
         <div>
-          <div class="mname">${name}</div>
+          <div class="mname">${name} <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— ${myPrograms||"بدون برنامج"}</span></div>
           <div class="mupdated">${statusText} | 📧 ${escapeHtml(emailText)} | 📱 ${escapeHtml(phoneText)}</div>
         </div>
         <div style="display:flex;gap:8px;">
@@ -4995,10 +5038,12 @@ function renderPasswordsScreen(){
       : filteredPMs.map(pm=>{
           const emailText = pm.email ? pm.email : "لا يوجد بريد مسجَّل";
           const phoneText = pm.phone ? pm.phone : "لا يوجد جوال مسجَّل";
+          const myProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId));
+          const myPrograms = [...new Set(myProjects.map(p=>p.programCode))].join("، ");
           return `
             <div class="mgr-auth-row">
               <div>
-                <div class="mname">${escapeHtml(pm.name)} <span style="font-weight:400;color:var(--text-muted);">— ${escapeHtml(pm.employeeId)}</span></div>
+                <div class="mname">${escapeHtml(pm.name)} <span style="font-weight:400;color:var(--text-muted);">— ${escapeHtml(pm.employeeId)} — ${myPrograms||"بدون مشاريع"}</span></div>
                 <div class="mupdated">📧 ${escapeHtml(emailText)} | 📱 ${escapeHtml(phoneText)}</div>
               </div>
               <div style="display:flex;gap:8px;">
@@ -5270,7 +5315,6 @@ function renderMeetingView(){
               <div class="mt-proj-item">
                 <div class="mt-proj-main">
                   <span class="mt-proj-text">${escapeHtml(it.projectName)}</span>
-                  ${it.projectOwner ? `<div class="mt-proj-note" style="color:#1E4E8C;font-style:normal;">👤 ${escapeHtml(it.projectOwner)}</div>` : ""}
                   ${(it.notes && !isEditingNote) ? `<div class="mt-proj-note">📝 ${escapeHtml(it.notes)}</div>` : ""}
                   ${isEditingNote ? `
                     <div class="mt-note-edit">
@@ -5984,8 +6028,7 @@ function renderWeeklyReportScreen(){
               <div>
                 <div class="rpi-name">${statusIcons ? statusIcons+" " : ""}${escapeHtml(pr.projectName)}</div>
                 <div class="rpi-meta">
-                  ${pr.projectOwner ? `<span class="owner-badge">👤 ${escapeHtml(pr.projectOwner)}</span>` : ""}
-                  <span>سنة ${pr.year}</span>
+                    <span>سنة ${pr.year}</span>
                   <span class="rpi-pct-badge ${pctClass}">تنفيذ: ${detail ? execPct+"%" : "لا توجد خطة"}</span>
                   <span class="rpi-pct-badge ${basicPct===100?'high':(basicPct>0?'mid':'low')}">بيانات: ${basicPct}%</span>
                   ${totalFiles>0 ? `<span class="rpi-pct-badge high">📎 ${totalFiles} خطوة مرفَقة</span>` : ""}
@@ -6060,13 +6103,15 @@ function getCompetitionFilters(){
 }
 function renderCompetitionReport(){
   const filters = getCompetitionFilters();
-  const projects = ALL_PROJECTS.filter(pr=>{
+  const allMatchedProjects = ALL_PROJECTS.filter(pr=>{
     if(filters.year && String(pr.year)!==filters.year) return false;
     if(filters.goalId && String(pr.goalId)!==filters.goalId) return false;
     if(filters.programCode && pr.programCode!==filters.programCode) return false;
     if(filters.manager && pr.govManager!==filters.manager) return false;
     return true;
   });
+  const closedProjects = allMatchedProjects.filter(p=>p.closed);
+  const projects = allMatchedProjects.filter(p=> !p.closed); // لوحة الريادة والمقاييس تخص المشاريع النشطة فقط
   const goalIds = [...new Set(projects.map(p=>p.goalId))];
   const goals = STRATEGIC_GOALS.filter(g=> goalIds.includes(g.id)).sort((a,b)=> a.id-b.id);
 
@@ -6078,7 +6123,7 @@ function renderCompetitionReport(){
     return { project: pr, pct, notStarted };
   }).sort((a,b)=> b.pct - a.pct);
 
-  // ===== إحصاءات الصفحة الأولى (إنفوجرافيك المحافظة) =====
+  // ===== إحصاءات الصفحة الأولى (إنفوجرافيك المحافظة) — على مستوى المشاريع النشطة فقط =====
   const programCodesAll = [...new Set(projects.map(p=>p.programCode))];
   const totalProjects = projects.length;
   const totalWithDetail = projects.filter(p=>{ const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
@@ -6086,6 +6131,14 @@ function renderCompetitionReport(){
     ? Math.round(totalWithDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/totalWithDetail.length)
     : 0;
   const overallAdherence = Math.round(computeScheduleAdherence(projects)*100);
+
+  // ===== إحصاءات المشاريع المغلقة =====
+  const totalAll = allMatchedProjects.length;
+  const closedSuccessCount = closedProjects.filter(p=>p.closedType==="success").length;
+  const closedEarlyCount = closedProjects.filter(p=>p.closedType==="early").length;
+  const closedSuccessPct = totalAll>0 ? Math.round((closedSuccessCount/totalAll)*100) : 0;
+  const closedEarlyPct = totalAll>0 ? Math.round((closedEarlyCount/totalAll)*100) : 0;
+
   const filterLabel = [
     filters.year ? `سنة ${filters.year}` : "",
     filters.goalId ? (STRATEGIC_GOALS.find(g=>String(g.id)===filters.goalId)||{}).name : "",
@@ -6139,32 +6192,32 @@ function renderCompetitionReport(){
       </div>
       <div class="comp-stats-grid">
         <div class="comp-stat-card"><div class="csc-num">${programCodesAll.length}</div><div class="csc-lbl">برنامج تنفيذي نشط</div></div>
-        <div class="comp-stat-card"><div class="csc-num">${totalProjects}</div><div class="csc-lbl">مشروعًا ومبادرة</div></div>
+        <div class="comp-stat-card"><div class="csc-num">${totalProjects}</div><div class="csc-lbl">مشروعًا ومبادرة نشطة</div></div>
         <div class="comp-stat-card"><div class="csc-num">${overallAvg}%</div><div class="csc-lbl">متوسط الإنجاز العام</div></div>
         <div class="comp-stat-card"><div class="csc-num">${overallAdherence}%</div><div class="csc-lbl">الالتزام بالجدول الزمني</div></div>
       </div>
+      <div class="comp-stats-grid-closed">
+        <div class="comp-stat-card" style="background:linear-gradient(160deg,#1E7A3D,#12461f);"><div class="csc-num">${closedSuccessPct}%</div><div class="csc-lbl">أُغلقت بنجاح (100%)</div></div>
+        <div class="comp-stat-card" style="background:linear-gradient(160deg,#8a6d1f,#5c481280);"><div class="csc-num">${closedEarlyPct}%</div><div class="csc-lbl">أُغلقت مبكرًا (غير مكتملة)</div></div>
+      </div>
+      ${top3.length>0 ? `
+      <div class="comp-leaderboard" style="margin-top:8px;">
+        <div class="comp-section-heading">🏆 لوحة الريادة — المراكز الثلاثة الأولى</div>
+        ${podiumHtml}
+      </div>` : ""}
     </div>`;
 
-  // ===== صفحات لوحة الريادة: مقسّمة برمجيًا بعدد ثابت من البطاقات لكل صفحة (لا نعتمد على التفاف المتصفح التلقائي) =====
+  // ===== صفحات باقي لوحة الريادة (من المركز 4): مقسّمة برمجيًا بعدد ثابت من البطاقات لكل صفحة =====
   const REST_CARDS_PER_PAGE = 12;
   const leaderboardPages = [];
-  if(projectStats.length===0){
-    leaderboardPages.push(`<div class="empty-note">لا توجد بيانات مطابقة لهذا الاختيار.</div>`);
-  }else{
-    const restChunks = [];
-    for(let i=0;i<restCards.length;i+=REST_CARDS_PER_PAGE) restChunks.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
-    if(restChunks.length===0) restChunks.push([]);
-    restChunks.forEach((chunk, idx)=>{
-      leaderboardPages.push(`
-        ${idx===0 ? podiumHtml : ""}
-        <div class="lb-rest-grid">${chunk.join("")}</div>`);
-    });
+  if(rest.length>0){
+    for(let i=0;i<rest.length;i+=REST_CARDS_PER_PAGE) leaderboardPages.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
   }
-  const leaderboardPageHtml = leaderboardPages.map((pageContent, idx)=> `
+  const leaderboardPageHtml = leaderboardPages.map((chunk, idx)=> `
     <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
-        <div class="comp-section-heading">🏆 لوحة الريادة — ترتيب المشاريع حسب نسبة الإنجاز${idx>0?" (تابع)":""}</div>
-        ${pageContent}
+        <div class="comp-section-heading">🏆 لوحة الريادة — باقي الترتيب${leaderboardPages.length>1?` (${idx+1}/${leaderboardPages.length})`:""}</div>
+        <div class="lb-rest-grid">${chunk.join("")}</div>
       </div>
     </div>`).join("");
 
@@ -6231,7 +6284,34 @@ function renderCompetitionReport(){
       </div>
     </div>`;
 
-  document.getElementById("competitionReportContent").innerHTML = statsPageHtml + leaderboardPageHtml + gaugesPageHtml + notStartedHtml;
+  // ===== قسم مستقل للمشاريع المغلقة — لا يُنافس المشاريع النشطة، مقسَّم بنجاح/مبكرًا =====
+  const closedSuccessList = closedProjects.filter(p=>p.closedType==="success");
+  const closedEarlyList = closedProjects.filter(p=>p.closedType==="early");
+  const closedGaugeCard = (pr, isSuccess)=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const pct = detail ? computeOverallPct(detail) : 0;
+    const ownerLabels = getProjectOwnerLabels(pr);
+    return `
+      <div class="comp-gauge-card comp-gauge-clickable" data-project-id="${pr.id}" title="فتح الخطة التفصيلية">
+        ${gaugeSVG(pct, 110)}
+        <div class="cg-name">${escapeHtml(pr.projectName)}</div>
+        <span class="lb-notstarted-badge" style="background:${isSuccess?'#E9F7EE':'#FFF3D6'};color:${isSuccess?'#1E7A3D':'#8a6d1f'};">${isSuccess?'✅ مغلق بنجاح':'🔒 مغلق مبكرًا'}</span>
+        <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
+        ${pr.closedNote ? `<div class="cg-meta" style="font-style:italic;margin-top:3px;">"${escapeHtml(pr.closedNote)}"</div>` : ""}
+      </div>`;
+  };
+  const closedPageHtml = closedProjects.length===0 ? "" : `
+    <div class="comp-page comp-closed-page">
+      <div class="comp-section-heading">🔒 المشاريع المغلقة (${closedProjects.length})</div>
+      ${closedSuccessList.length>0 ? `
+        <div class="comp-program-subheading" style="color:#1E7A3D;">✅ أُغلقت بنجاح (${closedSuccessList.length})</div>
+        <div class="comp-gauges-row" style="margin-bottom:24px;">${closedSuccessList.map(pr=>closedGaugeCard(pr,true)).join("")}</div>` : ""}
+      ${closedEarlyList.length>0 ? `
+        <div class="comp-program-subheading" style="color:#8a6d1f;">🔒 أُغلقت مبكرًا — غير مكتملة (${closedEarlyList.length})</div>
+        <div class="comp-gauges-row">${closedEarlyList.map(pr=>closedGaugeCard(pr,false)).join("")}</div>` : ""}
+    </div>`;
+
+  document.getElementById("competitionReportContent").innerHTML = statsPageHtml + leaderboardPageHtml + gaugesPageHtml + notStartedHtml + closedPageHtml;
   document.querySelectorAll(".comp-gauge-clickable").forEach(card=>{
     card.onclick = ()=> openProjectDetailForm(card.dataset.projectId);
   });
@@ -6636,6 +6716,7 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, s
   }
   validateAllStepDateOrder();
   const clearBtn = document.getElementById("detailClearBtn");
+  clearBtn.style.display = isAdminContext ? "" : "none"; // متاح لقسم التخطيط فقط — إزالة كاملة من واجهة المدير التنفيذي/مدير المشروع
   clearBtn.disabled = structureLocked;
   clearBtn.title = structureLocked ? "لا يمكن المسح أثناء قفل هيكل المراحل - افتح القفل أولاً من قسم التخطيط" : "مسح جميع بيانات الخطة التفصيلية لهذا المشروع";
   if(isAdminContext){
