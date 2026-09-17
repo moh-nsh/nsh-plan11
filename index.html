@@ -1423,6 +1423,11 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="mgrDecisionsList"></div>
     </div>
     <div class="pending-list">
+      <h3>🚨 سجل تحديات مشاريعك</h3>
+      <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
+      <div id="mgrChallengesList"></div>
+    </div>
+    <div class="pending-list">
       <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
       <div class="section-desc" style="margin-bottom:14px;">مثلاً: طلب فتح مشروع لتعديل الاسم، أو ملاحظة عامة (تغيير كلمة المرور...) أو أي طلب آخر</div>
       <div class="request-add-form">
@@ -1491,6 +1496,11 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="pending-list">
       <h3>📝 قرارات وملاحظات خاصة بمشاريعك</h3>
       <div id="pmDecisionsList"></div>
+    </div>
+    <div class="pending-list">
+      <h3>🚨 سجل تحديات مشاريعك</h3>
+      <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
+      <div id="pmChallengesList"></div>
     </div>
     <div class="pending-list">
       <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
@@ -2249,6 +2259,54 @@ function getPendingPlanningNotes(projects){
     });
   });
   return pending;
+}
+// يجمع كل تحديات مشاريع مدير معيّن (تنفيذي أو مشروع)، الأحدث أولًا
+function getMyChallenges(projects){
+  const entries = [];
+  projects.forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.challengesList)) return;
+    detail.challengesList.forEach(c=> entries.push({ project: pr, challenge: c }));
+  });
+  const order = { escalated:0, answered:1, open:2, resolved:3 };
+  return entries.sort((a,b)=> (order[a.challenge.status]??9) - (order[b.challenge.status]??9));
+}
+// يجمع كل التحديات التي طرأ عليها تحديث (أي حالة غير "لم يُعالَج بعد") — لتنبيه صاحبها أن هناك مستجدًا يستحق المتابعة
+function getChallengeUpdatesForManager(projects){
+  const updates = [];
+  projects.forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.challengesList)) return;
+    detail.challengesList.forEach(c=>{
+      if(c.status!=="open") updates.push({ project: pr, challenge: c });
+    });
+  });
+  return updates;
+}
+// يبني قائمة عرض (للقراءة فقط) لتحديات مدير معيّن — تُستخدم في تبويب "التواصل مع قسم التخطيط"
+function myChallengesListHTML(projects){
+  const entries = getMyChallenges(projects);
+  if(entries.length===0) return `<div class="empty-note">لم تُسجِّل أي تحدٍّ بعد.</div>`;
+  return entries.map(({project, challenge})=>{
+    const statusInfo = {
+      open: { icon:"⚪", label:"لم يُعالَج بعد" },
+      resolved: { icon:"🟢", label:"تم الحل" },
+      escalated: { icon:"🔴", label:"مُصعَّد للمدير العام — بانتظار الرد" },
+      answered: { icon:"🔵", label:"ردّ المدير العام" }
+    }[challenge.status] || { icon:"⚪", label:"" };
+    const resolutionInfo = challenge.status==="resolved" && challenge.resolutionNote
+      ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
+    const dgResponseInfo = challenge.dgResponse
+      ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
+    return `
+      <div class="planning-note-row" data-project-id="${project.id}" style="cursor:pointer;">
+        <div class="note-body">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${escapeHtml(project.projectName)}</div>
+          <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
+          ${resolutionInfo}${dgResponseInfo}
+        </div>
+      </div>`;
+  }).join("");
 }
 function refreshOpenPlanningNotesIfNeeded(){
   const overlay = document.getElementById("detailModalOverlay");
@@ -3618,6 +3676,10 @@ document.getElementById("pmSendRequestBtn").onclick = ()=>{
 function renderPMComms(){
   const projects = getPMProjects();
   const projectIds = projects.map(p=>p.id);
+  document.getElementById("pmChallengesList").innerHTML = myChallengesListHTML(projects);
+  document.getElementById("pmChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
+  });
   const myDecisions = ALL_DECISIONS.filter(d=> d.projectId && projectIds.includes(d.projectId))
     .sort((a,b)=>{
       const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
@@ -3678,8 +3740,9 @@ function checkAndShowLateStepsPopup(){
   const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
   const activeAnnouncements = getActiveAnnouncementsFor(currentManager);
   const pendingNotes = getPendingPlanningNotes(myProjects);
+  const challengeUpdates = getChallengeUpdatesForManager(myProjects);
 
-  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0) return;
+  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && challengeUpdates.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
   let html = "";
   if(activeAnnouncements.length>0){
@@ -3688,6 +3751,18 @@ function checkAndShowLateStepsPopup(){
       <div class="phase-alert-row announcement-alert">
         <div>${escapeHtml(a.text)}</div>
       </div>`).join("");
+  }
+  if(challengeUpdates.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">🚨 مستجدات على تحدياتك (${challengeUpdates.length})</div>`;
+    html += challengeUpdates.map(({project, challenge})=>{
+      const statusLabel = { resolved:"✅ تم الحل", escalated:"⬆️ صُعِّد للمدير العام", answered:"💬 ردّ المدير العام" }[challenge.status] || "";
+      return `
+      <div class="phase-alert-row ${challenge.status==='escalated'?'late':'upcoming'}" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
+        ${challenge.dgResponse ? `<div style="font-size:11px;color:#1E4E8C;margin-top:2px;">💬 ${escapeHtml(challenge.dgResponse)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${challenge.status==='escalated'?'late':'upcoming'}">${statusLabel}</span>
+      </div>`;}).join("");
   }
   if(pendingNotes.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
@@ -3757,8 +3832,9 @@ function checkAndShowPMPopup(){
   });
   const activeAnnouncements = getActiveAnnouncementsFor(currentProjectManagerName);
   const pendingNotes = getPendingPlanningNotes(myProjects);
+  const challengeUpdates = getChallengeUpdatesForManager(myProjects);
 
-  if(lateEntries.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0) return;
+  if(lateEntries.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && challengeUpdates.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
   let html = "";
   if(activeAnnouncements.length>0){
@@ -3767,6 +3843,18 @@ function checkAndShowPMPopup(){
       <div class="phase-alert-row announcement-alert">
         <div>${escapeHtml(a.text)}</div>
       </div>`).join("");
+  }
+  if(challengeUpdates.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">🚨 مستجدات على تحدياتك (${challengeUpdates.length})</div>`;
+    html += challengeUpdates.map(({project, challenge})=>{
+      const statusLabel = { resolved:"✅ تم الحل", escalated:"⬆️ صُعِّد للمدير العام", answered:"💬 ردّ المدير العام" }[challenge.status] || "";
+      return `
+      <div class="phase-alert-row ${challenge.status==='escalated'?'late':'upcoming'}" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
+        ${challenge.dgResponse ? `<div style="font-size:11px;color:#1E4E8C;margin-top:2px;">💬 ${escapeHtml(challenge.dgResponse)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${challenge.status==='escalated'?'late':'upcoming'}">${statusLabel}</span>
+      </div>`;}).join("");
   }
   if(pendingNotes.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
@@ -3948,6 +4036,11 @@ function updateMgrCommsBadge(){
   }
 }
 function renderManagerComms(){
+  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  document.getElementById("mgrChallengesList").innerHTML = myChallengesListHTML(myProjects);
+  document.getElementById("mgrChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
+  });
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
   const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
     .sort((a,b)=>{
