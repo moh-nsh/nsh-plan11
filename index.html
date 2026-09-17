@@ -1333,6 +1333,24 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<div id="adminChallengesPopupOverlay" class="modal-overlay hidden">
+  <div class="late-popup-box">
+    <h3>🚨 تحديات جديدة تحتاج قرارك</h3>
+    <div class="lp-desc">سجّلها مدراء المشاريع/البرامج ولم يُتَّخذ إجراء بعد (حل أو تصعيد). اضغط على أي بند لفتح المشروع مباشرة.</div>
+    <div id="adminChallengesPopupList"></div>
+    <button class="late-popup-close" id="adminChallengesPopupClose">إغلاق</button>
+  </div>
+</div>
+
+<div id="dgChallengesPopupOverlay" class="modal-overlay hidden">
+  <div class="late-popup-box">
+    <h3>🚨 تحديات مُصعَّدة تحتاج ردّك</h3>
+    <div class="lp-desc">لم يستطع قسم التخطيط حلّها داخليًا. اضغط على أي بند لفتح المشروع أو الرد مباشرة.</div>
+    <div id="dgChallengesPopupList"></div>
+    <button class="late-popup-close" id="dgChallengesPopupClose">إغلاق</button>
+  </div>
+</div>
+
 <!-- ===================== MANAGER DASHBOARD ===================== -->
 <div id="managerScreen" class="hidden">
   <div class="topbar">
@@ -1746,6 +1764,22 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="allPlanningNotesList"></div>
+
+    <div class="section-title" style="margin-top:40px;">🚨 سجل تحديات المشاريع — كل المشاريع</div>
+    <div class="section-desc">كل التحديات المُسجَّلة من مدراء المشاريع/البرامج، مجمَّعة في مكان واحد — حل داخلي، تصعيد للمدير العام، أو حذف</div>
+    <div id="challengesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="chFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="chFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+      <select id="chFilterStatus">
+        <option value="">كل الحالات</option>
+        <option value="open">لم يُعالَج بعد</option>
+        <option value="resolved">تم الحل داخليًا</option>
+        <option value="escalated">مُصعَّد — بانتظار رد المدير العام</option>
+        <option value="answered">ردّ المدير العام</option>
+      </select>
+    </div>
+    <div id="allChallengesList"></div>
 
     <div class="section-title" style="margin-top:40px;">📢 رسالة تنبيه منبثقة</div>
     <div class="section-desc">تظهر تلقائيًا عند الدخول — للجميع افتراضيًا، أو حدّد مستلمين معيّنين (مدراء تنفيذيين و/أو مدراء مشاريع)</div>
@@ -2317,6 +2351,92 @@ function renderAllPlanningNotes(){
     btn.onclick = ()=>{
       if(!confirm("هل أنت متأكد من حذف هذه النقطة نهائيًا؟")) return;
       deletePlanningNote(btn.dataset.projectId, btn.dataset.noteId);
+    };
+  });
+}
+// يجمع كل تحديات المشاريع عبر كل المشاريع في مكان واحد لقسم التخطيط، مع الفلاتر النشطة
+function renderAllChallenges(){
+  const goalFilter = document.getElementById("chFilterGoal").value;
+  const programFilter = document.getElementById("chFilterProgram").value;
+  const statusFilter = document.getElementById("chFilterStatus").value;
+
+  const allEntries = [];
+  ALL_PROJECT_DETAILS.forEach(detail=>{
+    if(!Array.isArray(detail.challengesList)) return;
+    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
+    if(!project) return;
+    detail.challengesList.forEach(challenge=> allEntries.push({ project, challenge }));
+  });
+
+  const filtered = allEntries.filter(({project, challenge})=>{
+    if(goalFilter && String(project.goalId)!==goalFilter) return false;
+    if(programFilter && project.programCode!==programFilter) return false;
+    if(statusFilter && challenge.status!==statusFilter) return false;
+    return true;
+  });
+
+  const openCount = allEntries.filter(e=>e.challenge.status==="open").length;
+  const resolvedCount = allEntries.filter(e=>e.challenge.status==="resolved").length;
+  const escalatedCount = allEntries.filter(e=>e.challenge.status==="escalated").length;
+  const answeredCount = allEntries.filter(e=>e.challenge.status==="answered").length;
+  document.getElementById("challengesSummaryGrid").innerHTML = `
+    <div class="summary-card"><div class="num">${allEntries.length}</div><div class="lbl">إجمالي التحديات</div></div>
+    <div class="summary-card"><div class="num">${openCount}</div><div class="lbl">⚪ لم يُعالَج بعد</div></div>
+    <div class="summary-card"><div class="num">${escalatedCount}</div><div class="lbl">🔴 مُصعَّد — بانتظار الرد</div></div>
+    <div class="summary-card"><div class="num">${resolvedCount+answeredCount}</div><div class="lbl">✅ مُعالَج (حلًا أو ردًا)</div></div>
+  `;
+
+  // ترتيب: المفتوحة أولًا (أكثر إلحاحًا)، ثم المُصعَّدة، ثم المُجاب عنها، ثم المحلولة أخيرًا
+  const statusOrder = { open:0, escalated:1, answered:2, resolved:3 };
+  filtered.sort((a,b)=> statusOrder[a.challenge.status]-statusOrder[b.challenge.status]);
+
+  const list = document.getElementById("allChallengesList");
+  list.innerHTML = filtered.length===0 ? `<div class="empty-note">لا توجد تحديات مطابقة لهذا الاختيار.</div>` : filtered.map(({project, challenge})=>{
+    const statusInfo = {
+      open: { icon:"⚪" }, resolved: { icon:"🟢" }, escalated: { icon:"🔴" }, answered: { icon:"🔵" }
+    }[challenge.status] || { icon:"⚪" };
+    const createdInfo = `<div class="note-meta">سجّله ${escapeHtml(challenge.createdBy)}</div>`;
+    const resolutionInfo = challenge.status==="resolved" && challenge.resolutionNote
+      ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
+    const escalatedInfo = (challenge.status==="escalated" || challenge.status==="answered") && challenge.escalatedBy
+      ? `<div class="note-meta">⬆️ صعّدها ${escapeHtml(challenge.escalatedBy)} للمدير العام</div>` : "";
+    const dgResponseInfo = challenge.dgResponse
+      ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
+    return `
+      <div class="planning-note-row" style="flex-wrap:wrap;">
+        <div class="note-body">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${project.programCode} — ${escapeHtml(project.programName)} | 👤 ${escapeHtml(project.govManager)}</div>
+          <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${statusInfo.icon} ${escapeHtml(challenge.text)}</div>
+          ${createdInfo}${resolutionInfo}${escalatedInfo}${dgResponseInfo}
+        </div>
+        <div class="note-actions">
+          <button class="ach-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
+          ${challenge.status==="open" ? `<button class="ach-resolve-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">✅ حل داخليًا</button><button class="ach-escalate-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">⬆️ تصعيد</button>` : ""}
+          <button class="ach-delete-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" title="حذف نهائي">🗑️</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  list.querySelectorAll(".ach-open-btn").forEach(btn=>{
+    btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId);
+  });
+  list.querySelectorAll(".ach-resolve-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const note = prompt("وصف مختصر لكيفية حل هذا التحدي (اختياري):", "");
+      if(note===null) return;
+      resolveChallenge(btn.dataset.projectId, btn.dataset.challengeId, note.trim());
+    };
+  });
+  list.querySelectorAll(".ach-escalate-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("سيتم تصعيد هذا التحدي للمدير العام مباشرة. هل أنت متأكد؟")) return;
+      escalateChallenge(btn.dataset.projectId, btn.dataset.challengeId);
+    };
+  });
+  list.querySelectorAll(".ach-delete-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("هل أنت متأكد من حذف هذا التحدي نهائيًا؟")) return;
+      deleteChallenge(btn.dataset.projectId, btn.dataset.challengeId);
     };
   });
 }
@@ -3221,7 +3341,7 @@ function submitLoginForm(){
     errEl.textContent = "بيانات الدخول غير صحيحة"; return;
   }
 
-  if(username === "DG"){
+  if(username.toLowerCase() === "dg"){
     if(pw === (DG_PASSWORD_CURRENT || DG_PASSWORD)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterDG();
@@ -4425,7 +4545,36 @@ function enterAdmin(){
   renderAdmin();
   updateRequestsBadge();
   renderCountdownBar("adminCountdownBar", true);
+  setTimeout(checkAndShowAdminChallengesPopup, 500);
 }
+// يجمع كل التحديات "المُسجَّلة" (⚪ لم يُتَّخذ إجراء بعد) عبر كل المشاريع — لعرضها كتنبيه فوري لقسم التخطيط
+function checkAndShowAdminChallengesPopup(){
+  const openEntries = [];
+  ALL_PROJECT_DETAILS.forEach(detail=>{
+    if(!Array.isArray(detail.challengesList)) return;
+    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
+    if(!project) return;
+    detail.challengesList.forEach(c=>{
+      if(c.status==="open") openEntries.push({ project, challenge:c });
+    });
+  });
+  if(openEntries.length===0) return;
+  const list = document.getElementById("adminChallengesPopupList");
+  list.innerHTML = openEntries.map(({project, challenge})=>`
+    <div class="phase-alert-row late" data-project-id="${project.id}">
+      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
+      <span class="phase-alert-badge late">سجّله ${escapeHtml(challenge.createdBy)}</span>
+    </div>`).join("");
+  list.querySelectorAll(".phase-alert-row").forEach(row=>{
+    row.onclick = ()=>{
+      document.getElementById("adminChallengesPopupOverlay").classList.add("hidden");
+      openProjectDetailForm(row.dataset.projectId);
+    };
+  });
+  document.getElementById("adminChallengesPopupOverlay").classList.remove("hidden");
+}
+document.getElementById("adminChallengesPopupClose").onclick = ()=> document.getElementById("adminChallengesPopupOverlay").classList.add("hidden");
+
 document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
 function enterDG(){
   currentDG = true;
@@ -4433,7 +4582,36 @@ function enterDG(){
   buildDGFilters();
   renderDGScreen();
   logActivity("المدير العام", "login", "");
+  setTimeout(checkAndShowDGChallengesPopup, 500);
 }
+// يجمع كل التحديات المُصعَّدة (🔴 لم يُردَّ عليها بعد) — لعرضها كتنبيه فوري للمدير العام
+function checkAndShowDGChallengesPopup(){
+  const escalatedEntries = [];
+  ALL_PROJECT_DETAILS.forEach(detail=>{
+    if(!Array.isArray(detail.challengesList)) return;
+    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
+    if(!project) return;
+    detail.challengesList.forEach(c=>{
+      if(c.status==="escalated") escalatedEntries.push({ project, challenge:c });
+    });
+  });
+  if(escalatedEntries.length===0) return;
+  const list = document.getElementById("dgChallengesPopupList");
+  list.innerHTML = escalatedEntries.map(({project, challenge})=>`
+    <div class="phase-alert-row late" data-project-id="${project.id}">
+      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
+      <span class="phase-alert-badge late">صعّدها ${escapeHtml(challenge.escalatedBy||"")}</span>
+    </div>`).join("");
+  list.querySelectorAll(".phase-alert-row").forEach(row=>{
+    row.onclick = ()=>{
+      document.getElementById("dgChallengesPopupOverlay").classList.add("hidden");
+      openProjectDetailForm(row.dataset.projectId);
+    };
+  });
+  document.getElementById("dgChallengesPopupOverlay").classList.remove("hidden");
+}
+document.getElementById("dgChallengesPopupClose").onclick = ()=> document.getElementById("dgChallengesPopupOverlay").classList.add("hidden");
+
 document.getElementById("dgLogoutBtn").onclick = ()=>{ currentDG = false; resetLoginForm(); showScreen("loginScreen"); };
 document.getElementById("dgChangePasswordBtn").onclick = ()=>{
   document.getElementById("dgNewPasswordInput").value = "";
@@ -4971,6 +5149,18 @@ function buildDecisionLogScreen(){
   document.getElementById("pnFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   document.getElementById("pnFilterProgram").onchange = renderDecisionLogScreen;
   document.getElementById("pnFilterStatus").onchange = renderDecisionLogScreen;
+
+  document.getElementById("chFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("chFilterGoal").onchange = ()=>{
+    const goalId = document.getElementById("chFilterGoal").value;
+    const progSel = document.getElementById("chFilterProgram");
+    const progs = goalId ? PROGRAMS.filter(p=>String(p.goalId)===goalId) : PROGRAMS;
+    progSel.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    renderDecisionLogScreen();
+  };
+  document.getElementById("chFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  document.getElementById("chFilterProgram").onchange = renderDecisionLogScreen;
+  document.getElementById("chFilterStatus").onchange = renderDecisionLogScreen;
   document.getElementById("addDecisionBtn").onclick = ()=>{
     const programCode = document.getElementById("decisionProgramSelect").value;
     const projectId = document.getElementById("decisionProjectSelect").value;
@@ -5094,6 +5284,7 @@ function renderAnnouncementsList(){
 function renderDecisionLogScreen(){
   renderAnnouncementsList();
   renderAllPlanningNotes();
+  renderAllChallenges();
   const totalCount = ALL_DECISIONS.length;
   const resolvedCount = ALL_DECISIONS.filter(d=>d.resolved).length;
   document.getElementById("decisionSummaryGrid").innerHTML = `
@@ -6379,12 +6570,16 @@ function renderDGScreen(){
     <div class="comp-gauges-row">
       ${ranked.map(({project:pr, pct, notStarted})=>{
         const ownerLabels = getProjectOwnerLabels(pr);
+        const goalName = (STRATEGIC_GOALS.find(g=>g.id===pr.goalId)||{}).name || "";
         return `
           <div class="comp-gauge-card comp-gauge-clickable" data-project-id="${pr.id}" title="فتح الخطة التفصيلية">
             ${gaugeSVG(pct, 110)}
             <div class="cg-name">${escapeHtml(pr.projectName)}</div>
             ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}
-            <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
+            <div class="cg-meta" style="margin-top:6px;">🎯 ${pr.goalId}. ${escapeHtml(goalName)}</div>
+            <div class="cg-meta">📂 ${pr.programCode} — ${escapeHtml(pr.programName)}</div>
+            <div class="cg-meta">👤 مسؤول البرنامج: ${escapeHtml(pr.govManager)}</div>
+            <div class="cg-meta">🧑‍💼 ${ownerLabels.map(escapeHtml).join("، ")}</div>
           </div>`;
       }).join("") || `<div class="empty-note">لا توجد مشاريع مطابقة لهذا الاختيار.</div>`}
     </div>
@@ -6395,12 +6590,15 @@ function renderDGScreen(){
         const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
         const pct = detail ? computeOverallPct(detail) : 0;
         const isSuccess = pr.closedType==="success";
+        const goalName = (STRATEGIC_GOALS.find(g=>g.id===pr.goalId)||{}).name || "";
         return `
           <div class="comp-gauge-card comp-gauge-clickable" data-project-id="${pr.id}">
             ${gaugeSVG(pct, 100)}
             <div class="cg-name">${escapeHtml(pr.projectName)}</div>
             <span class="lb-notstarted-badge" style="background:${isSuccess?'#E9F7EE':'#FFF3D6'};color:${isSuccess?'#1E7A3D':'#8a6d1f'};">${isSuccess?'✅ مغلق بنجاح':'🔒 مغلق مبكرًا'}</span>
-            <div class="cg-meta">${pr.programCode}</div>
+            <div class="cg-meta" style="margin-top:6px;">🎯 ${pr.goalId}. ${escapeHtml(goalName)}</div>
+            <div class="cg-meta">📂 ${pr.programCode} — ${escapeHtml(pr.programName)}</div>
+            <div class="cg-meta">👤 مسؤول البرنامج: ${escapeHtml(pr.govManager)}</div>
           </div>`;
       }).join("")}
     </div>` : ""}`;
@@ -8283,6 +8481,7 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
   if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllPlanningNotes();
+  if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllChallenges();
   if(!document.getElementById("dgScreen").classList.contains("hidden")) renderDGScreen();
   refreshOpenPlanningNotesIfNeeded();
 });
