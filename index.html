@@ -1090,6 +1090,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#0D6E6E;color:#fff;">📊 المشاريع</button>
     <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">🏆 تقرير المنافسة</button>
     <button class="meeting-btn" id="navFullMatrixBtn" style="background:#0D6E6E;color:#fff;">📐 المصفوفة الشاملة</button>
+    <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;">📈 مؤشر الأداء الزمني SPI</button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#1E4E8C;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navRequestsBtn" style="background:#1E4E8C;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navDecisionLogBtn" style="background:#1E4E8C;color:#fff;position:relative;">📝 إدارة الملاحظات والقرارات <span id="navChallengesBadge" class="req-badge hidden">0</span></button>
@@ -1106,6 +1107,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div style="display:flex;gap:10px;">
       <button class="meeting-btn" id="dgTabOverviewBtn" style="background:#0D6E6E;color:#fff;">📊 نظرة عامة</button>
       <button class="meeting-btn" id="dgTabChallengesBtn" style="background:#B3202E;color:#fff;position:relative;">🚨 التحديات <span id="dgChallengesBadge" class="req-badge hidden">0</span></button>
+      <button class="meeting-btn" id="dgTabSPIBtn" style="background:#1E4E8C;color:#fff;">📈 SPI</button>
       <button class="meeting-btn" id="dgChangePasswordBtn" style="background:#5B3EAF;color:#fff;">🔑 تغيير كلمة المرور</button>
       <button class="logout-btn" id="dgLogoutBtn">تسجيل الخروج</button>
     </div>
@@ -1122,6 +1124,11 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">🚨 تحديات مُصعَّدة تحتاج رأيك</div>
     <div class="section-desc">تحديات واجهت مدراء المشاريع/البرامج ولم يستطع قسم التخطيط حلّها داخليًا — ردّك يظهر لهم مباشرة</div>
     <div id="dgEscalatedChallengesList"></div>
+  </div>
+  <div class="dash-wrap hidden" id="dgSPIView">
+    <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
+    <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div id="dgSPIContent"></div>
   </div>
 </div>
 
@@ -1289,6 +1296,15 @@ tr.rejected-row td{background:#FDF6F6;}
   <div id="fullMatrixContent" style="padding:0 24px 30px;"></div>
 </div>
 
+<!-- ===================== SPI SCREEN (ADMIN) ===================== -->
+<div id="spiScreen" class="hidden">
+  <div class="dash-wrap">
+    <div class="section-title">📈 مؤشر الأداء الزمني SPI (Schedule Performance Index)</div>
+    <div class="section-desc">يقارن الإنجاز الفعلي لكل مشروع بما كان متوقَّعًا منه حسب خط أساس مُجمَّد لا يتأثر بتعديل التواريخ لاحقًا — SPI أقل من 1 يعني تأخرًا عن الخط الأساس، وأعلى من 1 يعني تقدّمًا عليه</div>
+    <div id="spiScreenContent"></div>
+  </div>
+</div>
+
 <!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
 <div id="weeklyReportScreen" class="hidden">
   <div class="dash-wrap">
@@ -1375,6 +1391,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
       <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrTabSPI">📈 مؤشر الأداء الزمني SPI</button>
     </div>
   </div>
   <div class="dash-wrap" id="mgrInputView">
@@ -1441,6 +1458,11 @@ tr.rejected-row td{background:#FDF6F6;}
       <div id="mgrRequestsList" style="margin-top:16px;"></div>
     </div>
   </div>
+  <div class="dash-wrap hidden" id="mgrSPIView">
+    <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
+    <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع من مشاريعك — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div id="mgrSPIContent"></div>
+  </div>
 </div>
 
 <!-- ===================== PROJECT MANAGER SCREEN (جديد) ===================== -->
@@ -1463,6 +1485,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab active" id="pmTabInput">📥 مشاريعي</button>
       <button class="mgr-tab" id="pmTabOverview">📊 لوحة المتابعة</button>
       <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmTabSPI">📈 مؤشر الأداء الزمني SPI</button>
     </div>
   </div>
 
@@ -1513,6 +1536,11 @@ tr.rejected-row td{background:#FDF6F6;}
       </div>
       <div id="pmRequestsList" style="margin-top:16px;"></div>
     </div>
+  </div>
+  <div class="dash-wrap hidden" id="pmSPIView">
+    <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
+    <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع من مشاريعك — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div id="pmSPIContent"></div>
   </div>
 </div>
 
@@ -2248,6 +2276,144 @@ function deleteChallenge(projectId, challengeId){
   const updated = list.filter(c=> c.id!==challengeId);
   saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
     if(ok) logActivity(ADMIN_NAME, "delete_challenge", challengeId);
+  });
+}
+/* ==================== خط الأساس ومؤشر الأداء الزمني (SPI) — نسخة مُجمَّدة من تواريخ الخطة لحظة الاعتماد، لا تتأثر بأي تعديل لاحق على التواريخ الفعلية ==================== */
+// يحفظ نسخة كاملة (لكل خطوة بمفردها) من تواريخ الخطة الحالية كخط أساس دائم — لا يمكن استدعاؤه مرة ثانية إلا بعد سماح صريح من قسم التخطيط
+// يقبل phases كمعطى مباشر (من نموذج الشاشة الحيّ) بدل قراءتها من النسخة المحفوظة محليًا، لأن الأخيرة قد لا تكون تحدَّثت بعد بسبب تأخير الحفظ التلقائي
+function setSPIBaseline(projectId, actorName, livePhases){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const sourcePhases = Array.isArray(livePhases) ? livePhases : (existing && Array.isArray(existing.phases) ? existing.phases : null);
+  if(!sourcePhases) return;
+  const baseline = {
+    setAt: new Date().toISOString(), setBy: actorName,
+    phases: sourcePhases.map(ph=>({
+      name: ph.name, weight: ph.weight,
+      steps: (ph.steps||[]).map(st=>({ startDate: st.startDate||null, endDate: st.endDate||null }))
+    }))
+  };
+  const history = (existing && Array.isArray(existing.spiBaselineHistory)) ? existing.spiBaselineHistory : [];
+  saveProjectDetail(projectId, { spiBaseline: baseline, spiBaselineHistory: history, spiUnlockRequested: null }).then(ok=>{
+    if(ok) logActivity(actorName, "set_spi_baseline", "");
+  });
+}
+// طلب من مالك المشروع لإعادة تحديد الخط الأساس (يحتاج سماح قسم التخطيط لاحقًا)
+function requestSPIBaselineUnlock(projectId, actorName){
+  saveProjectDetail(projectId, { spiUnlockRequested: { requestedBy: actorName, requestedAt: new Date().toISOString() } }).then(ok=>{
+    if(ok) logActivity(actorName, "request_spi_unlock", "");
+  });
+}
+// قسم التخطيط يسمح بإعادة التحديد — الخط الحالي يُنقَل للسجل التاريخي ويُفتح المجال لتحديد خط جديد
+function approveSPIBaselineUnlock(projectId){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  if(!existing) return;
+  const history = Array.isArray(existing.spiBaselineHistory) ? existing.spiBaselineHistory : [];
+  const oldBaseline = existing.spiBaseline;
+  const newHistory = oldBaseline ? [...history, { ...oldBaseline, unlockedBy: ADMIN_NAME, unlockedAt: new Date().toISOString() }] : history;
+  saveProjectDetail(projectId, { spiBaseline: null, spiBaselineHistory: newHistory, spiUnlockRequested: null }).then(ok=>{
+    if(ok) logActivity(ADMIN_NAME, "approve_spi_unlock", "");
+  });
+}
+// يحسب مؤشر الأداء الزمني (SPI) لمشروع له خط أساس محدَّد — يقارن الإنجاز الفعلي بالإنجاز المتوقَّع حسب الخط المُجمَّد، بأوزان المراحل الحقيقية
+function computeSPI(detail){
+  if(!detail || !detail.spiBaseline || !Array.isArray(detail.spiBaseline.phases)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let expectedSum = 0, actualSum = 0;
+  detail.spiBaseline.phases.forEach((basePh, pi)=>{
+    const liveSteps = (detail.phases && detail.phases[pi] && detail.phases[pi].steps) || [];
+    const baseSteps = basePh.steps || [];
+    const stepWeight = baseSteps.length>0 ? basePh.weight/baseSteps.length : 0;
+    baseSteps.forEach((baseSt, si)=>{
+      if(!baseSt.startDate || !baseSt.endDate) return;
+      const start = new Date(baseSt.startDate), end = new Date(baseSt.endDate);
+      if(isNaN(start) || isNaN(end) || end<=start) return;
+      const totalDays = (end-start)/86400000;
+      const elapsedDays = Math.max(0, Math.min((today-start)/86400000, totalDays));
+      const expectedPct = totalDays>0 ? elapsedDays/totalDays : 0;
+      expectedSum += expectedPct * stepWeight;
+      const liveStep = liveSteps[si];
+      const actualPct = liveStep && liveStep.status==="مكتمل" ? 1 : 0;
+      actualSum += actualPct * stepWeight;
+    });
+  });
+  if(expectedSum<=0) return null;
+  return { spi: actualSum/expectedSum, expectedPct: Math.round(expectedSum*100), actualPct: Math.round(actualSum*100) };
+}
+// يبني محتوى صفحة SPI لمجموعة مشاريع معيّنة — دالة مشتركة تُستخدَم لحساب التخطيط/المدير العام (بكل الصلاحيات) والمدير التنفيذي/مدير المشروع (بصلاحيات محدودة)
+function spiScreenContentHTML(projects, canApprove){
+  const noBaselineProjects = projects.filter(p=>{
+    const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+    return d && !d.spiBaseline && !d.closed;
+  });
+  const pendingUnlocks = projects.map(p=>{
+    const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+    return { project:p, detail:d };
+  }).filter(({detail})=> detail && detail.spiUnlockRequested);
+  const withBaseline = projects.map(p=>{
+    const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+    if(!d || !d.spiBaseline) return null;
+    return { project:p, detail:d, spi: computeSPI(d) };
+  }).filter(Boolean).sort((a,b)=>{
+    const av = a.spi ? a.spi.spi : 99, bv = b.spi ? b.spi.spi : 99;
+    return av - bv; // الأكثر تعثرًا أولًا (SPI منخفض) — الأكثر إلحاحًا للمتابعة
+  });
+
+  let html = "";
+  if(canApprove && pendingUnlocks.length>0){
+    html += `<div class="section-title" style="margin-top:0;">⚠️ طلبات إعادة تحديد الخط الأساس المعلَّقة (${pendingUnlocks.length})</div>`;
+    html += `<div style="margin-bottom:24px;">` + pendingUnlocks.map(({project, detail})=>`
+      <div class="planning-note-row chal-status-escalated">
+        <div class="note-body">
+          <div class="note-text"><b>${escapeHtml(project.projectName)}</b></div>
+          <div class="note-meta">طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)} بتاريخ ${escapeHtml((detail.spiUnlockRequested.requestedAt||"").slice(0,10))}</div>
+        </div>
+        <div class="note-actions">
+          <button class="spi-approve-unlock-btn" data-project-id="${project.id}">✅ سماح</button>
+          <button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
+        </div>
+      </div>`).join("") + `</div>`;
+  }
+  if(noBaselineProjects.length>0){
+    html += `<div class="section-title" style="margin-top:0;">🔔 مشاريع لم يُحدَّد لها خط أساس بعد (${noBaselineProjects.length})</div>`;
+    html += `<div style="margin-bottom:24px;">` + noBaselineProjects.map(p=>`
+      <div class="phase-alert-row upcoming" data-project-id="${p.id}">
+        <div><b>${escapeHtml(p.projectName)}</b> — ${p.programCode}</div>
+        <span class="phase-alert-badge upcoming">📋 فتح لتحديده</span>
+      </div>`).join("") + `</div>`;
+  }
+  html += `<div class="section-title" style="margin-top:0;">📈 مؤشرات الأداء الزمني (SPI) الحالية</div>`;
+  html += withBaseline.length===0 ? `<div class="empty-note">لا توجد مشاريع بخط أساس محدَّد حاليًا.</div>` : withBaseline.map(({project, spi})=>{
+    if(!spi) return `
+      <div class="planning-note-row">
+        <div class="note-body"><div class="note-text"><b>${escapeHtml(project.projectName)}</b> — تعذّر حساب SPI (تواريخ خط الأساس غير مكتملة)</div></div>
+        <div class="note-actions"><button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button></div>
+      </div>`;
+    const color = spi.spi>=0.95 ? "#1E7A3D" : (spi.spi>=0.8 ? "#C9962E" : "#B3202E");
+    const label = spi.spi>=0.95 ? "على المسار الصحيح" : (spi.spi>=0.8 ? "تأخر طفيف" : "متأخر بشكل ملحوظ");
+    return `
+      <div class="planning-note-row">
+        <div class="note-body">
+          <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${project.programCode}</div>
+          <div class="note-meta">الإنجاز الفعلي ${spi.actualPct}% مقابل المتوقَّع ${spi.expectedPct}%</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:18px;font-weight:800;color:${color};">${spi.spi.toFixed(2)}</div>
+          <div style="font-size:10.5px;color:${color};">${label}</div>
+        </div>
+        <div class="note-actions"><button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button></div>
+      </div>`;
+  }).join("");
+  return html;
+}
+function wireSPIScreenButtons(container){
+  container.querySelectorAll(".spi-open-btn, .phase-alert-row[data-project-id]").forEach(el=>{
+    el.onclick = ()=> openProjectDetailForm(el.dataset.projectId);
+  });
+  container.querySelectorAll(".spi-approve-unlock-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!confirm("سيُسمح لصاحب المشروع بتحديد خط أساس جديد، وسيُنقَل الخط الحالي للسجل التاريخي. هل أنت متأكد؟")) return;
+      approveSPIBaselineUnlock(btn.dataset.projectId);
+    };
   });
 }
 // إذا كانت نافذة الخطة التفصيلية مفتوحة حاليًا لهذا المشروع، يحدّث قائمة الملاحظات فقط دون التأثير على باقي الاستمارة
@@ -3372,7 +3538,7 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
-const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen"];
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen","spiScreen"];
 function showScreen(id){
   ["loginScreen","managerScreen","projectManagerScreen","dgScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
@@ -3483,16 +3649,26 @@ function switchPMTab(tab){
   document.getElementById("pmTabInput").classList.toggle("active", tab==="input");
   document.getElementById("pmTabOverview").classList.toggle("active", tab==="overview");
   document.getElementById("pmTabComms").classList.toggle("active", tab==="comms");
+  document.getElementById("pmTabSPI").classList.toggle("active", tab==="spi");
   document.getElementById("pmInputView").classList.toggle("hidden", tab!=="input");
   document.getElementById("pmOverviewView").classList.toggle("hidden", tab!=="overview");
   document.getElementById("pmCommsView").classList.toggle("hidden", tab!=="comms");
+  document.getElementById("pmSPIView").classList.toggle("hidden", tab!=="spi");
   if(tab==="input") renderPMProjectsList();
   if(tab==="overview") renderPMOverview();
   if(tab==="comms"){ buildPMRequestForm(); renderPMComms(); }
+  if(tab==="spi") renderPMSPIScreen();
 }
 document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
 document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
 document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
+document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
+function renderPMSPIScreen(){
+  const myProjects = getPMProjects();
+  const container = document.getElementById("pmSPIContent");
+  container.innerHTML = spiScreenContentHTML(myProjects.filter(p=>!p.closed), false);
+  wireSPIScreenButtons(container);
+}
 
 function renderPMProjectsList(){
   const projects = getPMProjects();
@@ -3901,15 +4077,25 @@ function switchMgrTab(tab){
   document.getElementById("mgrTabInput").classList.toggle("active", tab==="input");
   document.getElementById("mgrTabOverview").classList.toggle("active", tab==="overview");
   document.getElementById("mgrTabComms").classList.toggle("active", tab==="comms");
+  document.getElementById("mgrTabSPI").classList.toggle("active", tab==="spi");
   document.getElementById("mgrInputView").classList.toggle("hidden", tab!=="input");
   document.getElementById("mgrOverviewView").classList.toggle("hidden", tab!=="overview");
   document.getElementById("mgrCommsView").classList.toggle("hidden", tab!=="comms");
+  document.getElementById("mgrSPIView").classList.toggle("hidden", tab!=="spi");
   if(tab==="overview"){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
   if(tab==="comms"){ buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط"); }
+  if(tab==="spi"){ renderManagerSPIScreen(); logActivity(currentManager, "view_spi_screen", ""); }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
+document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
+function renderManagerSPIScreen(){
+  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  const container = document.getElementById("mgrSPIContent");
+  container.innerHTML = spiScreenContentHTML(myProjects.filter(p=>!p.closed), false);
+  wireSPIScreenButtons(container);
+}
 
 /* ---- تغيير كلمة مرور المدير ---- */
 document.getElementById("mgrChangePwBtn").onclick = ()=>{
@@ -4720,9 +4906,16 @@ function enterDG(){
 function switchDGTab(tab){
   document.getElementById("dgOverviewView").classList.toggle("hidden", tab!=="overview");
   document.getElementById("dgChallengesView").classList.toggle("hidden", tab!=="challenges");
+  document.getElementById("dgSPIView").classList.toggle("hidden", tab!=="spi");
 }
 document.getElementById("dgTabOverviewBtn").onclick = ()=> switchDGTab("overview");
 document.getElementById("dgTabChallengesBtn").onclick = ()=>{ switchDGTab("challenges"); renderDGScreen(); };
+document.getElementById("dgTabSPIBtn").onclick = ()=>{ switchDGTab("spi"); renderDGSPIScreen(); };
+function renderDGSPIScreen(){
+  const container = document.getElementById("dgSPIContent");
+  container.innerHTML = spiScreenContentHTML(ALL_PROJECTS.filter(p=>!p.closed), true);
+  wireSPIScreenButtons(container);
+}
 // عدّاد على تبويب "التحديات" للمدير العام — عدد التحديات المُصعَّدة التي لم يُرَدَّ عليها بعد
 function updateDGChallengesBadge(){
   const badge = document.getElementById("dgChallengesBadge");
@@ -5659,7 +5852,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI"
 };
 function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
 // يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
@@ -6916,7 +7109,7 @@ function renderCompetitionReport(){
       </div>
       ${top3.length>0 ? `
       <div class="comp-leaderboard" style="margin-top:8px;">
-        <div class="comp-section-heading">🏆 لوحة الريادة — المراكز الثلاثة الأولى</div>
+        <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(ليست مقياس أفضلية — مشاريع مختلفة المدد الزمنية)</span></div>
         ${podiumHtml}
       </div>` : ""}
     </div>`;
@@ -6930,7 +7123,7 @@ function renderCompetitionReport(){
   const leaderboardPageHtml = leaderboardPages.map((chunk, idx)=> `
     <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
-        <div class="comp-section-heading">🏆 لوحة الريادة — باقي الترتيب${leaderboardPages.length>1?` (${idx+1}/${leaderboardPages.length})`:""}</div>
+        <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي — تابع${leaderboardPages.length>1?` (${idx+1}/${leaderboardPages.length})`:""}</div>
         <div class="lb-rest-grid">${chunk.join("")}</div>
       </div>
     </div>`).join("");
@@ -7143,6 +7336,16 @@ document.getElementById("navFullMatrixBtn").onclick = ()=>{
   logActivity(ADMIN_NAME, "view_full_matrix", "");
 };
 document.getElementById("fullMatrixPrintBtn").onclick = ()=> window.print();
+document.getElementById("navSPIBtn").onclick = ()=>{
+  showScreen("spiScreen");
+  renderAdminSPIScreen();
+  logActivity(ADMIN_NAME, "view_spi_screen", "");
+};
+function renderAdminSPIScreen(){
+  const container = document.getElementById("spiScreenContent");
+  container.innerHTML = spiScreenContentHTML(ALL_PROJECTS.filter(p=>!p.closed), true);
+  wireSPIScreenButtons(container);
+}
 
 async function exportBackupExcel(){
   const btn = document.getElementById("exportBackupBtn");
@@ -7393,6 +7596,41 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, s
         </div>
       </div>`;
   }
+
+  // خط الأساس ومؤشر الأداء الزمني (SPI)
+  const spiInfo = computeSPI(existing);
+  const hasBaseline = !!existing.spiBaseline;
+  const pendingUnlock = existing.spiUnlockRequested;
+  let spiStatusHtml = "";
+  if(hasBaseline){
+    const spiColor = !spiInfo ? "#9CA3AF" : (spiInfo.spi>=0.95 ? "#1E7A3D" : (spiInfo.spi>=0.8 ? "#C9962E" : "#B3202E"));
+    spiStatusHtml = `
+      <div class="note-meta">✅ الخط الأساس محدَّد بتاريخ ${escapeHtml((existing.spiBaseline.setAt||"").slice(0,10))} بواسطة ${escapeHtml(existing.spiBaseline.setBy||"")}</div>
+      ${spiInfo ? `<div style="font-size:20px;font-weight:800;color:${spiColor};margin:6px 0;">SPI = ${spiInfo.spi.toFixed(2)}</div><div class="note-meta">الإنجاز الفعلي ${spiInfo.actualPct}% مقابل المتوقَّع ${spiInfo.expectedPct}% حسب الخط الأساس</div>` : `<div class="note-meta">لا يمكن حساب SPI حاليًا (تواريخ الخط الأساس غير مكتملة).</div>`}
+    `;
+  }else{
+    spiStatusHtml = `<div class="note-meta" style="color:#B3202E;">⚠️ لم يُحدَّد خط أساس SPI لهذا المشروع بعد.</div>`;
+  }
+  let spiActionsHtml = "";
+  if(isAdminContext){
+    if(pendingUnlock){
+      spiActionsHtml = `<button class="spi-approve-unlock-btn" data-project-id="${projectId}">✅ سماح بإعادة تحديد الخط الأساس (طلبها ${escapeHtml(pendingUnlock.requestedBy)})</button>`;
+    }
+  }else{
+    if(!hasBaseline){
+      spiActionsHtml = `<button class="spi-set-baseline-btn" style="background:#1E4E8C;">🎯 تحديد الخط الأساس (SPI)</button>`;
+    }else if(pendingUnlock){
+      spiActionsHtml = `<span style="font-size:12px;color:var(--text-muted);">⏳ طلب إعادة التحديد قيد المراجعة من قسم التخطيط</span>`;
+    }else{
+      spiActionsHtml = `<button class="spi-request-unlock-btn">🔓 طلب إعادة تحديد الخط الأساس</button>`;
+    }
+  }
+  bodyHtml += `
+    <div class="planning-notes-box" style="background:#EEF3FB;">
+      <label style="color:#1E4E8C;">🎯 خط الأساس ومؤشر الأداء الزمني (SPI) <span style="font-weight:400;color:var(--text-muted);">(نسخة مُجمَّدة من التواريخ لحظة الاعتماد — لا تتأثر بأي تعديل لاحق على التواريخ الفعلية)</span></label>
+      ${spiStatusHtml}
+      <div class="note-actions" style="margin-top:8px;">${spiActionsHtml}</div>
+    </div>`;
 
   // رابط مجلد الوثائق الداعمة (Google Drive) — التعديل لقسم التخطيط فقط، الفتح متاح للجميع
   const totalFilesCount = existing.phases ? existing.phases.reduce((s,ph)=> s + (ph.steps||[]).filter(st=>st.uploaded).length, 0) : 0;
@@ -7863,6 +8101,32 @@ function wireDetailModalStaticEvents(){
       if(!confirm("هل أنت متأكد من حذف هذا التحدي نهائيًا؟")) return;
       const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
       deleteChallenge(projectId, e.target.dataset.id);
+    }
+    if(e.target.classList.contains("spi-set-baseline-btn")){
+      if(!confirm("سيتم تجميد تواريخ الخطة الحالية كخط أساس دائم لحساب مؤشر الأداء الزمني (SPI). لا يمكن تعديل هذا الخط لاحقًا إلا بإذن قسم التخطيط. هل أنت متأكد؟")) return;
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      const livePhases = DETAIL_PHASES_DEF.map((def,pi)=>{
+        const container = document.querySelector(`.phase-steps[data-phase="${pi}"]`);
+        const rows = container ? [...container.querySelectorAll(".step-row")] : [];
+        const steps = rows.map(r=>({
+          startDate: r.querySelector(".step-start").value || null,
+          endDate: r.querySelector(".step-end").value || null
+        }));
+        return { name: def.name, weight: def.weight, steps };
+      });
+      setSPIBaseline(projectId, getActorName(), livePhases);
+      setTimeout(()=> openProjectDetailForm(projectId), 400);
+    }
+    if(e.target.classList.contains("spi-request-unlock-btn")){
+      if(!confirm("سيُرسَل طلب لقسم التخطيط للسماح بإعادة تحديد الخط الأساس. هل أنت متأكد؟")) return;
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      requestSPIBaselineUnlock(projectId, getActorName());
+      setTimeout(()=> openProjectDetailForm(projectId), 400);
+    }
+    if(e.target.classList.contains("spi-approve-unlock-btn")){
+      if(!confirm("سيُسمح لصاحب المشروع بتحديد خط أساس جديد، وسيُنقَل الخط الحالي للسجل التاريخي. هل أنت متأكد؟")) return;
+      approveSPIBaselineUnlock(e.target.dataset.projectId);
+      setTimeout(()=> openProjectDetailForm(e.target.dataset.projectId), 400);
     }
   });
   document.getElementById("detailModalCloseX").onclick = flushAndCloseDetailModal;
@@ -8727,6 +8991,10 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllPlanningNotes();
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllChallenges();
   if(!document.getElementById("dgScreen").classList.contains("hidden")) renderDGScreen();
+  if(!document.getElementById("spiScreen").classList.contains("hidden")) renderAdminSPIScreen();
+  if(!document.getElementById("dgSPIView").classList.contains("hidden")) renderDGSPIScreen();
+  if(!document.getElementById("mgrSPIView").classList.contains("hidden")) renderManagerSPIScreen();
+  if(!document.getElementById("pmSPIView").classList.contains("hidden")) renderPMSPIScreen();
   const loggedIn = document.getElementById("loginScreen").classList.contains("hidden");
   if(loggedIn && currentManager===null && currentProjectManagerId===null && !currentDG) updateAdminChallengesBadge();
   if(!document.getElementById("dgScreen").classList.contains("hidden")) updateDGChallengesBadge();
