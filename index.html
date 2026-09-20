@@ -446,16 +446,17 @@ input,select{font-family:inherit;}
 .fm-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px;table-layout:fixed;}
 .fm-table th{background:var(--navy);color:#fff;padding:8px 6px;text-align:center;border:1px solid var(--navy-light);font-family:'Cairo',sans-serif;font-weight:700;position:sticky;top:0;z-index:5;overflow-wrap:break-word;word-break:break-word;}
 .fm-table td{padding:7px 6px;text-align:center;border:1px solid #C9CED6;overflow-wrap:break-word;word-break:break-word;vertical-align:middle;}
-.fm-table th:nth-child(1),.fm-table td:nth-child(1){width:9%;}
-.fm-table th:nth-child(2),.fm-table td:nth-child(2){width:16%;}
-.fm-table th:nth-child(3),.fm-table td:nth-child(3){width:12%;}
-.fm-table th:nth-child(4),.fm-table td:nth-child(4){width:16%;}
-.fm-table th:nth-child(5),.fm-table td:nth-child(5),
+.fm-table th:nth-child(1),.fm-table td:nth-child(1){width:8%;}
+.fm-table th:nth-child(2),.fm-table td:nth-child(2){width:13%;}
+.fm-table th:nth-child(3),.fm-table td:nth-child(3){width:10%;}
+.fm-table th:nth-child(4),.fm-table td:nth-child(4){width:13%;}
+.fm-table th:nth-child(5),.fm-table td:nth-child(5){width:10%;}
 .fm-table th:nth-child(6),.fm-table td:nth-child(6),
 .fm-table th:nth-child(7),.fm-table td:nth-child(7),
-.fm-table th:nth-child(8),.fm-table td:nth-child(8){width:8%;}
-.fm-table th:nth-child(9),.fm-table td:nth-child(9){width:7%;}
-.fm-table th:nth-child(10),.fm-table td:nth-child(10){width:9%;}
+.fm-table th:nth-child(8),.fm-table td:nth-child(8),
+.fm-table th:nth-child(9),.fm-table td:nth-child(9){width:8%;}
+.fm-table th:nth-child(10),.fm-table td:nth-child(10){width:6%;}
+.fm-table th:nth-child(11),.fm-table td:nth-child(11){width:8%;}
 .fm-goal-cell{background:#EAF4F0;font-weight:700;color:var(--navy);white-space:normal;line-height:1.5;}
 .fm-prog-cell{background:#F8F9FB;font-weight:700;color:var(--navy);text-align:right !important;padding-right:10px !important;white-space:normal;}
 .fm-manager-cell{background:#FBFBFC;font-weight:600;color:var(--navy);font-size:11px;white-space:normal;}
@@ -1092,7 +1093,7 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="nav-collapsible" id="navCollapsible">
     <button class="meeting-btn" id="navMeetingBtn" style="background:#0D6E6E;color:#fff;">📋 الخطة المفصلة</button>
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#0D6E6E;color:#fff;">📊 المشاريع</button>
-    <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">🏆 تقرير المنافسة</button>
+    <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">📊 لوحة أداء الخطة</button>
     <button class="meeting-btn" id="navFullMatrixBtn" style="background:#0D6E6E;color:#fff;">📐 المصفوفة الشاملة</button>
     <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;">📈 مؤشر الأداء الزمني SPI</button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#1E4E8C;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
@@ -1327,6 +1328,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div style="display:flex;gap:10px;margin-bottom:18px;">
       <button class="print-btn" id="weeklyReportPrintBtn">🖨️ طباعة / PDF</button>
       <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ نص واتساب</button>
+      <button class="export-btn" id="adminExportICSBtn" style="background:#5B3EAF;">📅 تصدير كل المواعيد للتقويم</button>
     </div>
 
     <div class="filters-bar">
@@ -1425,6 +1427,7 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="mgrHealthScoreContainer"></div>
+    <div style="margin-bottom:18px;"><button class="export-btn" id="mgrExportICSBtn" style="background:#5B3EAF;">📅 تصدير مواعيد مشاريعي للتقويم</button></div>
     <div id="mgrRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
@@ -1518,6 +1521,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل خططها التفصيلية</div>
     <div id="pmHealthScoreContainer"></div>
+    <div style="margin-bottom:18px;"><button class="export-btn" id="pmExportICSBtn" style="background:#5B3EAF;">📅 تصدير مواعيد مشاريعي للتقويم</button></div>
     <div id="pmRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
     <div class="pending-list">
@@ -1937,6 +1941,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <input type="text" id="pmeName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الرقم الوظيفي (اسم المستخدم لتسجيل الدخول)</label>
     <input type="text" id="pmeEmployeeId" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <div id="pmeDuplicateNote" class="note-meta hidden" style="color:#1E7A3D;margin-top:4px;font-weight:700;"></div>
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">المسمى الوظيفي (اختياري)</label>
     <input type="text" id="pmeJobTitle" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
     <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:10px 0 4px;">الجنس (لتخصيص تحية رسائل التذكير)</label>
@@ -2431,6 +2436,62 @@ function spiScreenContentHTML(projects, canApprove){
       </div>`;
   }).join("");
   return html;
+}
+/* ==================== تصدير مواعيد الخطوات كملف تقويم (.ics) — يعمل بالكامل من طرف المتصفح، دون أي خادم خلفي ==================== */
+function escapeICSText(text){
+  return String(text).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+}
+function buildICSContent(events){
+  const pad = n=> String(n).padStart(2,"0");
+  const now = new Date();
+  const dtstamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth()+1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Rasd//Health Plan//AR","CALSCALE:GREGORIAN"];
+  events.forEach(ev=>{
+    const dateStr = ev.date.replace(/-/g,"");
+    const d = new Date(ev.date);
+    d.setDate(d.getDate()+1);
+    const nextDateStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+    lines.push("BEGIN:VEVENT");
+    lines.push(`UID:${ev.uid}@rasd-health-plan`);
+    lines.push(`DTSTAMP:${dtstamp}`);
+    lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
+    lines.push(`DTEND;VALUE=DATE:${nextDateStr}`);
+    lines.push(`SUMMARY:${escapeICSText(ev.title)}`);
+    if(ev.description) lines.push(`DESCRIPTION:${escapeICSText(ev.description)}`);
+    lines.push("END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+function downloadICSFile(content, filename){
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 2000);
+}
+// يجمع خطوات غير المكتملة عبر المشاريع المُعطاة ويُصدِّرها كملف تقويم واحد (.ics)
+function exportProjectsToICS(projects, filename){
+  const events = [];
+  projects.forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.phases)) return;
+    detail.phases.forEach((ph, phaseIdx)=>{
+      (ph.steps||[]).forEach((st, stepIdx)=>{
+        if(!st.name || !st.endDate || st.status==="مكتمل") return;
+        events.push({
+          uid: `${pr.id}-${phaseIdx}-${stepIdx}`,
+          title: `${st.name} — ${pr.projectName}`,
+          date: st.endDate,
+          description: `المرحلة: ${ph.name} | المشروع: ${pr.projectName} (${pr.programCode})`
+        });
+      });
+    });
+  });
+  if(events.length===0){ alert("لا توجد خطوات قادمة (غير مكتملة) لتصديرها حاليًا."); return; }
+  if(!confirm(`سيتم تصدير ${events.length} خطوة قادمة (غير مكتملة) كملف تقويم (.ics) — افتح الملف بعد التنزيل لإضافته لتقويم جهازك. هل تريد المتابعة؟`)) return;
+  downloadICSFile(buildICSContent(events), filename);
 }
 function wireSPIScreenButtons(container){
   container.querySelectorAll(".spi-open-btn, .phase-alert-row[data-project-id]").forEach(el=>{
@@ -3727,6 +3788,10 @@ document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
 document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
 document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
 document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
+document.getElementById("pmExportICSBtn").onclick = ()=>{
+  const myProjects = getPMProjects().filter(p=>!p.closed);
+  exportProjectsToICS(myProjects, "رصد-مواعيدي.ics");
+};
 function renderPMSPIScreen(){
   const myProjects = getPMProjects();
   const container = document.getElementById("pmSPIContent");
@@ -4159,6 +4224,10 @@ document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
+document.getElementById("mgrExportICSBtn").onclick = ()=>{
+  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager && !p.closed);
+  exportProjectsToICS(myProjects, "رصد-مواعيدي.ics");
+};
 function renderManagerSPIScreen(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const container = document.getElementById("mgrSPIContent");
@@ -5117,6 +5186,9 @@ document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
   }
   document.body.removeChild(temp);
 };
+document.getElementById("adminExportICSBtn").onclick = ()=>{
+  exportProjectsToICS(ALL_PROJECTS.filter(p=>!p.closed), "رصد-كل-المواعيد.ics");
+};
 document.getElementById("navRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
 document.getElementById("navProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
 
@@ -5316,7 +5388,10 @@ function renderProjectManagersAdminList(){
   });
 }
 
-function renderPMProjectsChecklist(selectedIds, searchTerm){
+// قائمة المشاريع المُختارة حاليًا في نافذة إضافة/تعديل مدير مشروع — تُحفَظ في الذاكرة بمعزل عن عناصر القائمة المعروضة حاليًا،
+// حتى لا يفقد المستخدم مشاريع سبق اختيارها عند استخدام مربع البحث لتصفية القائمة قبل الحفظ
+let pmeSelectedProjectIds = new Set();
+function renderPMProjectsChecklist(searchTerm){
   searchTerm = (searchTerm||"").trim().toLowerCase();
   const container = document.getElementById("pmeProjectsChecklist");
   let projects = [...ALL_PROJECTS].sort((a,b)=> a.programCode.localeCompare(b.programCode) || a.year-b.year);
@@ -5329,12 +5404,18 @@ function renderPMProjectsChecklist(selectedIds, searchTerm){
   }
   container.innerHTML = projects.map(p=>`
     <label class="bulk-project-item" style="margin-bottom:4px;">
-      <input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id)?"checked":""}>
+      <input type="checkbox" value="${p.id}" ${pmeSelectedProjectIds.has(p.id)?"checked":""}>
       <div>
         <div class="bpi-name">${escapeHtml(p.projectName)}</div>
         <div class="bpi-meta">${p.programCode} — ${escapeHtml(p.programName)} | سنة ${p.year}</div>
       </div>
     </label>`).join("");
+  container.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+    cb.onchange = ()=>{
+      if(cb.checked) pmeSelectedProjectIds.add(cb.value);
+      else pmeSelectedProjectIds.delete(cb.value);
+    };
+  });
 }
 
 function openProjectManagerEditModal(employeeId){
@@ -5347,13 +5428,39 @@ function openProjectManagerEditModal(employeeId){
   document.getElementById("pmeGender").value = pm ? (pm.gender||"") : "";
   document.getElementById("pmePassword").value = pm ? pm.password : "plan2026";
   document.getElementById("pmeProjectSearch").value = "";
+  document.getElementById("pmeDuplicateNote").classList.add("hidden");
   const currentlyAssigned = pm ? ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(employeeId)).map(p=>p.id) : [];
-  renderPMProjectsChecklist(currentlyAssigned, "");
+  pmeSelectedProjectIds = new Set(currentlyAssigned);
+  renderPMProjectsChecklist("");
   document.getElementById("pmeProjectSearch").oninput = ()=>{
-    const checked = [...document.querySelectorAll("#pmeProjectsChecklist input:checked")].map(cb=>cb.value);
-    renderPMProjectsChecklist(checked, document.getElementById("pmeProjectSearch").value);
+    renderPMProjectsChecklist(document.getElementById("pmeProjectSearch").value);
+  };
+  // في وضع "إضافة": إن كان الرقم الوظيفي المُدخَل مسجَّلًا مسبقًا، نعبّئ بيانات الموظف تلقائيًا (بدل إنشاء حساب مكرَّر) ونعلن ذلك بوضوح
+  document.getElementById("pmeEmployeeId").oninput = ()=>{
+    if(document.getElementById("projectManagerEditModal").dataset.originalMode!=="add") return;
+    const enteredId = document.getElementById("pmeEmployeeId").value.trim();
+    const existingPM = enteredId ? ALL_PROJECT_MANAGERS.find(m=>m.employeeId===enteredId) : null;
+    const note = document.getElementById("pmeDuplicateNote");
+    if(existingPM){
+      note.textContent = `⚠️ هذا الموظف مسجَّل مسبقًا باسم "${existingPM.name}" — تم جلب بياناته تلقائيًا، أضف فقط مشاريعه الجديدة.`;
+      note.classList.remove("hidden");
+      document.getElementById("pmeName").value = existingPM.name;
+      document.getElementById("pmeJobTitle").value = existingPM.jobTitle||"";
+      document.getElementById("pmeGender").value = existingPM.gender||"";
+      document.getElementById("pmePassword").value = existingPM.password;
+      const assignedToExisting = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(enteredId)).map(p=>p.id);
+      pmeSelectedProjectIds = new Set(assignedToExisting);
+      renderPMProjectsChecklist(document.getElementById("pmeProjectSearch").value);
+      document.getElementById("projectManagerEditModal").dataset.mode = "edit";
+      document.getElementById("projectManagerEditModal").dataset.employeeId = enteredId;
+    }else{
+      note.classList.add("hidden");
+      document.getElementById("projectManagerEditModal").dataset.mode = "add";
+      document.getElementById("projectManagerEditModal").dataset.employeeId = "";
+    }
   };
   document.getElementById("projectManagerEditModal").dataset.mode = pm ? "edit" : "add";
+  document.getElementById("projectManagerEditModal").dataset.originalMode = pm ? "edit" : "add";
   document.getElementById("projectManagerEditModal").dataset.employeeId = employeeId || "";
   document.getElementById("projectManagerEditModal").classList.remove("hidden");
 }
@@ -5367,7 +5474,7 @@ document.getElementById("pmEditSave").onclick = async ()=>{
   const jobTitle = document.getElementById("pmeJobTitle").value.trim();
   const gender = document.getElementById("pmeGender").value;
   const password = document.getElementById("pmePassword").value.trim();
-  const selectedProjectIds = [...document.querySelectorAll("#pmeProjectsChecklist input:checked")].map(cb=>cb.value);
+  const selectedProjectIds = [...pmeSelectedProjectIds];
   if(!name || !employeeId || !password){ alert("الرجاء تعبئة الاسم والرقم الوظيفي وكلمة المرور."); return; }
   const btn = document.getElementById("pmEditSave");
   btn.disabled = true;
@@ -7163,7 +7270,40 @@ function renderCompetitionReport(){
     </div>`;
   });
 
-  // ===== الصفحة الأولى: المؤشرات الأربعة فقط =====
+  // ===== مؤشر إنجاز كل مرحلة من مراحل العمل الأربع — بمؤشرين: شامل (يشمل المشاريع غير المبدوءة كصفر) ومقتصر على المشاريع الفعّالة فقط =====
+  const startedProjectsForPhaseAvg = projects.filter(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    return detail && countPhasesStarted(detail)>0;
+  });
+  const phaseAverages = DETAIL_PHASES_DEF.map((def, idx)=>{
+    const allPcts = projects.map(pr=>{
+      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+      const pct = computePhasePct(detail, idx);
+      return pct===null ? 0 : pct;
+    });
+    const startedPcts = startedProjectsForPhaseAvg.map(pr=>{
+      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+      const pct = computePhasePct(detail, idx);
+      return pct===null ? 0 : pct;
+    });
+    return {
+      name: def.name,
+      allAvg: allPcts.length>0 ? Math.round(allPcts.reduce((s,v)=>s+v,0)/allPcts.length) : 0,
+      startedAvg: startedPcts.length>0 ? Math.round(startedPcts.reduce((s,v)=>s+v,0)/startedPcts.length) : 0
+    };
+  });
+  const phaseAvgHtml = `
+    <div class="comp-section-heading" style="margin-top:26px;">📐 متوسط إنجاز مراحل العمل</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">شامل كل المشاريع النشطة (المشاريع غير المبدوءة تُحتسَب صفرًا في كل مرحلة)</div>
+    <div class="comp-gauges-row" style="margin-bottom:16px;">
+      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.allAvg, 80)}<div style="font-size:11px;font-weight:700;color:var(--navy);margin-top:4px;">${escapeHtml(p.name)}</div></div>`).join("")}
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">المشاريع التي بدأ تنفيذها فعليًا فقط (استثناء غير المبدوءة)</div>
+    <div class="comp-gauges-row">
+      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.startedAvg, 80)}<div style="font-size:11px;font-weight:700;color:var(--navy);margin-top:4px;">${escapeHtml(p.name)}</div></div>`).join("")}
+    </div>`;
+
+  // ===== الصفحة الأولى: المؤشرات + مؤشرات المراحل فقط — لوحة الريادة تبدأ من الصفحة الثانية دائمًا لتفادي أي ارتفاع/تداخل =====
   const statsPageHtml = `
     <div class="comp-page comp-infographic">
       <div class="comp-hero">
@@ -7182,23 +7322,24 @@ function renderCompetitionReport(){
         <div class="comp-stat-card" style="background:linear-gradient(160deg,#1E7A3D,#12461f);"><div class="csc-num">${closedSuccessPct}%</div><div class="csc-lbl">أُغلقت بنجاح (100%)</div></div>
         <div class="comp-stat-card" style="background:linear-gradient(160deg,#8a6d1f,#5c481280);"><div class="csc-num">${closedEarlyPct}%</div><div class="csc-lbl">أُغلقت مبكرًا (غير مكتملة)</div></div>
       </div>
-      ${top3.length>0 ? `
-      <div class="comp-leaderboard" style="margin-top:8px;">
-        <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(ليست مقياس أفضلية — مشاريع مختلفة المدد الزمنية)</span></div>
-        ${podiumHtml}
-      </div>` : ""}
+      ${phaseAvgHtml}
     </div>`;
 
-  // ===== صفحات باقي لوحة الريادة (من المركز 4): مقسّمة برمجيًا بعدد ثابت من البطاقات لكل صفحة =====
+  // ===== صفحة (صفحات) لوحة الريادة — تبدأ دائمًا من الصفحة الثانية: المراكز الثلاثة الأولى + باقي الترتيب مقسّمًا بعدد ثابت من البطاقات لكل صفحة =====
   const REST_CARDS_PER_PAGE = 12;
   const leaderboardPages = [];
-  if(rest.length>0){
-    for(let i=0;i<rest.length;i+=REST_CARDS_PER_PAGE) leaderboardPages.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
+  if(top3.length>0 || rest.length>0){
+    if(rest.length===0){
+      leaderboardPages.push([]);
+    }else{
+      for(let i=0;i<rest.length;i+=REST_CARDS_PER_PAGE) leaderboardPages.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
+    }
   }
   const leaderboardPageHtml = leaderboardPages.map((chunk, idx)=> `
     <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
-        <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي — تابع${leaderboardPages.length>1?` (${idx+1}/${leaderboardPages.length})`:""}</div>
+        <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(ليست مقياس أفضلية — مشاريع مختلفة المدد الزمنية)</span>${leaderboardPages.length>1?` — ${idx+1}/${leaderboardPages.length}`:""}</div>
+        ${idx===0 ? podiumHtml : ""}
         <div class="lb-rest-grid">${chunk.join("")}</div>
       </div>
     </div>`).join("");
@@ -7244,17 +7385,20 @@ function renderCompetitionReport(){
     });
   });
 
-  // تجميع البرامج في صفحات فعلية — أقصى ~8 مقاييس بالصفحة الواحدة (صفّان تقريبًا)، وبرنامج واحد لا يُقسَّم أبدًا بين صفحتين
+  // تجميع البرامج في صفحات فعلية — كل هدف استراتيجي يبدأ صفحته الخاصة دائمًا (لا يُشارك صفحة مع هدف آخر)، وقد يمتد لعدة صفحات إن كان كبيرًا (بحد أقصى ~8 مقاييس بالصفحة الواحدة)، وبرنامج واحد لا يُقسَّم أبدًا بين صفحتين
   const GAUGES_PER_PAGE = 8;
   const gaugePages = [];
-  let currentPageGroups = [], currentPageCount = 0;
+  let currentPageGroups = [], currentPageCount = 0, currentPageGoalId = null;
   programGroups.forEach(group=>{
-    if(currentPageCount>0 && currentPageCount+group.gaugeCount>GAUGES_PER_PAGE){
+    const isNewGoal = currentPageGoalId!==null && group.goalId!==currentPageGoalId;
+    const wouldOverflow = currentPageCount>0 && currentPageCount+group.gaugeCount>GAUGES_PER_PAGE;
+    if(currentPageGroups.length>0 && (isNewGoal || wouldOverflow)){
       gaugePages.push(currentPageGroups);
       currentPageGroups = []; currentPageCount = 0;
     }
     currentPageGroups.push(group);
     currentPageCount += group.gaugeCount;
+    currentPageGoalId = group.goalId;
   });
   if(currentPageGroups.length>0) gaugePages.push(currentPageGroups);
 
@@ -7381,6 +7525,7 @@ function renderFullMatrix(){
         const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
         const overallPct = detail ? computeOverallPct(detail) : 0;
         const totalCost = detail && detail.totalCost ? detail.totalCost : "—";
+        const ownerLabel = getProjectOwnerLabels(pr).join("، ");
         const goalCell = goalCellWritten ? "" : `<td class="fm-goal-cell" rowspan="${goalRowCount}">${goal.id}. ${escapeHtml(goal.name)}</td>`;
         goalCellWritten = true;
         bodyRows.push(`
@@ -7389,6 +7534,7 @@ function renderFullMatrix(){
             <td class="fm-prog-cell">${prog.code} — ${escapeHtml(prog.name)}</td>
             <td class="fm-manager-cell">${escapeHtml(prog.govManager)}</td>
             <td class="fm-proj-cell">${escapeHtml(pr.projectName)}</td>
+            <td class="fm-manager-cell">${escapeHtml(ownerLabel)}</td>
             ${DETAIL_PHASES_DEF.map((ph,idx)=> phaseExcelCell(detail, idx)).join("")}
             <td class="fm-total-cell">${overallPct}%</td>
             <td class="fm-cost-cell">${escapeHtml(totalCost)}</td>
@@ -7406,6 +7552,7 @@ function renderFullMatrix(){
           <th>البرنامج التنفيذي</th>
           <th>مدير البرنامج</th>
           <th>المشروع</th>
+          <th>مالك المشروع</th>
           ${phaseHeaders}
           <th>نسبة الإنجاز الإجمالية</th>
           <th>التكلفة الإجمالية</th>
