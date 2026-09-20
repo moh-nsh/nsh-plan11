@@ -429,11 +429,11 @@ input,select{font-family:inherit;}
   display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;
 }
 /* ==================== تقرير المنافسة التحفيزي ==================== */
-.comp-page{background:#fff;border-radius:16px;padding:30px 34px;margin-bottom:26px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
-.comp-hero{text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px dashed var(--border);}
-.comp-hero-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:24px;color:var(--navy);}
-.comp-hero-sub{font-size:13px;color:var(--text-muted);margin-top:6px;}
-.comp-hero-org{font-size:13px;color:var(--navy);font-weight:700;margin-top:2px;}
+.comp-page{background:#fff;border-radius:16px;padding:20px 30px;margin-bottom:26px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.comp-hero{text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px dashed var(--border);}
+.comp-hero-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:19px;color:var(--navy);}
+.comp-hero-sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
+.comp-hero-org{font-size:12px;color:var(--navy);font-weight:700;margin-top:1px;}
 .comp-notstarted-list{display:flex;flex-wrap:wrap;gap:8px;}
 .ns-item{background:#FDEAEA;color:#B3202E;font-size:12px;font-weight:700;padding:8px 14px;border-radius:10px;}
 .cm-group-row td{background:var(--navy-light) !important;color:#fff !important;font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;text-align:right !important;padding:10px 14px !important;}
@@ -7235,34 +7235,12 @@ function renderCompetitionReport(){
     filters.manager ? filters.manager : ""
   ].filter(Boolean).join(" | ") || "كل الخطة — كل السنوات";
 
-  const rankColors = ["#D4AF37","#B0B7C0","#C08A4F"]; // ذهبي / فضي / برونزي
-  const podiumOrder = [1,0,2]; // ترتيب العرض البصري: الثاني - الأول (وسط، أبرز) - الثالث
-  const top3 = projectStats.slice(0,3);
-  const rest = projectStats.slice(3);
-
-  const podiumHtml = top3.length===0 ? "" : `
-    <div class="lb-podium">
-      ${podiumOrder.filter(i=> i<top3.length).map(i=>{
-        const { project: pr, pct, notStarted } = top3[i];
-        const ownerLabels = getProjectOwnerLabels(pr);
-        const isFirst = i===0;
-        return `
-        <div class="lb-podium-card ${isFirst?'lb-podium-first':''}" style="--podium-color:${rankColors[i]};">
-          <div class="lb-podium-rank">${i+1}</div>
-          ${gaugeSVG(pct, isFirst?110:90)}
-          <div class="lb-podium-name">${escapeHtml(pr.projectName)}</div>
-          ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}
-          <div class="lb-podium-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
-        </div>`;
-      }).join("")}
-    </div>`;
-
-  const restCards = rest.map(({project:pr, pct, notStarted}, i)=>{
+  // ===== لوحة الريادة: كل المشاريع بنفس شكل البطاقة وحجم المقياس (بلا تمييز للمراكز الثلاثة الأولى) — كثافة أعلى لكل صفحة لتقليل عدد الصفحات =====
+  const allRankedCards = projectStats.map(({project:pr, pct, notStarted}, i)=>{
     const ownerLabels = getProjectOwnerLabels(pr);
-    const rank = i+4;
     return `
     <div class="lb-mini-card">
-      <div class="lb-mini-rank">${rank}</div>
+      <div class="lb-mini-rank">${i+1}</div>
       ${gaugeSVG(pct, 80)}
       <div class="lb-mini-name">${escapeHtml(pr.projectName)}</div>
       ${notStarted ? `<span class="lb-notstarted-badge">⛔ لم يبدأ التنفيذ</span>` : ""}
@@ -7293,14 +7271,14 @@ function renderCompetitionReport(){
     };
   });
   const phaseAvgHtml = `
-    <div class="comp-section-heading" style="margin-top:26px;">📐 متوسط إنجاز مراحل العمل</div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">شامل كل المشاريع النشطة (المشاريع غير المبدوءة تُحتسَب صفرًا في كل مرحلة)</div>
-    <div class="comp-gauges-row" style="margin-bottom:16px;">
-      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.allAvg, 80)}<div style="font-size:11px;font-weight:700;color:var(--navy);margin-top:4px;">${escapeHtml(p.name)}</div></div>`).join("")}
+    <div class="comp-section-heading" style="margin-top:16px;">📐 متوسط إنجاز مراحل العمل</div>
+    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:3px;">شامل كل المشاريع النشطة (المشاريع غير المبدوءة تُحتسَب صفرًا في كل مرحلة)</div>
+    <div class="comp-gauges-row" style="margin-bottom:10px;gap:14px;">
+      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.allAvg, 58)}<div style="font-size:10px;font-weight:700;color:var(--navy);margin-top:2px;">${escapeHtml(p.name)}</div></div>`).join("")}
     </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">المشاريع التي بدأ تنفيذها فعليًا فقط (استثناء غير المبدوءة)</div>
-    <div class="comp-gauges-row">
-      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.startedAvg, 80)}<div style="font-size:11px;font-weight:700;color:var(--navy);margin-top:4px;">${escapeHtml(p.name)}</div></div>`).join("")}
+    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:3px;">المشاريع التي بدأ تنفيذها فعليًا فقط (استثناء غير المبدوءة)</div>
+    <div class="comp-gauges-row" style="gap:14px;">
+      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.startedAvg, 58)}<div style="font-size:10px;font-weight:700;color:var(--navy);margin-top:2px;">${escapeHtml(p.name)}</div></div>`).join("")}
     </div>`;
 
   // ===== الصفحة الأولى: المؤشرات + مؤشرات المراحل فقط — لوحة الريادة تبدأ من الصفحة الثانية دائمًا لتفادي أي ارتفاع/تداخل =====
@@ -7325,21 +7303,18 @@ function renderCompetitionReport(){
       ${phaseAvgHtml}
     </div>`;
 
-  // ===== صفحة (صفحات) لوحة الريادة — تبدأ دائمًا من الصفحة الثانية: المراكز الثلاثة الأولى + باقي الترتيب مقسّمًا بعدد ثابت من البطاقات لكل صفحة =====
-  const REST_CARDS_PER_PAGE = 12;
+  // ===== صفحة (صفحات) لوحة الريادة — تبدأ دائمًا من الصفحة الثانية: كل المشاريع بنفس الحجم، بكثافة أعلى (~20 بالصفحة) لتقليل عدد الصفحات لأدنى حد (غالبًا صفحة أو صفحتان فقط) =====
+  const REST_CARDS_PER_PAGE = 20;
   const leaderboardPages = [];
-  if(top3.length>0 || rest.length>0){
-    if(rest.length===0){
-      leaderboardPages.push([]);
-    }else{
-      for(let i=0;i<rest.length;i+=REST_CARDS_PER_PAGE) leaderboardPages.push(restCards.slice(i,i+REST_CARDS_PER_PAGE));
-    }
+  if(allRankedCards.length===0){
+    leaderboardPages.push([]);
+  }else{
+    for(let i=0;i<allRankedCards.length;i+=REST_CARDS_PER_PAGE) leaderboardPages.push(allRankedCards.slice(i,i+REST_CARDS_PER_PAGE));
   }
   const leaderboardPageHtml = leaderboardPages.map((chunk, idx)=> `
     <div class="comp-page comp-leaderboard-page">
       <div class="comp-leaderboard">
         <div class="comp-section-heading">📊 ترتيب المشاريع حسب نسبة الإنجاز الحالي <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(ليست مقياس أفضلية — مشاريع مختلفة المدد الزمنية)</span>${leaderboardPages.length>1?` — ${idx+1}/${leaderboardPages.length}`:""}</div>
-        ${idx===0 ? podiumHtml : ""}
         <div class="lb-rest-grid">${chunk.join("")}</div>
       </div>
     </div>`).join("");
