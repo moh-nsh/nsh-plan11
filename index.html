@@ -542,8 +542,10 @@ input,select{font-family:inherit;}
 .comp-program-group{margin-bottom:28px;}
 .comp-goal-heading{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold);flex-basis:100%;width:100%;}
 .comp-program-subheading{font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;color:var(--navy);margin-bottom:12px;}
-.comp-program-divider{font-family:'Cairo',sans-serif;font-weight:700;font-size:12.5px;color:var(--navy);flex-basis:100%;width:100%;margin:10px 0 4px;padding-bottom:5px;border-bottom:1px solid #D8CCEF;}
-.comp-program-divider:first-of-type{margin-top:0;}
+.comp-program-cluster{display:flex;flex-direction:column;align-items:flex-end;gap:10px;padding-inline-end:18px;margin-inline-end:18px;border-inline-end:1px solid #D8CCEF;}
+.comp-program-cluster:last-child{border-inline-end:none;padding-inline-end:0;margin-inline-end:0;}
+.comp-program-cluster .cluster-label{font-family:'Cairo',sans-serif;font-weight:700;font-size:11.5px;color:var(--navy);white-space:nowrap;line-height:1.5;text-align:right;}
+.comp-program-cluster .cluster-gauges{display:flex;flex-wrap:wrap;gap:16px;justify-content:flex-end;}
 .comp-gauge-clickable{cursor:pointer;transition:transform .15s,box-shadow .15s;}
 .comp-gauge-clickable:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
 .comp-gauges-row{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;}
@@ -7202,9 +7204,9 @@ function renderCompetitionReport(){
     </div>`).join("");
 
   // ===== من الصفحة الثالثة: مقاييس المشاريع مُجمَّعة حسب البرنامج التنفيذي — تُوزَّع على صفحات محسوبة برمجيًا (لا نعتمد على تلميحات المتصفح لتجنّب أي تقطيع غير متوقع) =====
-  // كل مشاريع البرامج التابعة لنفس الهدف الاستراتيجي تتدفّق بجانب بعضها في صفّ واحد مشترك — الفاصل بين البرامج شريط أفقي صغير (flex-basis:100%) بدل صفّ منفصل لكل برنامج
+  // كل برنامج تنفيذي = "كتلة" واحدة (تسمية البرنامج + مقاييس مشاريعه)، والكتل تتدفّق بجانب بعضها أفقيًا ضمن نفس الهدف الاستراتيجي، مفصولة بخط رأسي رفيع
   const notStartedProjects = [];
-  const programGroups = []; // { html, gaugeCount }
+  const programGroups = []; // { goalId, goalHeadingHtml, clusterHtml, gaugeCount }
   let currentGoalId = null;
   goals.forEach(goal=>{
     const goalPrograms = PROGRAMS.filter(p=> p.goalId===goal.id && projects.some(pr=>pr.programCode===p.code)).sort((a,b)=> a.code.localeCompare(b.code));
@@ -7224,14 +7226,20 @@ function renderCompetitionReport(){
         const ownerLabels = getProjectOwnerLabels(pr);
         return `
           <div class="comp-gauge-card comp-gauge-clickable" data-project-id="${pr.id}" title="فتح الخطة التفصيلية">
-            ${gaugeSVG(pct, 120)}
+            ${gaugeSVG(pct, 110)}
             <div class="cg-name">${escapeHtml(pr.projectName)}</div>
             <div class="cg-meta">${pr.programCode} | 👤 ${ownerLabels.map(escapeHtml).join("، ")}</div>
           </div>`;
       }).join("");
       programGroups.push({
+        goalId: goal.id,
+        goalHeadingHtml,
         gaugeCount: activeProjects.length,
-        html: `${goalHeadingHtml}<div class="comp-program-divider">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>${gaugesHtml}`
+        clusterHtml: `
+          <div class="comp-program-cluster">
+            <div class="cluster-label">${prog.code} — ${escapeHtml(prog.name)}<br><span style="font-weight:400;color:#6B7280;">👤 ${escapeHtml(prog.govManager)}</span></div>
+            <div class="cluster-gauges">${gaugesHtml}</div>
+          </div>`
       });
     });
   });
@@ -7242,15 +7250,29 @@ function renderCompetitionReport(){
   let currentPageGroups = [], currentPageCount = 0;
   programGroups.forEach(group=>{
     if(currentPageCount>0 && currentPageCount+group.gaugeCount>GAUGES_PER_PAGE){
-      gaugePages.push(currentPageGroups.join(""));
+      gaugePages.push(currentPageGroups);
       currentPageGroups = []; currentPageCount = 0;
     }
-    currentPageGroups.push(group.html);
+    currentPageGroups.push(group);
     currentPageCount += group.gaugeCount;
   });
-  if(currentPageGroups.length>0) gaugePages.push(currentPageGroups.join(""));
+  if(currentPageGroups.length>0) gaugePages.push(currentPageGroups);
 
-  const gaugesPageHtml = gaugePages.map(pageContent=> `<div class="comp-page comp-gauges-page"><div class="comp-gauges-row">${pageContent}</div></div>`).join("");
+  // يبني محتوى صفحة واحدة: عنوان الهدف الاستراتيجي عنصر كامل العرض مستقل، وكتل البرامج التابعة له تتدفّق أفقيًا داخل صفّ واحد مشترك تحته
+  const gaugesPageHtml = gaugePages.map(pageGroups=>{
+    let html = "", rowBuffer = "", openGoalId = null;
+    const flushRow = ()=>{ if(rowBuffer){ html += `<div class="comp-gauges-row">${rowBuffer}</div>`; rowBuffer = ""; } };
+    pageGroups.forEach(g=>{
+      if(g.goalId!==openGoalId){
+        flushRow();
+        if(g.goalHeadingHtml) html += g.goalHeadingHtml;
+        openGoalId = g.goalId;
+      }
+      rowBuffer += g.clusterHtml;
+    });
+    flushRow();
+    return `<div class="comp-page comp-gauges-page">${html}</div>`;
+  }).join("");
 
   const notStartedHtml = notStartedProjects.length===0 ? "" : `
     <div class="comp-page comp-notstarted-page">
