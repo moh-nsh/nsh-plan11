@@ -540,8 +540,10 @@ input,select{font-family:inherit;}
 .cph-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:20px;color:var(--navy);}
 .cph-sub{font-size:12.5px;color:var(--text-muted);margin-top:4px;}
 .comp-program-group{margin-bottom:28px;}
-.comp-goal-heading{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold);}
+.comp-goal-heading{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold);flex-basis:100%;width:100%;}
 .comp-program-subheading{font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;color:var(--navy);margin-bottom:12px;}
+.comp-program-divider{font-family:'Cairo',sans-serif;font-weight:700;font-size:12.5px;color:var(--navy);flex-basis:100%;width:100%;margin:10px 0 4px;padding-bottom:5px;border-bottom:1px solid #D8CCEF;}
+.comp-program-divider:first-of-type{margin-top:0;}
 .comp-gauge-clickable{cursor:pointer;transition:transform .15s,box-shadow .15s;}
 .comp-gauge-clickable:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
 .comp-gauges-row{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;}
@@ -2414,7 +2416,10 @@ function spiScreenContentHTML(projects, canApprove){
       <div class="planning-note-row">
         <div class="note-body">
           <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${project.programCode}</div>
-          <div class="note-meta">الإنجاز الفعلي ${spi.actualPct}% مقابل المتوقَّع ${spi.expectedPct}%</div>
+          <div style="display:flex;gap:14px;margin-top:6px;align-items:center;">
+            <div style="text-align:center;">${gaugeSVG(spi.actualPct, 56)}<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">فعلي</div></div>
+            <div style="text-align:center;">${gaugeSVG(spi.expectedPct, 56)}<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">متوقَّع</div></div>
+          </div>
         </div>
         <div style="text-align:center;">
           <div style="font-size:18px;font-weight:800;color:${color};">${spi.spi.toFixed(2)}</div>
@@ -7197,6 +7202,7 @@ function renderCompetitionReport(){
     </div>`).join("");
 
   // ===== من الصفحة الثالثة: مقاييس المشاريع مُجمَّعة حسب البرنامج التنفيذي — تُوزَّع على صفحات محسوبة برمجيًا (لا نعتمد على تلميحات المتصفح لتجنّب أي تقطيع غير متوقع) =====
+  // كل مشاريع البرامج التابعة لنفس الهدف الاستراتيجي تتدفّق بجانب بعضها في صفّ واحد مشترك — الفاصل بين البرامج شريط أفقي صغير (flex-basis:100%) بدل صفّ منفصل لكل برنامج
   const notStartedProjects = [];
   const programGroups = []; // { html, gaugeCount }
   let currentGoalId = null;
@@ -7225,12 +7231,7 @@ function renderCompetitionReport(){
       }).join("");
       programGroups.push({
         gaugeCount: activeProjects.length,
-        html: `
-          <div class="comp-program-group">
-            ${goalHeadingHtml}
-            <div class="comp-program-subheading">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>
-            <div class="comp-gauges-row">${gaugesHtml}</div>
-          </div>`
+        html: `${goalHeadingHtml}<div class="comp-program-divider">${prog.code} — ${escapeHtml(prog.name)} <span style="font-weight:400;color:#6B7280;">— 👤 ${escapeHtml(prog.govManager)}</span></div>${gaugesHtml}`
       });
     });
   });
@@ -7249,7 +7250,7 @@ function renderCompetitionReport(){
   });
   if(currentPageGroups.length>0) gaugePages.push(currentPageGroups.join(""));
 
-  const gaugesPageHtml = gaugePages.map(pageContent=> `<div class="comp-page comp-gauges-page">${pageContent}</div>`).join("");
+  const gaugesPageHtml = gaugePages.map(pageContent=> `<div class="comp-page comp-gauges-page"><div class="comp-gauges-row">${pageContent}</div></div>`).join("");
 
   const notStartedHtml = notStartedProjects.length===0 ? "" : `
     <div class="comp-page comp-notstarted-page">
