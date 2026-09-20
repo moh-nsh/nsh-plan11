@@ -1791,11 +1791,19 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== DECISION LOG SCREEN ===================== -->
 <div id="decisionLogScreen" class="hidden">
-  <div class="dash-wrap">
-    <div class="section-title" style="font-size:20px;">📝 إدارة الملاحظات والقرارات</div>
-    <div class="section-desc" style="margin-bottom:22px;">كل قرارات وملاحظات البرامج، وملاحظات الخطط التفصيلية لكل المشاريع، ورسائل التنبيه — في صفحة واحدة</div>
+  <div class="dash-wrap" style="padding-bottom:0;">
+    <div class="section-title" style="font-size:20px;margin-top:0;">📝 إدارة الملاحظات والقرارات</div>
+    <div class="section-desc" style="margin-bottom:16px;">كل قرارات وملاحظات البرامج، وملاحظات الخطط التفصيلية لكل المشاريع، وسجل التحديات، ورسائل التنبيه — في صفحة واحدة</div>
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="dlTabDecisions">📝 القرارات والملاحظات</button>
+      <button class="mgr-tab" id="dlTabNotes">📋 ملاحظات الخطط التفصيلية</button>
+      <button class="mgr-tab" id="dlTabChallenges">🚨 سجل التحديات</button>
+      <button class="mgr-tab" id="dlTabAnnounce">📢 رسالة تنبيه منبثقة</button>
+    </div>
+  </div>
 
-    <div class="section-title">تسجيل قرار أو ملاحظة جديدة</div>
+  <div class="dash-wrap" id="dlDecisionsView">
+    <div class="section-title" style="margin-top:0;">تسجيل قرار أو ملاحظة جديدة</div>
     <div class="section-desc">اختر البرنامج التنفيذي المعني (ومشروعًا محددًا اختياريًا) واكتب القرار أو الملاحظة — تصل مباشرة لمن يعنيه الأمر لمتابعتها وتنفيذها. تحديد مشروع معيّن يُرسل نسخة تلقائية للمدير التنفيذي أيضًا.</div>
     <div class="pending-list">
       <div class="decision-add-form">
@@ -1817,8 +1825,10 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="decisionLogList"></div>
+  </div>
 
-    <div class="section-title" style="margin-top:40px;">📝 ملاحظات الخطط التفصيلية — كل المشاريع</div>
+  <div class="dash-wrap hidden" id="dlNotesView">
+    <div class="section-title" style="margin-top:0;">📋 ملاحظات الخطط التفصيلية — كل المشاريع</div>
     <div class="section-desc">كل نقاط الملاحظات المُدخَلة على الخطط التفصيلية للمشاريع، مجمَّعة في مكان واحد — يمكنك التأكيد أو الإرجاع أو الحذف، وفتح الخطة التفصيلية مباشرة</div>
     <div id="planningNotesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
@@ -1832,8 +1842,10 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="allPlanningNotesList"></div>
+  </div>
 
-    <div class="section-title" style="margin-top:40px;">🚨 سجل تحديات المشاريع — كل المشاريع</div>
+  <div class="dash-wrap hidden" id="dlChallengesView">
+    <div class="section-title" style="margin-top:0;">🚨 سجل تحديات المشاريع — كل المشاريع</div>
     <div class="section-desc">كل التحديات المُسجَّلة من مدراء المشاريع/البرامج، مجمَّعة في مكان واحد — حل داخلي، تصعيد للمدير العام، أو حذف</div>
     <div id="challengesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
@@ -1848,8 +1860,10 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="allChallengesList"></div>
+  </div>
 
-    <div class="section-title" style="margin-top:40px;">📢 رسالة تنبيه منبثقة</div>
+  <div class="dash-wrap hidden" id="dlAnnounceView">
+    <div class="section-title" style="margin-top:0;">📢 رسالة تنبيه منبثقة</div>
     <div class="section-desc">تظهر تلقائيًا عند الدخول — للجميع افتراضيًا، أو حدّد مستلمين معيّنين (مدراء تنفيذيين و/أو مدراء مشاريع)</div>
     <div class="pending-list">
       <div class="decision-add-form" style="align-items:flex-end;">
@@ -1902,29 +1916,32 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== PROGRAMS & MANAGERS ADMIN SCREEN ===================== -->
 <div id="programsAdminScreen" class="hidden">
-  <div class="dash-wrap">
+  <div class="dash-wrap" style="padding-bottom:0;">
     <div class="filters-bar">
-      <select id="pgaGroupFilter">
-        <option value="">كل المدراء (تنفيذيون + مدراء مشاريع)</option>
-        <option value="exec">المدراء التنفيذيون فقط</option>
-        <option value="pm">مدراء المشاريع فقط</option>
-      </select>
       <select id="pgaGoalFilter"><option value="">كل الأهداف الاستراتيجية</option></select>
     </div>
-
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="pgaTabExec">👤 مدراء البرامج التنفيذية</button>
+      <button class="mgr-tab" id="pgaTabPrograms">📂 البرامج التنفيذية</button>
+      <button class="mgr-tab" id="pgaTabPM">👤 مدراء المشاريع</button>
+    </div>
+  </div>
+  <div class="dash-wrap" id="pgaExecView">
     <div id="execManagersSection">
       <div class="section-title">👤 مدراء البرامج التنفيذية بالمحافظة</div>
       <div class="section-desc">إضافة مدير جديد، إعادة تسمية، أو حذف (لا يمكن حذف مدير لا يزال مسؤولًا عن برنامج)</div>
       <button class="add-btn" id="addManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير جديد</button>
       <div id="managersAdminList"></div>
     </div>
-
-    <div class="section-title" style="margin-top:40px;" id="programsAdminCountTitle">📂 البرامج التنفيذية</div>
+  </div>
+  <div class="dash-wrap hidden" id="pgaProgramsView">
+    <div class="section-title" id="programsAdminCountTitle">📂 البرامج التنفيذية</div>
     <div class="section-desc">تعديل بيانات أي برنامج، أو إعادة تعيين مديره المسؤول مباشرة — عند تغيير المدير تنتقل كل مشاريع البرنامج له تلقائيًا</div>
     <button class="add-btn" id="addProgramBtn" style="margin-bottom:16px;">➕ إضافة برنامج تنفيذي جديد</button>
     <div id="programsAdminList"></div>
-
-    <div id="pmManagersSection" style="margin-top:40px;">
+  </div>
+  <div class="dash-wrap hidden" id="pgaPMView">
+    <div id="pmManagersSection">
       <div class="section-title">👤 مدراء المشاريع</div>
       <div class="section-desc">حسابات مستقلة لأصحاب مشاريع مُحدَّدة — لا يحتاج المدير التنفيذي مشاركة كلمة مروره الخاصة، وقد يُسنَد المشروع لأكثر من مدير مشروع، ومدير المشروع الواحد لعدد غير محدود من المشاريع</div>
       <button class="add-btn" id="addProjectManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير مشروع جديد</button>
@@ -3004,6 +3021,43 @@ function findIncompleteSteps(project){
   return incomplete;
 }
 
+// يبني ويرسل رسالة واتساب ببيانات الدخول وكل المشاريع المُسنَدة حاليًا لشخص معيّن (مدير تنفيذي أو مدير مشروع) — قابلة للإرسال أكثر من مرة
+function sendCredentialsWhatsApp(recipientType, identifier){
+  let name, phone, password, gender, myProjects;
+  if(recipientType==="exec"){
+    name = identifier;
+    const authRec = ALL_MANAGER_AUTH.find(a=>a.id===identifier);
+    phone = authRec && authRec.phone;
+    password = (authRec && authRec.password) || DEFAULT_MANAGER_PASSWORD;
+    gender = authRec && authRec.gender;
+    myProjects = ALL_PROJECTS.filter(p=>p.govManager===identifier);
+  }else{
+    const pm = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===identifier);
+    if(!pm){ alert("تعذّر العثور على مدير المشروع."); return; }
+    name = pm.name;
+    phone = pm.phone;
+    password = pm.password;
+    gender = pm.gender;
+    myProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(identifier));
+  }
+  if(!phone){ alert("لا يوجد رقم جوال مسجَّل لهذا الشخص. أضفه أولًا من نفس الصفحة."); return; }
+  if(myProjects.length===0){ alert("لا توجد مشاريع مُسنَدة لهذا الشخص حاليًا."); return; }
+  const greeting = gender==="male" ? "الفاضل" : (gender==="female" ? "الفاضلة" : "الفاضل/الفاضلة");
+  let msg = `${greeting} ${name}،\nتم إسناد المشروع/المشاريع التالية لك ضمن منصة "رصد":\n`;
+  myProjects.forEach(p=>{
+    const goalName = (STRATEGIC_GOALS.find(g=>g.id===p.goalId)||{}).name || "";
+    msg += `• ${p.projectName} — ${p.programCode} ${p.programName} — الهدف: ${goalName}\n`;
+  });
+  msg += `\nبيانات الدخول للمنصة:\nاسم المستخدم: ${identifier}\nكلمة المرور: ${password}\n${PLATFORM_URL}\n\nيمكنك تغيير كلمة المرور لاحقًا من داخل حسابك.\n\nقسم التخطيط والدراسات`;
+  window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(phone)}&text=${encodeURIComponent(msg)}`, "_blank");
+  const sentInfo = { sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentBy: ADMIN_NAME };
+  if(recipientType==="exec"){
+    db.collection(MANAGER_AUTH_COLLECTION).doc(identifier).set({ credentialsSent: sentInfo }, { merge:true });
+  }else{
+    db.collection(PROJECT_MANAGERS_COLLECTION).doc(identifier).set({ credentialsSent: sentInfo }, { merge:true });
+  }
+  logActivity(ADMIN_NAME, "send_credentials_whatsapp", `${name} (${recipientType})`);
+}
 // يبني نص الرسالة (طويل للبريد، مختصر لواتساب) حسب المستلم (المدير التنفيذي أو مدير مشروع محدد)
 const PLATFORM_URL = "https://moh-nsh.github.io/nsh-plan11/"; // رابط المنصة الحيّة — يُضمَّن في رسائل التذكير
 function buildReminderMessage(project, lateSteps, recipientLabel, recipientName, isWhatsapp, gender){
@@ -5161,7 +5215,21 @@ document.getElementById("saveAdminPasswordBtn").onclick = ()=>{
 document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
 document.getElementById("navBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
-document.getElementById("navDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); };
+document.getElementById("navDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); switchDLTab("decisions"); };
+function switchDLTab(tab){
+  document.getElementById("dlTabDecisions").classList.toggle("active", tab==="decisions");
+  document.getElementById("dlTabNotes").classList.toggle("active", tab==="notes");
+  document.getElementById("dlTabChallenges").classList.toggle("active", tab==="challenges");
+  document.getElementById("dlTabAnnounce").classList.toggle("active", tab==="announce");
+  document.getElementById("dlDecisionsView").classList.toggle("hidden", tab!=="decisions");
+  document.getElementById("dlNotesView").classList.toggle("hidden", tab!=="notes");
+  document.getElementById("dlChallengesView").classList.toggle("hidden", tab!=="challenges");
+  document.getElementById("dlAnnounceView").classList.toggle("hidden", tab!=="announce");
+}
+document.getElementById("dlTabDecisions").onclick = ()=> switchDLTab("decisions");
+document.getElementById("dlTabNotes").onclick = ()=> switchDLTab("notes");
+document.getElementById("dlTabChallenges").onclick = ()=> switchDLTab("challenges");
+document.getElementById("dlTabAnnounce").onclick = ()=> switchDLTab("announce");
 document.getElementById("navWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
 document.getElementById("weeklyReportPrintBtn").onclick = ()=> window.print();
 document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
@@ -5196,17 +5264,22 @@ function renderProgramsAdminScreen(){
   const prevPgaGoalFilter = document.getElementById("pgaGoalFilter").value;
   document.getElementById("pgaGoalFilter").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
   document.getElementById("pgaGoalFilter").value = prevPgaGoalFilter;
-  document.getElementById("pgaGroupFilter").onchange = renderProgramsAdminScreen;
   document.getElementById("pgaGoalFilter").onchange = renderProgramsAdminScreen;
-  const groupFilter = document.getElementById("pgaGroupFilter").value;
-  const showExec = !groupFilter || groupFilter==="exec";
-  const showPM = !groupFilter || groupFilter==="pm";
-  document.getElementById("execManagersSection").style.display = showExec ? "" : "none";
-  document.getElementById("pmManagersSection").style.display = showPM ? "" : "none";
   renderManagersAdminList();
   renderProgramsAdminList();
   renderProjectManagersAdminList();
 }
+function switchPGATab(tab){
+  document.getElementById("pgaTabExec").classList.toggle("active", tab==="exec");
+  document.getElementById("pgaTabPrograms").classList.toggle("active", tab==="programs");
+  document.getElementById("pgaTabPM").classList.toggle("active", tab==="pm");
+  document.getElementById("pgaExecView").classList.toggle("hidden", tab!=="exec");
+  document.getElementById("pgaProgramsView").classList.toggle("hidden", tab!=="programs");
+  document.getElementById("pgaPMView").classList.toggle("hidden", tab!=="pm");
+}
+document.getElementById("pgaTabExec").onclick = ()=> switchPGATab("exec");
+document.getElementById("pgaTabPrograms").onclick = ()=> switchPGATab("programs");
+document.getElementById("pgaTabPM").onclick = ()=> switchPGATab("pm");
 
 function renderManagersAdminList(){
   const goalFilter = document.getElementById("pgaGoalFilter").value;
@@ -5294,14 +5367,17 @@ function renderManagersAdminList(){
 }
 
 function renderProgramsAdminList(){
-  document.getElementById("programsAdminCountTitle").textContent = `📂 البرامج التنفيذية (${PROGRAMS.length})`;
+  const goalFilter = document.getElementById("pgaGoalFilter").value;
+  const filteredPrograms = goalFilter ? PROGRAMS.filter(p=>String(p.goalId)===goalFilter) : PROGRAMS;
+  document.getElementById("programsAdminCountTitle").textContent = `📂 البرامج التنفيذية (${filteredPrograms.length})`;
   const list = document.getElementById("programsAdminList");
-  if(PROGRAMS.length===0){
-    list.innerHTML = `<div class="empty-note">لا توجد برامج مُسجَّلة بعد.</div>`;
+  if(filteredPrograms.length===0){
+    list.innerHTML = `<div class="empty-note">لا توجد برامج مطابقة لهذا الاختيار.</div>`;
     return;
   }
-  list.innerHTML = STRATEGIC_GOALS.map(goal=>{
-    const programsInGoal = PROGRAMS.filter(p=>p.goalId===goal.id);
+  const filteredGoals = goalFilter ? STRATEGIC_GOALS.filter(g=>String(g.id)===goalFilter) : STRATEGIC_GOALS;
+  list.innerHTML = filteredGoals.map(goal=>{
+    const programsInGoal = filteredPrograms.filter(p=>p.goalId===goal.id);
     if(programsInGoal.length===0) return "";
     const rows = programsInGoal.map(p=>`
       <div class="program-admin-row">
@@ -5907,19 +5983,26 @@ function renderPasswordsScreen(){
     const emailText = rec && rec.email ? rec.email : "لا يوجد بريد مسجَّل";
     const phoneText = rec && rec.phone ? rec.phone : "لا يوجد جوال مسجَّل";
     const myPrograms = PROGRAMS.filter(p=>p.govManager===name).map(p=>p.code).join("، ");
+    const sentInfo = rec && rec.credentialsSent;
+    const sentText = sentInfo && sentInfo.sentAt ? `✅ أُرسلت بيانات الدخول بتاريخ ${sentInfo.sentAt.toDate ? sentInfo.sentAt.toDate().toLocaleDateString("ar") : ""}` : "";
     return `
       <div class="mgr-auth-row">
         <div>
           <div class="mname">${name} <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— ${myPrograms||"بدون برنامج"}</span></div>
           <div class="mupdated">${statusText} | 📧 ${escapeHtml(emailText)} | 📱 ${escapeHtml(phoneText)}</div>
+          ${sentText ? `<div class="mupdated" style="color:#1E7A3D;">${sentText}</div>` : ""}
         </div>
         <div style="display:flex;gap:8px;">
           <button class="reset-pw-btn" data-name="${escapeAttr(name)}" data-field="email" style="background:#1E4E8C;">✎ البريد</button>
           <button class="reset-pw-btn" data-name="${escapeAttr(name)}" data-field="phone" style="background:#1E7A3D;">✎ الجوال</button>
           <button class="reset-pw-btn" data-name="${escapeAttr(name)}" data-action="resetpw">إعادة تعيين</button>
+          <button class="reset-pw-btn" data-name="${escapeAttr(name)}" data-action="sendcreds" style="background:#25D366;">📤 إرسال بيانات الدخول</button>
         </div>
       </div>`;
   }).join("");
+  authList.querySelectorAll(".reset-pw-btn[data-action='sendcreds']").forEach(btn=>{
+    btn.onclick = ()=> sendCredentialsWhatsApp("exec", btn.dataset.name);
+  });
   authList.querySelectorAll(".reset-pw-btn[data-action='resetpw']").forEach(btn=>{
     btn.onclick = ()=>{
       pendingResetManager = btn.dataset.name;
@@ -5956,19 +6039,26 @@ function renderPasswordsScreen(){
           const phoneText = pm.phone ? pm.phone : "لا يوجد جوال مسجَّل";
           const myProjects = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId));
           const myPrograms = [...new Set(myProjects.map(p=>p.programCode))].join("، ");
+          const sentInfo = pm.credentialsSent;
+          const sentText = sentInfo && sentInfo.sentAt ? `✅ أُرسلت بيانات الدخول بتاريخ ${sentInfo.sentAt.toDate ? sentInfo.sentAt.toDate().toLocaleDateString("ar") : ""}` : "";
           return `
             <div class="mgr-auth-row">
               <div>
                 <div class="mname">${escapeHtml(pm.name)} <span style="font-weight:400;color:var(--text-muted);">— ${escapeHtml(pm.employeeId)} — ${myPrograms||"بدون مشاريع"}</span></div>
                 <div class="mupdated">📧 ${escapeHtml(emailText)} | 📱 ${escapeHtml(phoneText)}</div>
+                ${sentText ? `<div class="mupdated" style="color:#1E7A3D;">${sentText}</div>` : ""}
               </div>
               <div style="display:flex;gap:8px;">
                 <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="email" style="background:#1E4E8C;">✎ البريد</button>
                 <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-field="phone" style="background:#1E7A3D;">✎ الجوال</button>
                 <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="resetpw">إعادة تعيين</button>
+                <button class="reset-pw-btn" data-id="${escapeAttr(pm.employeeId)}" data-action="sendcreds" style="background:#25D366;">📤 إرسال بيانات الدخول</button>
               </div>
             </div>`;
         }).join("");
+    pmList.querySelectorAll(".reset-pw-btn[data-action='sendcreds']").forEach(btn=>{
+      btn.onclick = ()=> sendCredentialsWhatsApp("pm", btn.dataset.id);
+    });
     pmList.querySelectorAll(".reset-pw-btn[data-action='resetpw']").forEach(btn=>{
       btn.onclick = ()=>{
         pendingResetManager = btn.dataset.id;
