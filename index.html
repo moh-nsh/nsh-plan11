@@ -1128,6 +1128,11 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap hidden" id="dgSPIView">
     <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
     <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="dgSpiFilterYear"><option value="">كل السنوات</option></select>
+      <select id="dgSpiFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="dgSpiFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+    </div>
     <div id="dgSPIContent"></div>
   </div>
 </div>
@@ -1301,6 +1306,11 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap">
     <div class="section-title">📈 مؤشر الأداء الزمني SPI (Schedule Performance Index)</div>
     <div class="section-desc">يقارن الإنجاز الفعلي لكل مشروع بما كان متوقَّعًا منه حسب خط أساس مُجمَّد لا يتأثر بتعديل التواريخ لاحقًا — SPI أقل من 1 يعني تأخرًا عن الخط الأساس، وأعلى من 1 يعني تقدّمًا عليه</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="spiFilterYear"><option value="">كل السنوات</option></select>
+      <select id="spiFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="spiFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+    </div>
     <div id="spiScreenContent"></div>
   </div>
 </div>
@@ -1461,6 +1471,11 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap hidden" id="mgrSPIView">
     <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
     <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع من مشاريعك — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="mgrSpiFilterYear"><option value="">كل السنوات</option></select>
+      <select id="mgrSpiFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="mgrSpiFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+    </div>
     <div id="mgrSPIContent"></div>
   </div>
 </div>
@@ -1540,6 +1555,11 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap hidden" id="pmSPIView">
     <div class="section-title">📈 مؤشر الأداء الزمني SPI</div>
     <div class="section-desc">يقارن الإنجاز الفعلي بما كان متوقَّعًا حسب خط أساس مُجمَّد لكل مشروع من مشاريعك — SPI أقل من 1 يعني تأخرًا، وأعلى من 1 تقدّمًا</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="pmSpiFilterYear"><option value="">كل السنوات</option></select>
+      <select id="pmSpiFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
+      <select id="pmSpiFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
+    </div>
     <div id="pmSPIContent"></div>
   </div>
 </div>
@@ -2414,6 +2434,40 @@ function wireSPIScreenButtons(container){
       if(!confirm("سيُسمح لصاحب المشروع بتحديد خط أساس جديد، وسيُنقَل الخط الحالي للسجل التاريخي. هل أنت متأكد؟")) return;
       approveSPIBaselineUnlock(btn.dataset.projectId);
     };
+  });
+}
+// يبني قوائم فلاتر السنة/الهدف الاستراتيجي/البرنامج التنفيذي لصفحة SPI (تُستدعى مرة واحدة عند فتح الشاشة/التبويب فقط) — يحافظ على القيمة المختارة سابقًا عند إعادة البناء
+function buildSPIFilterSelects(yearId, goalId, programId, onChangeCallback){
+  const prevYear = document.getElementById(yearId).value;
+  const prevGoal = document.getElementById(goalId).value;
+  const prevProgram = document.getElementById(programId).value;
+  document.getElementById(yearId).innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  document.getElementById(goalId).innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  const goalFilterForPrograms = prevGoal ? PROGRAMS.filter(p=>String(p.goalId)===prevGoal) : PROGRAMS;
+  document.getElementById(programId).innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + goalFilterForPrograms.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+  document.getElementById(yearId).value = prevYear;
+  document.getElementById(goalId).value = prevGoal;
+  document.getElementById(programId).value = prevProgram;
+  document.getElementById(yearId).onchange = onChangeCallback;
+  document.getElementById(goalId).onchange = ()=>{
+    const goalVal = document.getElementById(goalId).value;
+    const progSel = document.getElementById(programId);
+    const progs = goalVal ? PROGRAMS.filter(p=>String(p.goalId)===goalVal) : PROGRAMS;
+    progSel.innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    onChangeCallback();
+  };
+  document.getElementById(programId).onchange = onChangeCallback;
+}
+// يطبّق فلاتر السنة/الهدف/البرنامج على قائمة مشاريع لصفحة SPI
+function applySPIFilters(projects, yearId, goalId, programId){
+  const year = document.getElementById(yearId).value;
+  const goal = document.getElementById(goalId).value;
+  const program = document.getElementById(programId).value;
+  return projects.filter(p=>{
+    if(year && String(p.year)!==year) return false;
+    if(goal && String(p.goalId)!==goal) return false;
+    if(program && p.programCode!==program) return false;
+    return true;
   });
 }
 // إذا كانت نافذة الخطة التفصيلية مفتوحة حاليًا لهذا المشروع، يحدّث قائمة الملاحظات فقط دون التأثير على باقي الاستمارة
@@ -3657,7 +3711,10 @@ function switchPMTab(tab){
   if(tab==="input") renderPMProjectsList();
   if(tab==="overview") renderPMOverview();
   if(tab==="comms"){ buildPMRequestForm(); renderPMComms(); }
-  if(tab==="spi") renderPMSPIScreen();
+  if(tab==="spi"){
+    buildSPIFilterSelects("pmSpiFilterYear","pmSpiFilterGoal","pmSpiFilterProgram", renderPMSPIScreen);
+    renderPMSPIScreen();
+  }
 }
 document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
 document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
@@ -3666,7 +3723,8 @@ document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
 function renderPMSPIScreen(){
   const myProjects = getPMProjects();
   const container = document.getElementById("pmSPIContent");
-  container.innerHTML = spiScreenContentHTML(myProjects.filter(p=>!p.closed), false);
+  const filtered = applySPIFilters(myProjects.filter(p=>!p.closed), "pmSpiFilterYear","pmSpiFilterGoal","pmSpiFilterProgram");
+  container.innerHTML = spiScreenContentHTML(filtered, false);
   wireSPIScreenButtons(container);
 }
 
@@ -4084,7 +4142,11 @@ function switchMgrTab(tab){
   document.getElementById("mgrSPIView").classList.toggle("hidden", tab!=="spi");
   if(tab==="overview"){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
   if(tab==="comms"){ buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط"); }
-  if(tab==="spi"){ renderManagerSPIScreen(); logActivity(currentManager, "view_spi_screen", ""); }
+  if(tab==="spi"){
+    buildSPIFilterSelects("mgrSpiFilterYear","mgrSpiFilterGoal","mgrSpiFilterProgram", renderManagerSPIScreen);
+    renderManagerSPIScreen();
+    logActivity(currentManager, "view_spi_screen", "");
+  }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
@@ -4093,7 +4155,8 @@ document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
 function renderManagerSPIScreen(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const container = document.getElementById("mgrSPIContent");
-  container.innerHTML = spiScreenContentHTML(myProjects.filter(p=>!p.closed), false);
+  const filtered = applySPIFilters(myProjects.filter(p=>!p.closed), "mgrSpiFilterYear","mgrSpiFilterGoal","mgrSpiFilterProgram");
+  container.innerHTML = spiScreenContentHTML(filtered, false);
   wireSPIScreenButtons(container);
 }
 
@@ -4910,10 +4973,15 @@ function switchDGTab(tab){
 }
 document.getElementById("dgTabOverviewBtn").onclick = ()=> switchDGTab("overview");
 document.getElementById("dgTabChallengesBtn").onclick = ()=>{ switchDGTab("challenges"); renderDGScreen(); };
-document.getElementById("dgTabSPIBtn").onclick = ()=>{ switchDGTab("spi"); renderDGSPIScreen(); };
+document.getElementById("dgTabSPIBtn").onclick = ()=>{
+  switchDGTab("spi");
+  buildSPIFilterSelects("dgSpiFilterYear","dgSpiFilterGoal","dgSpiFilterProgram", renderDGSPIScreen);
+  renderDGSPIScreen();
+};
 function renderDGSPIScreen(){
   const container = document.getElementById("dgSPIContent");
-  container.innerHTML = spiScreenContentHTML(ALL_PROJECTS.filter(p=>!p.closed), true);
+  const filtered = applySPIFilters(ALL_PROJECTS.filter(p=>!p.closed), "dgSpiFilterYear","dgSpiFilterGoal","dgSpiFilterProgram");
+  container.innerHTML = spiScreenContentHTML(filtered, true);
   wireSPIScreenButtons(container);
 }
 // عدّاد على تبويب "التحديات" للمدير العام — عدد التحديات المُصعَّدة التي لم يُرَدَّ عليها بعد
@@ -7338,12 +7406,14 @@ document.getElementById("navFullMatrixBtn").onclick = ()=>{
 document.getElementById("fullMatrixPrintBtn").onclick = ()=> window.print();
 document.getElementById("navSPIBtn").onclick = ()=>{
   showScreen("spiScreen");
+  buildSPIFilterSelects("spiFilterYear","spiFilterGoal","spiFilterProgram", renderAdminSPIScreen);
   renderAdminSPIScreen();
   logActivity(ADMIN_NAME, "view_spi_screen", "");
 };
 function renderAdminSPIScreen(){
   const container = document.getElementById("spiScreenContent");
-  container.innerHTML = spiScreenContentHTML(ALL_PROJECTS.filter(p=>!p.closed), true);
+  const filtered = applySPIFilters(ALL_PROJECTS.filter(p=>!p.closed), "spiFilterYear","spiFilterGoal","spiFilterProgram");
+  container.innerHTML = spiScreenContentHTML(filtered, true);
   wireSPIScreenButtons(container);
 }
 
