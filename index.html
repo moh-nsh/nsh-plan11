@@ -482,8 +482,15 @@ input,select{font-family:inherit;}
   body{padding-top:0 !important;}
 }
 
-.comp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:14px;}
-.comp-stats-grid-closed{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px;max-width:520px;}
+.comp-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+.phase-avg-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px;}
+.phase-avg-table th{background:var(--navy);color:#fff;padding:7px 8px;text-align:center;font-weight:700;}
+.phase-avg-table td{padding:6px 8px;border-bottom:1px solid #E4E7EC;}
+.phase-avg-table .pat-name{font-weight:700;color:var(--navy);white-space:nowrap;width:18%;}
+.pat-bar-row{display:flex;align-items:center;gap:8px;}
+.pat-bar-track{flex:1;height:10px;background:#EEF0F3;border-radius:5px;overflow:hidden;}
+.pat-bar-fill{height:100%;background:#C9962E;border-radius:5px;}
+.pat-bar-row span{font-weight:700;color:var(--navy);width:32px;text-align:left;flex-shrink:0;}
 .comp-stat-card{background:linear-gradient(160deg,var(--navy),#0d151f);border-radius:14px;padding:20px 10px;text-align:center;}
 .comp-stat-card .csc-num{font-family:'Cairo',sans-serif;font-weight:800;font-size:30px;color:var(--gold);}
 .comp-stat-card .csc-lbl{font-size:12px;color:#fff;margin-top:6px;}
@@ -832,7 +839,7 @@ tr.rejected-row td{background:#FDF6F6;}
 }
 .detail-modal-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;}
 .detail-modal-subtitle{font-size:12px;color:#c9d2de;margin-top:3px;}
-.detail-close-btn{background:rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:8px;font-size:15px;flex-shrink:0;}
+.detail-close-btn{background:rgba(255,255,255,.15);color:#fff;width:36px;height:36px;min-width:36px;border-radius:8px;font-size:17px;flex-shrink:0;touch-action:manipulation;}
 .detail-close-btn:hover{background:rgba(255,255,255,.28);}
 .detail-progress-wrap{padding:14px 22px;background:#F8F9FB;border-bottom:1px solid var(--border);}
 .detail-progress-label{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:6px;}
@@ -1096,6 +1103,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">📊 لوحة أداء الخطة</button>
     <button class="meeting-btn" id="navFullMatrixBtn" style="background:#0D6E6E;color:#fff;">📐 المصفوفة الشاملة</button>
     <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;">📈 مؤشر الأداء الزمني SPI</button>
+    <button class="meeting-btn" id="navAnalyticsBtn" style="background:#0D6E6E;color:#fff;">🔬 تحليلات متقدمة</button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#1E4E8C;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navRequestsBtn" style="background:#1E4E8C;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navDecisionLogBtn" style="background:#1E4E8C;color:#fff;position:relative;">📝 إدارة الملاحظات والقرارات <span id="navChallengesBadge" class="req-badge hidden">0</span></button>
@@ -1328,15 +1336,14 @@ tr.rejected-row td{background:#FDF6F6;}
     <div style="display:flex;gap:10px;margin-bottom:18px;">
       <button class="print-btn" id="weeklyReportPrintBtn">🖨️ طباعة / PDF</button>
       <button class="export-btn" id="weeklyReportCopyBtn">📋 نسخ نص واتساب</button>
-      <button class="export-btn" id="adminExportICSBtn" style="background:#5B3EAF;">📅 تصدير كل المواعيد للتقويم</button>
     </div>
 
     <div class="filters-bar">
       <select id="reportFilterYear"><option value="">كل السنوات</option></select>
-      <select id="reportFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
       <select id="reportFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
       <select id="reportFilterManager"><option value="">كل المدراء</option></select>
     </div>
+    <div class="mgr-tabs" id="reportGoalTabs"></div>
 
     <div class="exec-header" style="margin-top:10px;">
       <div class="exec-title">📊 تقرير متابعة إدخال مشاريع الخطة الخمسية الحادية عشرة</div>
@@ -1427,7 +1434,6 @@ tr.rejected-row td{background:#FDF6F6;}
       </select>
     </div>
     <div id="mgrHealthScoreContainer"></div>
-    <div style="margin-bottom:18px;"><button class="export-btn" id="mgrExportICSBtn" style="background:#5B3EAF;">📅 تصدير مواعيد مشاريعي للتقويم</button></div>
     <div id="mgrRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="mgrOverviewSummary" class="summary-grid" style="margin-bottom:22px;"></div>
     <canvas id="mgrOverviewChart" style="max-height:260px;margin-bottom:24px;"></canvas>
@@ -1521,7 +1527,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title">لوحة المتابعة</div>
     <div class="section-desc">نظرة عامة على تقدم مشاريعك وحالة كل مرحلة من مراحل خططها التفصيلية</div>
     <div id="pmHealthScoreContainer"></div>
-    <div style="margin-bottom:18px;"><button class="export-btn" id="pmExportICSBtn" style="background:#5B3EAF;">📅 تصدير مواعيد مشاريعي للتقويم</button></div>
     <div id="pmRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
     <div class="pending-list">
@@ -1575,11 +1580,9 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== ADMIN DASHBOARD ===================== -->
 <div id="adminScreen" class="hidden">
   <div id="adminCountdownBar"></div>
-  <div class="dash-wrap">
+  <div class="dash-wrap" style="padding-bottom:0;">
     <div class="section-title">استعراض المشاريع المجمّعة</div>
     <div class="section-desc">تصفية وتصدير جميع المشاريع المدخلة من مدراء البرامج التنفيذية بالمحافظة</div>
-
-    <div id="healthScoreContainer"></div>
 
     <div class="filters-bar">
       <select id="filterGoal"><option value="">كل البرامج الاستراتيجية</option></select>
@@ -1591,7 +1594,15 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="export-btn" id="exportBtn">تصدير CSV</button>
       <button class="print-btn" id="printBtn">طباعة</button>
     </div>
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="adminTabOverview">📊 استعراض المشاريع المجمّعة</button>
+      <button class="mgr-tab" id="adminTabLate">⏰ المشاريع المتأخرة عن جدولها الزمني</button>
+      <button class="mgr-tab" id="adminTabIncomplete">📋 خطوات ناقصة البيانات</button>
+    </div>
+  </div>
 
+  <div class="dash-wrap" id="adminOverviewView">
+    <div id="healthScoreContainer"></div>
     <div id="summaryGrid" class="summary-grid"></div>
 
     <div class="pending-list">
@@ -1605,13 +1616,17 @@ tr.rejected-row td{background:#FDF6F6;}
         <div class="chart-box"><canvas id="adminManagerChart"></canvas></div>
       </div>
     </div>
+  </div>
 
+  <div class="dash-wrap hidden" id="adminLateView">
     <div class="pending-list">
       <h3>⏰ المشاريع المتأخرة عن جدولها الزمني</h3>
       <div class="section-desc" style="margin-bottom:14px;">مشاريع فيها بند أو خطوة تجاوزت تاريخ انتهائها المستهدف دون اكتمال — يمكنك إرسال تذكير بالبريد مباشرة لمدير البرنامج</div>
       <div id="lateProjectsList"></div>
     </div>
+  </div>
 
+  <div class="dash-wrap hidden" id="adminIncompleteView">
     <div class="pending-list">
       <h3>📋 خطوات ناقصة البيانات</h3>
       <div class="section-desc" style="margin-bottom:6px;">خطوات ينقصها أحد الحقول الأساسية (الاسم، الوثائق الداعمة، تاريخ البدء، تاريخ الانتهاء، أو الحالة) — بحسب نفس الفلاتر أعلاه</div>
@@ -2031,6 +2046,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <input type="file" id="detailImportFile" accept=".xlsx" style="display:none;">
       <button class="export-btn" id="detailExportBtn">📊 تصدير Excel</button>
       <button class="export-btn" id="detailPrintBtn" style="background:#5B3EAF;">🖨️ طباعة / PDF</button>
+      <button class="export-btn" id="detailICSBtn" style="background:#25D366;">📅 إضافة الخطة للتقويم</button>
       <button class="add-btn" id="detailSaveBtn">💾 حفظ الخطة التفصيلية</button>
     </div>
   </div>
@@ -2079,6 +2095,7 @@ const ACTIVITY_LOG_COLLECTION = "nsh_plan11_activity_log"; // سجل الدخو�
 const DECISION_LOG_COLLECTION = "nsh_plan11_decision_log"; // سجل قرارات وملاحظات الاجتماعات الدورية
 const REQUESTS_COLLECTION = "nsh_plan11_requests"; // طلبات مدراء البرامج التنفيذية لقسم التخطيط والدراسات
 const SETTINGS_COLLECTION = "nsh_plan11_settings"; // إعدادات عامة للمنصة (مثل شريط العد التنازلي)
+const MONTHLY_SNAPSHOTS_COLLECTION = "nsh_plan11_monthly_snapshots"; // لقطة شهرية تلقائية للحالة الصحية العامة للمحافظة — معرّف الوثيقة بصيغة YYYY-MM
 const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنفيذية (ديناميكية - قابلة للإضافة والتعديل)
 const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
 const PROJECT_MANAGERS_COLLECTION = "nsh_plan11_project_managers"; // حسابات مدراء المشاريع (جديد) — قد يُسنَد للمشروع الواحد أكثر من مدير، وللمدير الواحد أكثر من مشروع
@@ -2154,6 +2171,7 @@ try{
 
 let ALL_PROJECTS = []; // كاش محلي من Firestore
 let ALL_PROJECT_DETAILS = []; // كاش محلي للخطط التفصيلية
+let ALL_MONTHLY_SNAPSHOTS = []; // كاش محلي للقطات الشهرية { id:"YYYY-MM", overallAvg, overallAdherence, capturedAt }
 let ALL_PROGRAM_CARDS = []; // كاش محلي لبطاقات تعريف البرامج التنفيذية
 let ALL_MANAGER_AUTH = []; // كاش محلي لكلمات مرور المدراء
 let ALL_PROJECT_MANAGERS = []; // كاش محلي لحسابات مدراء المشاريع (الاسم، الرقم الوظيفي، كلمة المرور)
@@ -2231,6 +2249,131 @@ function listenToProjectDetails(cb){
     ALL_PROJECT_DETAILS = arr;
     cb(arr);
   }, err=>{ console.error(err); cb([]); });
+}
+function listenToMonthlySnapshots(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(MONTHLY_SNAPSHOTS_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    arr.sort((a,b)=> a.id.localeCompare(b.id));
+    ALL_MONTHLY_SNAPSHOTS = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+// يجمع الخطوات التي دخلت "منطقة الخطر" — انقضى 80% أو أكثر من مدتها المخطَّطة دون اكتمال، مع بقاء وقت كافٍ لتفادي التأخر الفعلي بعد
+function getDangerZoneSteps(projects){
+  const results = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  projects.forEach(pr=>{
+    if(pr.closed) return;
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.phases)) return;
+    detail.phases.forEach((ph, phaseIdx)=>{
+      (ph.steps||[]).forEach((st, stepIdx)=>{
+        if(!st.name || st.status==="مكتمل" || !st.startDate || !st.endDate) return;
+        const start = new Date(st.startDate), end = new Date(st.endDate);
+        if(isNaN(start)||isNaN(end)||end<=start) return;
+        if(end < today) return; // متأخرة فعليًا بالفعل — تُرصَد في قائمة المتأخرات المعتادة
+        const totalDays = (end-start)/86400000;
+        const elapsedDays = (today-start)/86400000;
+        if(elapsedDays < 0) return; // لم يبدأ تاريخها بعد
+        const elapsedPct = elapsedDays/totalDays;
+        if(elapsedPct >= 0.8){
+          results.push({ project:pr, phaseName:ph.name, stepName:st.name, seq:`${phaseIdx+1}.${stepIdx+1}`, phaseIdx, stepIdx, elapsedPct: Math.round(elapsedPct*100), daysLeft: Math.ceil((end-today)/86400000) });
+        }
+      });
+    });
+  });
+  return results;
+}
+// يكشف مراحل يُتوقَّع تأخر بدئها الفعلي لأن المرحلة السابقة لها لم تكتمل بعد رغم اقتراب/حلول موعد بدئها
+function getCascadeWarnings(projects){
+  const results = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  projects.forEach(pr=>{
+    if(pr.closed) return;
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.phases)) return;
+    for(let i=1;i<detail.phases.length;i++){
+      const prevPhase = detail.phases[i-1];
+      const curPhase = detail.phases[i];
+      const prevIncomplete = (prevPhase.steps||[]).some(s=> s.name && s.status!=="مكتمل");
+      if(!prevIncomplete) continue;
+      const curSteps = (curPhase.steps||[]).filter(s=>s.name && s.startDate);
+      if(curSteps.length===0) continue;
+      let earliestStart = null;
+      curSteps.forEach(s=>{ const d=new Date(s.startDate); if(!isNaN(d) && (!earliestStart || d<earliestStart)) earliestStart=d; });
+      if(earliestStart && earliestStart <= today){
+        results.push({ project:pr, prevPhaseName:prevPhase.name, curPhaseName:curPhase.name, phaseIdx:i });
+      }
+    }
+  });
+  return results;
+}
+// يحدّد "الخطوة الحرجة" الحالية لمشروع — أول خطوة غير مكتملة بترتيبها التسلسلي، وهي التي تُعطِّل تقدّم المشروع فعليًا الآن
+function getCriticalStepForProject(detail){
+  if(!detail || !Array.isArray(detail.phases)) return null;
+  for(let pi=0; pi<detail.phases.length; pi++){
+    const ph = detail.phases[pi];
+    const steps = ph.steps||[];
+    for(let si=0; si<steps.length; si++){
+      const st = steps[si];
+      if(st.name && st.status!=="مكتمل"){
+        return { phaseName: ph.name, phaseWeight: ph.weight, stepName: st.name, phaseIdx:pi, stepIdx:si };
+      }
+    }
+  }
+  return null;
+}
+// يحسب عدد الخطوات النشطة/القادمة خلال 30 يومًا لكل مسؤول عن مشروع — للكشف عن التحميل الزائد
+function computeWorkloadMap(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in30 = new Date(today); in30.setDate(in30.getDate()+30);
+  const workload = {};
+  ALL_PROJECTS.filter(p=>!p.closed).forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.phases)) return;
+    let activeCount = 0;
+    detail.phases.forEach(ph=>{
+      (ph.steps||[]).forEach(st=>{
+        if(!st.name || st.status==="مكتمل" || !st.startDate || !st.endDate) return;
+        const start = new Date(st.startDate), end = new Date(st.endDate);
+        if(isNaN(start)||isNaN(end)) return;
+        if(start <= in30 && end >= today) activeCount++;
+      });
+    });
+    if(activeCount===0) return;
+    getProjectOwnerLabels(pr).forEach(name=>{ workload[name] = (workload[name]||0) + activeCount; });
+  });
+  return Object.entries(workload).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+}
+// يقارن متوسط إنجاز مشاريع برنامج تنفيذي واحد عبر سنوات مختلفة — لرصد تحسّن/تراجع أدائه بمرور الزمن
+function computeYearlyProgramComparison(programCode){
+  const projects = ALL_PROJECTS.filter(p=>p.programCode===programCode);
+  const years = [...new Set(projects.map(p=>p.year))].sort();
+  return years.map(year=>{
+    const yearProjects = projects.filter(p=>p.year===year && !p.closed);
+    const withDetail = yearProjects.filter(p=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
+    const avg = withDetail.length ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length) : 0;
+    return { year, avg, projectCount: yearProjects.length };
+  });
+}
+// يلتقط لقطة للحالة الصحية العامة للمحافظة للشهر الحالي — مرة واحدة فقط لكل شهر (لا يُعيد الكتابة إن كانت موجودة أصلًا)
+function captureMonthlySnapshotIfNeeded(){
+  if(!firebaseReady) return;
+  const now = new Date();
+  const monthId = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  if(ALL_MONTHLY_SNAPSHOTS.some(s=>s.id===monthId)) return; // موجودة أصلًا لهذا الشهر
+  const activeProjects = ALL_PROJECTS.filter(p=>!p.closed);
+  const withDetail = activeProjects.filter(p=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return countPhasesStarted(d)>0; });
+  const overallAvg = withDetail.length
+    ? Math.round(withDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/withDetail.length)
+    : 0;
+  const overallAdherence = Math.round(computeScheduleAdherence(activeProjects)*100);
+  db.collection(MONTHLY_SNAPSHOTS_COLLECTION).doc(monthId).set({
+    overallAvg, overallAdherence, totalProjects: activeProjects.length,
+    capturedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 function saveProjectDetail(projectId, data){
   if(!firebaseReady){ alert("لم يتم ربط قاعدة البيانات بعد."); return Promise.resolve(false); }
@@ -3842,10 +3985,6 @@ document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
 document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
 document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
 document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
-document.getElementById("pmExportICSBtn").onclick = ()=>{
-  const myProjects = getPMProjects().filter(p=>!p.closed);
-  exportProjectsToICS(myProjects, "رصد-مواعيدي.ics");
-};
 function renderPMSPIScreen(){
   const myProjects = getPMProjects();
   const container = document.getElementById("pmSPIContent");
@@ -4278,10 +4417,6 @@ document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
-document.getElementById("mgrExportICSBtn").onclick = ()=>{
-  const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager && !p.closed);
-  exportProjectsToICS(myProjects, "رصد-مواعيدي.ics");
-};
 function renderManagerSPIScreen(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const container = document.getElementById("mgrSPIContent");
@@ -5036,11 +5171,24 @@ function enterAdmin(){
   showScreen("adminScreen");
   buildFilters();
   renderAdmin();
+  switchAdminTab("overview");
   updateRequestsBadge();
   updateAdminChallengesBadge();
   renderCountdownBar("adminCountdownBar", true);
   setTimeout(checkAndShowAdminChallengesPopup, 500);
+  setTimeout(captureMonthlySnapshotIfNeeded, 800);
 }
+function switchAdminTab(tab){
+  document.getElementById("adminTabOverview").classList.toggle("active", tab==="overview");
+  document.getElementById("adminTabLate").classList.toggle("active", tab==="late");
+  document.getElementById("adminTabIncomplete").classList.toggle("active", tab==="incomplete");
+  document.getElementById("adminOverviewView").classList.toggle("hidden", tab!=="overview");
+  document.getElementById("adminLateView").classList.toggle("hidden", tab!=="late");
+  document.getElementById("adminIncompleteView").classList.toggle("hidden", tab!=="incomplete");
+}
+document.getElementById("adminTabOverview").onclick = ()=> switchAdminTab("overview");
+document.getElementById("adminTabLate").onclick = ()=> switchAdminTab("late");
+document.getElementById("adminTabIncomplete").onclick = ()=> switchAdminTab("incomplete");
 // عدّاد على زر "إدارة الملاحظات والقرارات" — عدد التحديات الجديدة (⚪) التي لم يُتَّخذ إجراء بشأنها بعد
 function updateAdminChallengesBadge(){
   const badge = document.getElementById("navChallengesBadge");
@@ -5253,9 +5401,6 @@ document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
     alert("تم نسخ التقرير — الصقه الآن في واتساب.");
   }
   document.body.removeChild(temp);
-};
-document.getElementById("adminExportICSBtn").onclick = ()=>{
-  exportProjectsToICS(ALL_PROJECTS.filter(p=>!p.closed), "رصد-كل-المواعيد.ics");
 };
 document.getElementById("navRequestsBtn").onclick = ()=>{ showScreen("requestsScreen"); buildRequestsScreen(); renderRequestsScreen(); };
 document.getElementById("navProgramsAdminBtn").onclick = ()=>{ showScreen("programsAdminScreen"); renderProgramsAdminScreen(); };
@@ -6894,19 +7039,30 @@ function addProgramBackupSheet(wb, program){
 
 
 /* ==================== التقرير الأسبوعي المرئي ==================== */
+let reportActiveGoalId = ""; // "" = كل الأهداف الاستراتيجية (تبويب افتراضي)
 function buildReportFilters(){
   document.getElementById("reportFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
-  document.getElementById("reportFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
   document.getElementById("reportFilterProgram").innerHTML = "<option value=''>كل البرامج التنفيذية</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   document.getElementById("reportFilterManager").innerHTML = "<option value=''>كل المدراء</option>" + GOV_MANAGERS.map(m=>`<option value="${escapeAttr(m)}">${m}</option>`).join("");
-  ["reportFilterYear","reportFilterGoal","reportFilterProgram","reportFilterManager"].forEach(id=>{
+  ["reportFilterYear","reportFilterProgram","reportFilterManager"].forEach(id=>{
     document.getElementById(id).onchange = renderWeeklyReportScreen;
+  });
+  const goalsInUse = STRATEGIC_GOALS.filter(g=> PROGRAMS.some(p=>p.goalId===g.id));
+  const tabsContainer = document.getElementById("reportGoalTabs");
+  tabsContainer.innerHTML = `<button class="mgr-tab ${reportActiveGoalId===""?"active":""}" data-goal="">كل الأهداف الاستراتيجية</button>` +
+    goalsInUse.map(g=>`<button class="mgr-tab ${reportActiveGoalId===String(g.id)?"active":""}" data-goal="${g.id}">${g.id}. ${escapeHtml(g.name)}</button>`).join("");
+  tabsContainer.querySelectorAll(".mgr-tab").forEach(btn=>{
+    btn.onclick = ()=>{
+      reportActiveGoalId = btn.dataset.goal;
+      tabsContainer.querySelectorAll(".mgr-tab").forEach(b=> b.classList.toggle("active", b===btn));
+      renderWeeklyReportScreen();
+    };
   });
 }
 function getReportFilters(){
   return {
     year: document.getElementById("reportFilterYear").value,
-    goalId: document.getElementById("reportFilterGoal").value,
+    goalId: reportActiveGoalId,
     programCode: document.getElementById("reportFilterProgram").value,
     manager: document.getElementById("reportFilterManager").value
   };
@@ -7361,15 +7517,20 @@ function renderCompetitionReport(){
     };
   });
   const phaseAvgHtml = `
-    <div class="comp-section-heading" style="margin-top:16px;">📐 متوسط إنجاز مراحل العمل</div>
-    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:3px;">شامل كل المشاريع النشطة (المشاريع غير المبدوءة تُحتسَب صفرًا في كل مرحلة)</div>
-    <div class="comp-gauges-row" style="margin-bottom:10px;gap:14px;">
-      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.allAvg, 58)}<div style="font-size:10px;font-weight:700;color:var(--navy);margin-top:2px;">${escapeHtml(p.name)}</div></div>`).join("")}
-    </div>
-    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:3px;">المشاريع التي بدأ تنفيذها فعليًا فقط (استثناء غير المبدوءة)</div>
-    <div class="comp-gauges-row" style="gap:14px;">
-      ${phaseAverages.map(p=> `<div style="text-align:center;">${gaugeSVG(p.startedAvg, 58)}<div style="font-size:10px;font-weight:700;color:var(--navy);margin-top:2px;">${escapeHtml(p.name)}</div></div>`).join("")}
-    </div>`;
+    <div class="comp-section-heading" style="margin-top:14px;">📐 متوسط إنجاز مراحل العمل</div>
+    <table class="phase-avg-table">
+      <thead>
+        <tr><th>المرحلة</th><th>شامل كل المشاريع النشطة</th><th>المشاريع الفعّالة فقط (بدأ تنفيذها)</th></tr>
+      </thead>
+      <tbody>
+        ${phaseAverages.map(p=>`
+        <tr>
+          <td class="pat-name">${escapeHtml(p.name)}</td>
+          <td><div class="pat-bar-row"><div class="pat-bar-track"><div class="pat-bar-fill" style="width:${p.allAvg}%;"></div></div><span>${p.allAvg}%</span></div></td>
+          <td><div class="pat-bar-row"><div class="pat-bar-track"><div class="pat-bar-fill" style="width:${p.startedAvg}%;background:#1E7A3D;"></div></div><span>${p.startedAvg}%</span></div></td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
 
   // ===== الصفحة الأولى: المؤشرات + مؤشرات المراحل فقط — لوحة الريادة تبدأ من الصفحة الثانية دائمًا لتفادي أي ارتفاع/تداخل =====
   const statsPageHtml = `
@@ -7385,8 +7546,6 @@ function renderCompetitionReport(){
         <div class="comp-stat-card"><div class="csc-num">${totalProjects}</div><div class="csc-lbl">مشروعًا ومبادرة نشطة</div></div>
         <div class="comp-stat-card"><div class="csc-num">${overallAvg}%</div><div class="csc-lbl">متوسط الإنجاز العام</div></div>
         <div class="comp-stat-card"><div class="csc-num">${overallAdherence}%</div><div class="csc-lbl">الالتزام بالجدول الزمني</div></div>
-      </div>
-      <div class="comp-stats-grid-closed">
         <div class="comp-stat-card" style="background:linear-gradient(160deg,#1E7A3D,#12461f);"><div class="csc-num">${closedSuccessPct}%</div><div class="csc-lbl">أُغلقت بنجاح (100%)</div></div>
         <div class="comp-stat-card" style="background:linear-gradient(160deg,#8a6d1f,#5c481280);"><div class="csc-num">${closedEarlyPct}%</div><div class="csc-lbl">أُغلقت مبكرًا (غير مكتملة)</div></div>
       </div>
@@ -7394,7 +7553,7 @@ function renderCompetitionReport(){
     </div>`;
 
   // ===== صفحة (صفحات) لوحة الريادة — تبدأ دائمًا من الصفحة الثانية: كل المشاريع بنفس الحجم، بكثافة أعلى (~20 بالصفحة) لتقليل عدد الصفحات لأدنى حد (غالبًا صفحة أو صفحتان فقط) =====
-  const REST_CARDS_PER_PAGE = 20;
+  const REST_CARDS_PER_PAGE = 12;
   const leaderboardPages = [];
   if(allRankedCards.length===0){
     leaderboardPages.push([]);
@@ -7563,8 +7722,20 @@ function renderFullMatrix(){
     ? Math.round(totalWithDetail.reduce((s,p)=>{ const d=ALL_PROJECT_DETAILS.find(x=>x.id===p.id); return s+computeOverallPct(d); },0)/totalWithDetail.length)
     : 0;
   const overallAdherence = Math.round(computeScheduleAdherence(projects)*100);
+  const matrixFilterLabel = [
+    year ? `سنة ${year}` : "",
+    goalId ? (STRATEGIC_GOALS.find(g=>String(g.id)===goalId)||{}).name : ""
+  ].filter(Boolean).join(" | ") || "كل الخطة — كل السنوات";
+  const heroHtml = `
+    <div class="comp-hero" style="margin-bottom:20px;">
+      <div class="comp-hero-title">📐 مصفوفة الخطة الشاملة</div>
+      <div class="comp-hero-org">المديرية العامة للخدمات الصحية</div>
+      <div class="comp-hero-org">محافظة شمال الشرقية</div>
+      <div class="comp-hero-sub">${escapeHtml(matrixFilterLabel)}</div>
+    </div>`;
   const statsHtml = `
-    <div class="comp-stats-grid" style="margin-bottom:26px;">
+    ${heroHtml}
+    <div class="comp-stats-grid" style="margin-bottom:26px;grid-template-columns:repeat(4,1fr);">
       <div class="comp-stat-card"><div class="csc-num">${programCodesAll.length}</div><div class="csc-lbl">برنامج تنفيذي نشط</div></div>
       <div class="comp-stat-card"><div class="csc-num">${projects.length}</div><div class="csc-lbl">مشروعًا ومبادرة</div></div>
       <div class="comp-stat-card"><div class="csc-num">${overallAvg}%</div><div class="csc-lbl">متوسط الإنجاز العام</div></div>
@@ -8124,11 +8295,16 @@ function flushAndCloseDetailModal(){
   clearTimeout(detailAutoSaveTimer);
   const overlay = document.getElementById("detailModalOverlay");
   const projectId = overlay.dataset.projectId;
-  if(projectId){
-    const data = gatherDetailFormData();
-    saveProjectDetail(projectId, data);
-  }
+  // الإغلاق يجب أن يحدث دائمًا فورًا، بغض النظر عن نجاح الحفظ — أي خطأ أثناء تجميع/حفظ البيانات لا يجب أن يمنع المستخدم من الخروج
   overlay.classList.add("hidden");
+  if(projectId){
+    try{
+      const data = gatherDetailFormData();
+      saveProjectDetail(projectId, data);
+    }catch(err){
+      console.error("flushAndCloseDetailModal save error:", err);
+    }
+  }
 }
 
 function calcWeeksBetween(startStr, endStr){
@@ -8484,6 +8660,13 @@ function wireDetailModalStaticEvents(){
     document.body.classList.add("printing-detail-table");
     window.print();
     setTimeout(()=> document.body.classList.remove("printing-detail-table"), 500);
+  };
+  document.getElementById("detailICSBtn").onclick = ()=>{
+    const overlay = document.getElementById("detailModalOverlay");
+    const projectId = overlay.dataset.projectId;
+    const project = ALL_PROJECTS.find(p=>p.id===projectId);
+    if(!project) return;
+    exportProjectsToICS([project], `رصد-${project.projectName}.ics`);
   };
 
   // أزرار "+ إضافة" و"✕" لخانات القوائم القابلة للإضافة (تعمل داخل أي من النافذتين)
@@ -9287,6 +9470,9 @@ listenToProjects(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
   if(!document.getElementById("weeklyReportScreen").classList.contains("hidden")) renderWeeklyReportScreen();
+});
+listenToMonthlySnapshots(()=>{
+  if(!document.getElementById("analyticsScreen").classList.contains("hidden")) renderAnalyticsScreen();
 });
 listenToProjectDetails(()=>{
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
