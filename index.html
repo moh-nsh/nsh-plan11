@@ -1798,6 +1798,10 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== BACKUP / EXPORT SCREEN ===================== -->
 <div id="backupScreen" class="hidden">
   <div class="dash-wrap">
+    <div class="section-title">🛠️ أدوات صيانة البيانات</div>
+    <div class="section-desc">إصلاح احتساب مدة الخطوات القصيرة (كاجتماع يوم واحد) التي ظهرت بنسبة إنجاز 0% بسبب خطأ سابق في طريقة الحساب — يُشغَّل مرة واحدة</div>
+    <button class="add-btn" id="recalcDurationsBtn" style="margin-bottom:30px;background:#B3202E;">🔄 إعادة حساب مدد كل الخطوات المحفوظة</button>
+
     <div class="section-title">تصدير نسخة احتياطية من بيانات المنصة</div>
     <div class="section-desc">اختر البيانات التي تريد تضمينها، ثم اضغط تصدير — سيُنشأ ملف Excel واحد بورقة منفصلة لكل بند مُحدَّد.</div>
 
@@ -2328,9 +2332,9 @@ function getDangerZoneSteps(projects){
       (ph.steps||[]).forEach((st, stepIdx)=>{
         if(!st.name || st.status==="مكتمل" || !st.startDate || !st.endDate) return;
         const start = new Date(st.startDate), end = new Date(st.endDate);
-        if(isNaN(start)||isNaN(end)||end<=start) return;
+        if(isNaN(start)||isNaN(end)||end<start) return;
         if(end < today) return; // متأخرة فعليًا بالفعل — تُرصَد في قائمة المتأخرات المعتادة
-        const totalDays = (end-start)/86400000;
+        const totalDays = Math.max(1, (end-start)/86400000); // بحد أدنى يوم واحد (خطوة/اجتماع في نفس اليوم)
         const elapsedDays = (today-start)/86400000;
         if(elapsedDays < 0) return; // لم يبدأ تاريخها بعد
         const elapsedPct = elapsedDays/totalDays;
@@ -2571,8 +2575,8 @@ function computeSPI(detail){
     baseSteps.forEach((baseSt, si)=>{
       if(!baseSt.startDate || !baseSt.endDate) return;
       const start = new Date(baseSt.startDate), end = new Date(baseSt.endDate);
-      if(isNaN(start) || isNaN(end) || end<=start) return;
-      const totalDays = (end-start)/86400000;
+      if(isNaN(start) || isNaN(end) || end<start) return;
+      const totalDays = Math.max(1, (end-start)/86400000); // بحد أدنى يوم واحد (خطوة/اجتماع في نفس اليوم)
       const elapsedDays = Math.max(0, Math.min((today-start)/86400000, totalDays));
       const expectedPct = totalDays>0 ? elapsedDays/totalDays : 0;
       expectedSum += expectedPct * stepWeight;
@@ -6143,6 +6147,7 @@ function renderDecisionLogScreen(){
   });
 }
 document.getElementById("execPrintBtn").onclick = ()=> window.print();
+document.getElementById("recalcDurationsBtn").onclick = recalculateAllStepDurations;
 document.getElementById("backupSelectAll").onclick = ()=>{
   document.querySelectorAll(".backup-check-item input").forEach(cb=> cb.checked = true);
 };
@@ -8001,6 +8006,33 @@ function renderMonthlySnapshotChart(){
   });
 }
 
+// يُعيد حساب "المدة بالأسابيع" لكل خطوة في كل الخطط التفصيلية المحفوظة، باستخدام المنطق المُصحَّح (حد أدنى أسبوع واحد) — أداة إصلاح تُشغَّل مرة واحدة لتصحيح البيانات المحفوظة سابقًا بالمنطق القديم
+async function recalculateAllStepDurations(){
+  if(!confirm("سيُعاد حساب مدة كل خطوة (بالأسابيع) في كل الخطط التفصيلية المحفوظة، بحيث لا تقل أي خطوة صالحة التواريخ عن أسبوع واحد. هذا يُصلح الخطوات التي ظهرت بنسبة 0% بسبب مدتها القصيرة (كاجتماع يوم واحد). هل تريد المتابعة؟")) return;
+  let fixedSteps = 0, fixedDetails = 0;
+  for(const detail of ALL_PROJECT_DETAILS){
+    if(!Array.isArray(detail.phases)) continue;
+    let changed = false;
+    const newPhases = detail.phases.map(ph=>({
+      ...ph,
+      steps: (ph.steps||[]).map(st=>{
+        if(!st.startDate || !st.endDate) return st;
+        const correctWeeks = calcWeeksBetween(st.startDate, st.endDate);
+        if(correctWeeks!==null && Number(st.durationWeeks)!==correctWeeks){
+          changed = true; fixedSteps++;
+          return { ...st, durationWeeks: correctWeeks };
+        }
+        return st;
+      })
+    }));
+    if(changed){
+      fixedDetails++;
+      await saveProjectDetail(detail.id, { phases: newPhases });
+    }
+  }
+  alert(`تم الإصلاح: ${fixedSteps} خطوة عبر ${fixedDetails} خطة تفصيلية.`);
+  logActivity(ADMIN_NAME, "recalculate_step_durations", `${fixedSteps} خطوة`);
+}
 async function exportBackupExcel(){
   const btn = document.getElementById("exportBackupBtn");
   try{
@@ -8491,8 +8523,8 @@ function calcWeeksBetween(startStr, endStr){
   const end = new Date(endStr);
   const diffMs = end - start;
   if(isNaN(diffMs)) return null;
-  if(diffMs <= 0) return 0;
-  return Math.ceil(diffMs / (7*24*60*60*1000));
+  if(diffMs < 0) return 0; // تاريخ انتهاء قبل تاريخ البدء — خطأ إدخال حقيقي
+  return Math.max(1, Math.ceil(diffMs / (7*24*60*60*1000))); // بحد أدنى أسبوع واحد دائمًا (يشمل الاجتماعات/الخطوات التي تتم في يوم واحد)
 }
 
 // قارئ عام لخانات "القوائم القابلة للإضافة" (مستهدفات، جهات مساندة، أعضاء فريق...)
