@@ -1328,6 +1328,62 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== ADVANCED ANALYTICS SCREEN (ADMIN) ===================== -->
+<div id="analyticsScreen" class="hidden">
+  <div class="dash-wrap" style="padding-bottom:0;">
+    <div class="section-title">🔬 تحليلات متقدمة</div>
+    <div class="section-desc">نظام إنذار مبكر وتحليل أعمق لتفاصيل الخطة — يعتمد على البيانات الحالية دون الحاجة لأي إدخال إضافي</div>
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="anTabDanger">⚠️ منطقة الخطر</button>
+      <button class="mgr-tab" id="anTabCascade">🔗 الأثر التسلسلي</button>
+      <button class="mgr-tab" id="anTabCritical">🎯 المسار الحرج</button>
+      <button class="mgr-tab" id="anTabWorkload">👥 خريطة الحمل الوظيفي</button>
+      <button class="mgr-tab" id="anTabYearly">📈 مقارنة سنوية للبرامج</button>
+      <button class="mgr-tab" id="anTabMonthly">📅 الحالة الصحية الشهرية</button>
+    </div>
+  </div>
+
+  <div class="dash-wrap" id="anDangerView">
+    <div class="section-title" style="margin-top:0;">⚠️ منطقة الخطر الزمنية</div>
+    <div class="section-desc">خطوات قيد التنفيذ انقضى 80% أو أكثر من مدتها المخطَّطة دون اكتمال — إنذار مبكر قبل أن تتحول لتأخر فعلي</div>
+    <div id="anDangerList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="anCascadeView">
+    <div class="section-title" style="margin-top:0;">🔗 الأثر التسلسلي بين المراحل</div>
+    <div class="section-desc">مراحل يُتوقَّع تأخر بدئها الفعلي لأن المرحلة السابقة لها لم تكتمل بعد رغم اقتراب أو حلول موعد بدئها</div>
+    <div id="anCascadeList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="anCriticalView">
+    <div class="section-title" style="margin-top:0;">🎯 المسار الحرج لكل مشروع</div>
+    <div class="section-desc">الخطوة التي تُعطِّل تقدّم المشروع فعليًا الآن (أول خطوة غير مكتملة بترتيبها) — التركيز عليها يُسرِّع الإنجاز أكثر من أي خطوة أخرى</div>
+    <div id="anCriticalList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="anWorkloadView">
+    <div class="section-title" style="margin-top:0;">👥 خريطة الحمل الوظيفي</div>
+    <div class="section-desc">عدد الخطوات النشطة أو المستحقة خلال 30 يومًا القادمة لكل مسؤول عن مشاريع — يكشف من هو مثقل فعليًا بمهام متزامنة</div>
+    <div id="anWorkloadList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="anYearlyView">
+    <div class="section-title" style="margin-top:0;">📈 مقارنة سنوية لأداء برنامج تنفيذي</div>
+    <div class="section-desc">يقارن متوسط إنجاز مشاريع نفس البرنامج عبر السنوات المختلفة — لرصد تحسّن أو تراجع أدائه بمرور الزمن</div>
+    <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="anYearlyProgramSelect"></select>
+    </div>
+    <div class="chart-box" style="height:320px;"><canvas id="anYearlyChart"></canvas></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="anMonthlyView">
+    <div class="section-title" style="margin-top:0;">📅 سجل الحالة الصحية الشهرية للمحافظة</div>
+    <div class="section-desc">لقطة تلقائية تُلتقَط عند أول دخول لقسم التخطيط كل شهر — تبني مسارًا تاريخيًا للأداء العام دون أي جهد يدوي</div>
+    <div class="chart-box" style="height:320px;"><canvas id="anMonthlyChart"></canvas></div>
+  </div>
+</div>
+
+
 <!-- ===================== WEEKLY VISUAL REPORT SCREEN ===================== -->
 <div id="weeklyReportScreen" class="hidden">
   <div class="dash-wrap">
@@ -3857,7 +3913,7 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
-const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen","spiScreen"];
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen","spiScreen","analyticsScreen"];
 function showScreen(id){
   ["loginScreen","managerScreen","projectManagerScreen","dgScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
@@ -6269,7 +6325,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة"
 };
 function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
 // يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
@@ -7821,6 +7877,128 @@ function renderAdminSPIScreen(){
   const filtered = applySPIFilters(ALL_PROJECTS.filter(p=>!p.closed), "spiFilterYear","spiFilterGoal","spiFilterProgram");
   container.innerHTML = spiScreenContentHTML(filtered, true);
   wireSPIScreenButtons(container);
+}
+document.getElementById("navAnalyticsBtn").onclick = ()=>{
+  showScreen("analyticsScreen");
+  switchAnalyticsTab("danger");
+  renderAnalyticsScreen();
+  logActivity(ADMIN_NAME, "view_analytics_screen", "");
+};
+function switchAnalyticsTab(tab){
+  document.getElementById("anTabDanger").classList.toggle("active", tab==="danger");
+  document.getElementById("anTabCascade").classList.toggle("active", tab==="cascade");
+  document.getElementById("anTabCritical").classList.toggle("active", tab==="critical");
+  document.getElementById("anTabWorkload").classList.toggle("active", tab==="workload");
+  document.getElementById("anTabYearly").classList.toggle("active", tab==="yearly");
+  document.getElementById("anTabMonthly").classList.toggle("active", tab==="monthly");
+  document.getElementById("anDangerView").classList.toggle("hidden", tab!=="danger");
+  document.getElementById("anCascadeView").classList.toggle("hidden", tab!=="cascade");
+  document.getElementById("anCriticalView").classList.toggle("hidden", tab!=="critical");
+  document.getElementById("anWorkloadView").classList.toggle("hidden", tab!=="workload");
+  document.getElementById("anYearlyView").classList.toggle("hidden", tab!=="yearly");
+  document.getElementById("anMonthlyView").classList.toggle("hidden", tab!=="monthly");
+}
+document.getElementById("anTabDanger").onclick = ()=> switchAnalyticsTab("danger");
+document.getElementById("anTabCascade").onclick = ()=> switchAnalyticsTab("cascade");
+document.getElementById("anTabCritical").onclick = ()=> switchAnalyticsTab("critical");
+document.getElementById("anTabWorkload").onclick = ()=> switchAnalyticsTab("workload");
+document.getElementById("anTabYearly").onclick = ()=>{ switchAnalyticsTab("yearly"); renderYearlyComparisonChart(); };
+document.getElementById("anTabMonthly").onclick = ()=>{ switchAnalyticsTab("monthly"); renderMonthlySnapshotChart(); };
+function renderAnalyticsScreen(){
+  const activeProjects = ALL_PROJECTS.filter(p=>!p.closed);
+
+  // منطقة الخطر
+  const dangerSteps = getDangerZoneSteps(activeProjects);
+  document.getElementById("anDangerList").innerHTML = dangerSteps.length===0
+    ? `<div class="empty-note">لا توجد خطوات في منطقة الخطر حاليًا.</div>`
+    : dangerSteps.sort((a,b)=>a.daysLeft-b.daysLeft).map(d=>`
+      <div class="phase-alert-row upcoming" data-project-id="${d.project.id}">
+        <div><b>${escapeHtml(d.project.projectName)}</b> — ${d.phaseName} / ${escapeHtml(d.stepName)}</div>
+        <span class="phase-alert-badge upcoming">⚠️ ${d.elapsedPct}% من الوقت منقضٍ — تبقّى ${d.daysLeft} يوم</span>
+      </div>`).join("");
+  document.getElementById("anDangerList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+
+  // الأثر التسلسلي
+  const cascadeWarnings = getCascadeWarnings(activeProjects);
+  document.getElementById("anCascadeList").innerHTML = cascadeWarnings.length===0
+    ? `<div class="empty-note">لا توجد مراحل مهدَّدة بتأخر تسلسلي حاليًا.</div>`
+    : cascadeWarnings.map(c=>`
+      <div class="phase-alert-row late" data-project-id="${c.project.id}">
+        <div><b>${escapeHtml(c.project.projectName)}</b> — مرحلة "${c.curPhaseName}" قد يتأخر بدؤها</div>
+        <span class="phase-alert-badge late">🔗 لأن "${c.prevPhaseName}" لم تكتمل بعد</span>
+      </div>`).join("");
+  document.getElementById("anCascadeList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+
+  // المسار الحرج
+  const criticalRows = activeProjects.map(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    const crit = getCriticalStepForProject(detail);
+    return { project:pr, crit };
+  }).filter(r=>r.crit);
+  document.getElementById("anCriticalList").innerHTML = criticalRows.length===0
+    ? `<div class="empty-note">لا توجد بيانات كافية حاليًا.</div>`
+    : criticalRows.sort((a,b)=> b.crit.phaseWeight-a.crit.phaseWeight).map(r=>`
+      <div class="phase-alert-row late" data-project-id="${r.project.id}">
+        <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
+        <span class="phase-alert-badge late">🎯 وزن مرحلتها ${Math.round(r.crit.phaseWeight*100)}%</span>
+      </div>`).join("");
+  document.getElementById("anCriticalList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+
+  // خريطة الحمل الوظيفي
+  const workload = computeWorkloadMap();
+  document.getElementById("anWorkloadList").innerHTML = workload.length===0
+    ? `<div class="empty-note">لا توجد خطوات نشطة حاليًا لأي مسؤول.</div>`
+    : workload.map(w=>{
+      const level = w.count>=8 ? "late" : (w.count>=4 ? "upcoming" : "");
+      return `
+      <div class="phase-alert-row ${level}">
+        <div><b>${escapeHtml(w.name)}</b></div>
+        <span class="phase-alert-badge ${level}">${w.count} خطوة نشطة/مستحقة خلال 30 يومًا</span>
+      </div>`;
+    }).join("");
+
+  // مقارنة سنوية للبرامج — قائمة البرامج
+  const yearlySelect = document.getElementById("anYearlyProgramSelect");
+  const prevYearlyProgram = yearlySelect.value;
+  yearlySelect.innerHTML = PROGRAMS.map(p=>`<option value="${p.code}">${p.code} — ${escapeHtml(p.name)}</option>`).join("");
+  if(prevYearlyProgram) yearlySelect.value = prevYearlyProgram;
+  yearlySelect.onchange = renderYearlyComparisonChart;
+}
+let anYearlyChartInstance = null;
+function renderYearlyComparisonChart(){
+  const programCode = document.getElementById("anYearlyProgramSelect").value;
+  if(!programCode) return;
+  const data = computeYearlyProgramComparison(programCode);
+  const ctx = document.getElementById("anYearlyChart").getContext("2d");
+  if(anYearlyChartInstance) anYearlyChartInstance.destroy();
+  anYearlyChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.map(d=>String(d.year)),
+      datasets: [{ label: "متوسط الإنجاز %", data: data.map(d=>d.avg), backgroundColor: "#1E4E8C" }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100 } } }
+  });
+}
+let anMonthlyChartInstance = null;
+function renderMonthlySnapshotChart(){
+  const ctx = document.getElementById("anMonthlyChart").getContext("2d");
+  if(anMonthlyChartInstance) anMonthlyChartInstance.destroy();
+  if(ALL_MONTHLY_SNAPSHOTS.length===0){
+    document.getElementById("anMonthlyView").querySelector(".chart-box").innerHTML = `<div class="empty-note" style="padding:40px;">لا توجد لقطات شهرية بعد — ستُلتقَط أول لقطة تلقائيًا عند دخولك القادم في شهر جديد.</div>`;
+    return;
+  }
+  anMonthlyChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ALL_MONTHLY_SNAPSHOTS.map(s=>s.id),
+      datasets: [
+        { label: "متوسط الإنجاز العام %", data: ALL_MONTHLY_SNAPSHOTS.map(s=>s.overallAvg), borderColor:"#1E4E8C", tension:0.3 },
+        { label: "الالتزام بالجدول الزمني %", data: ALL_MONTHLY_SNAPSHOTS.map(s=>s.overallAdherence), borderColor:"#1E7A3D", tension:0.3 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100 } } }
+  });
 }
 
 async function exportBackupExcel(){
@@ -9483,6 +9661,7 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAllChallenges();
   if(!document.getElementById("dgScreen").classList.contains("hidden")) renderDGScreen();
   if(!document.getElementById("spiScreen").classList.contains("hidden")) renderAdminSPIScreen();
+  if(!document.getElementById("analyticsScreen").classList.contains("hidden")) renderAnalyticsScreen();
   if(!document.getElementById("dgSPIView").classList.contains("hidden")) renderDGSPIScreen();
   if(!document.getElementById("mgrSPIView").classList.contains("hidden")) renderManagerSPIScreen();
   if(!document.getElementById("pmSPIView").classList.contains("hidden")) renderPMSPIScreen();
