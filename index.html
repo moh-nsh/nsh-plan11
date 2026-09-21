@@ -850,6 +850,8 @@ tr.rejected-row td{background:#FDF6F6;}
 @media print{
   body.printing-detail-table > *:not(#detailPrintTableContainer){display:none !important;}
   body.printing-detail-table #detailPrintTableContainer{display:block !important;}
+  body.printing-challenges-table > *:not(#challengesPrintTableContainer){display:none !important;}
+  body.printing-challenges-table #challengesPrintTableContainer{display:block !important;}
   @page{ size:A4 landscape; margin:12mm; }
 }
 .dpt-container{font-family:'Cairo',sans-serif;direction:rtl;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -877,6 +879,16 @@ tr.rejected-row td{background:#FDF6F6;}
 .dpt-steps-table .dpt-phase-name{background:#F6CD7C;font-weight:800;color:var(--navy);}
 .dpt-steps-table .dpt-step-name{text-align:right;padding-right:8px;}
 .dpt-footer-note{margin-top:14px;font-size:9.5px;color:#666;font-style:italic;text-align:right;}
+.chpt-container{font-family:'Cairo',sans-serif;direction:rtl;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.chpt-title{background:var(--navy);color:#fff;font-weight:800;font-size:16px;padding:10px 14px;text-align:center;margin-bottom:14px;}
+.chpt-table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed;}
+.chpt-table th{background:var(--navy);color:#fff;padding:7px 5px;border:1px solid #999;font-weight:700;}
+.chpt-table td{border:1px solid #999;padding:6px 5px;text-align:right;overflow-wrap:break-word;word-break:break-word;vertical-align:top;}
+.chpt-table th:nth-child(1),.chpt-table td:nth-child(1){width:20%;}
+.chpt-table th:nth-child(2),.chpt-table td:nth-child(2){width:12%;}
+.chpt-table th:nth-child(3),.chpt-table td:nth-child(3){width:28%;}
+.chpt-table th:nth-child(4),.chpt-table td:nth-child(4){width:12%;}
+.chpt-table th:nth-child(5),.chpt-table td:nth-child(5){width:28%;}
 .detail-modal-footer{
   padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#F8F9FB;
 }
@@ -1471,6 +1483,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
       <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="mgrTabSPI">📈 مؤشر الأداء الزمني SPI</button>
+      <button class="mgr-tab" id="mgrTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
   </div>
   <div class="dash-wrap" id="mgrInputView">
@@ -1547,6 +1560,34 @@ tr.rejected-row td{background:#FDF6F6;}
     </div>
     <div id="mgrSPIContent"></div>
   </div>
+  <div class="dash-wrap hidden" id="mgrAnalyticsView">
+    <div class="section-title" style="margin-top:0;">🔬 تحليلات متقدمة لمشاريعك</div>
+    <div class="section-desc">نظام إنذار مبكر يساعدك على متابعة مشاريعك عن قرب واتخاذ القرار بسرعة</div>
+    <div class="mgr-tabs" style="margin-bottom:18px;">
+      <button class="mgr-tab active" id="mgrAnTabDanger">⚠️ منطقة الخطر</button>
+      <button class="mgr-tab" id="mgrAnTabCascade">🔗 الأثر التسلسلي</button>
+      <button class="mgr-tab" id="mgrAnTabCritical">🎯 المسار الحرج</button>
+      <button class="mgr-tab" id="mgrAnTabWorkload">👥 الحمل الوظيفي</button>
+    </div>
+    <div id="mgrAnalyticsWrap">
+      <div id="mgrAnDangerWrap">
+        <div class="section-desc">خطوات قيد التنفيذ انقضى 80% أو أكثر من مدتها المخطَّطة دون اكتمال</div>
+        <div id="mgrAnDangerList"></div>
+      </div>
+      <div id="mgrAnCascadeWrap" class="hidden">
+        <div class="section-desc">مراحل يُتوقَّع تأخر بدئها الفعلي لأن المرحلة السابقة لها لم تكتمل بعد</div>
+        <div id="mgrAnCascadeList"></div>
+      </div>
+      <div id="mgrAnCriticalWrap" class="hidden">
+        <div class="section-desc">الخطوة التي تُعطِّل تقدّم كل مشروع فعليًا الآن</div>
+        <div id="mgrAnCriticalList"></div>
+      </div>
+      <div id="mgrAnWorkloadWrap" class="hidden">
+        <div class="section-desc">عدد الخطوات النشطة أو المستحقة خلال 30 يومًا القادمة لكل مشروع من مشاريعك</div>
+        <div id="mgrAnWorkloadList"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===================== PROJECT MANAGER SCREEN (جديد) ===================== -->
@@ -1570,6 +1611,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab" id="pmTabOverview">📊 لوحة المتابعة</button>
       <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="pmTabSPI">📈 مؤشر الأداء الزمني SPI</button>
+      <button class="mgr-tab" id="pmTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
   </div>
 
@@ -1630,6 +1672,34 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="pmSpiFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
     </div>
     <div id="pmSPIContent"></div>
+  </div>
+  <div class="dash-wrap hidden" id="pmAnalyticsView">
+    <div class="section-title" style="margin-top:0;">🔬 تحليلات متقدمة لمشاريعك</div>
+    <div class="section-desc">نظام إنذار مبكر يساعدك على متابعة مشاريعك عن قرب واتخاذ القرار بسرعة</div>
+    <div class="mgr-tabs" style="margin-bottom:18px;">
+      <button class="mgr-tab active" id="pmAnTabDanger">⚠️ منطقة الخطر</button>
+      <button class="mgr-tab" id="pmAnTabCascade">🔗 الأثر التسلسلي</button>
+      <button class="mgr-tab" id="pmAnTabCritical">🎯 المسار الحرج</button>
+      <button class="mgr-tab" id="pmAnTabWorkload">👥 الحمل الوظيفي</button>
+    </div>
+    <div id="pmAnalyticsWrap">
+      <div id="pmAnDangerWrap">
+        <div class="section-desc">خطوات قيد التنفيذ انقضى 80% أو أكثر من مدتها المخطَّطة دون اكتمال</div>
+        <div id="pmAnDangerList"></div>
+      </div>
+      <div id="pmAnCascadeWrap" class="hidden">
+        <div class="section-desc">مراحل يُتوقَّع تأخر بدئها الفعلي لأن المرحلة السابقة لها لم تكتمل بعد</div>
+        <div id="pmAnCascadeList"></div>
+      </div>
+      <div id="pmAnCriticalWrap" class="hidden">
+        <div class="section-desc">الخطوة التي تُعطِّل تقدّم كل مشروع فعليًا الآن</div>
+        <div id="pmAnCriticalList"></div>
+      </div>
+      <div id="pmAnWorkloadWrap" class="hidden">
+        <div class="section-desc">عدد الخطوات النشطة أو المستحقة خلال 30 يومًا القادمة لكل مشروع من مشاريعك</div>
+        <div id="pmAnWorkloadList"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1933,6 +2003,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <option value="escalated">مُصعَّد — بانتظار رد المدير العام</option>
         <option value="answered">ردّ المدير العام</option>
       </select>
+      <button class="print-btn" id="printChallengesBtn">🖨️ طباعة القائمة المُفلترة</button>
     </div>
     <div id="allChallengesList"></div>
   </div>
@@ -2084,6 +2155,7 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailPrintTableContainer" class="hidden"></div>
+<div id="challengesPrintTableContainer" class="hidden"></div>
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
     <div class="detail-modal-header">
@@ -2364,7 +2436,7 @@ function getCascadeWarnings(projects){
       let earliestStart = null;
       curSteps.forEach(s=>{ const d=new Date(s.startDate); if(!isNaN(d) && (!earliestStart || d<earliestStart)) earliestStart=d; });
       if(earliestStart && earliestStart <= today){
-        results.push({ project:pr, prevPhaseName:prevPhase.name, curPhaseName:curPhase.name, phaseIdx:i });
+        results.push({ project:pr, prevPhaseName:prevPhase.name, curPhaseName:curPhase.name, phaseIdx:i, seq:`${i+1}` });
       }
     }
   });
@@ -2379,13 +2451,85 @@ function getCriticalStepForProject(detail){
     for(let si=0; si<steps.length; si++){
       const st = steps[si];
       if(st.name && st.status!=="مكتمل"){
-        return { phaseName: ph.name, phaseWeight: ph.weight, stepName: st.name, phaseIdx:pi, stepIdx:si };
+        return { phaseName: ph.name, phaseWeight: ph.weight, stepName: st.name, seq:`${pi+1}.${si+1}`, phaseIdx:pi, stepIdx:si };
       }
     }
   }
   return null;
 }
 // يحسب عدد الخطوات النشطة/القادمة خلال 30 يومًا لكل مسؤول عن مشروع — للكشف عن التحميل الزائد
+// نسخة شخصية من خريطة الحمل الوظيفي — توزيع الخطوات النشطة/المستحقة خلال 30 يومًا لكل مشروع من مشاريع الشخص نفسه (لا عبر أشخاص متعددين)
+function computePersonalWorkload(projects){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in30 = new Date(today); in30.setDate(in30.getDate()+30);
+  const rows = [];
+  projects.filter(p=>!p.closed).forEach(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.phases)) return;
+    let activeCount = 0;
+    detail.phases.forEach(ph=>{
+      (ph.steps||[]).forEach(st=>{
+        if(!st.name || st.status==="مكتمل" || !st.startDate || !st.endDate) return;
+        const start = new Date(st.startDate), end = new Date(st.endDate);
+        if(isNaN(start)||isNaN(end)) return;
+        if(start <= in30 && end >= today) activeCount++;
+      });
+    });
+    if(activeCount>0) rows.push({ project:pr, count:activeCount });
+  });
+  return rows.sort((a,b)=>b.count-a.count);
+}
+// يبني محتوى تبويبات التحليلات المتقدمة (منطقة الخطر / الأثر التسلسلي / المسار الحرج / الحمل الوظيفي) لمجموعة مشاريع شخص واحد — مُستخدَمة في حسابي المدير التنفيذي ومدير المشروع
+function renderPersonalAnalyticsHTML(containerPrefix, projects){
+  const dangerSteps = getDangerZoneSteps(projects);
+  document.getElementById(containerPrefix+"DangerList").innerHTML = dangerSteps.length===0
+    ? `<div class="empty-note">لا توجد خطوات في منطقة الخطر حاليًا ✅</div>`
+    : dangerSteps.sort((a,b)=>a.daysLeft-b.daysLeft).map(d=>`
+      <div class="phase-alert-row upcoming" data-project-id="${d.project.id}" data-phase-idx="${d.phaseIdx}" data-step-idx="${d.stepIdx}">
+        <div><b>${escapeHtml(d.project.projectName)}</b> — [${d.seq}] ${d.phaseName} / ${escapeHtml(d.stepName)}</div>
+        <span class="phase-alert-badge upcoming">⚠️ ${d.elapsedPct}% من الوقت منقضٍ — تبقّى ${d.daysLeft} يوم</span>
+      </div>`).join("");
+
+  const cascadeWarnings = getCascadeWarnings(projects);
+  document.getElementById(containerPrefix+"CascadeList").innerHTML = cascadeWarnings.length===0
+    ? `<div class="empty-note">لا توجد مراحل مهدَّدة بتأخر تسلسلي حاليًا ✅</div>`
+    : cascadeWarnings.map(c=>`
+      <div class="phase-alert-row late" data-project-id="${c.project.id}" data-phase-idx="${c.phaseIdx}" data-step-idx="0">
+        <div><b>${escapeHtml(c.project.projectName)}</b> — [مرحلة ${c.seq}] "${c.curPhaseName}" قد يتأخر بدؤها</div>
+        <span class="phase-alert-badge late">🔗 لأن "${c.prevPhaseName}" لم تكتمل بعد</span>
+      </div>`).join("");
+
+  const criticalRows = projects.filter(p=>!p.closed).map(pr=>{
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    return { project:pr, crit: getCriticalStepForProject(detail) };
+  }).filter(r=>r.crit);
+  document.getElementById(containerPrefix+"CriticalList").innerHTML = criticalRows.length===0
+    ? `<div class="empty-note">لا توجد بيانات كافية حاليًا.</div>`
+    : criticalRows.sort((a,b)=> b.crit.phaseWeight-a.crit.phaseWeight).map(r=>`
+      <div class="phase-alert-row late" data-project-id="${r.project.id}" data-phase-idx="${r.crit.phaseIdx}" data-step-idx="${r.crit.stepIdx}">
+        <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: [${r.crit.seq}] ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
+        <span class="phase-alert-badge late">🎯 وزن مرحلتها ${Math.round(r.crit.phaseWeight*100)}%</span>
+      </div>`).join("");
+
+  const workloadRows = computePersonalWorkload(projects);
+  document.getElementById(containerPrefix+"WorkloadList").innerHTML = workloadRows.length===0
+    ? `<div class="empty-note">لا توجد خطوات نشطة حاليًا خلال 30 يومًا القادمة.</div>`
+    : workloadRows.map(w=>{
+      const level = w.count>=5 ? "late" : (w.count>=3 ? "upcoming" : "");
+      return `
+      <div class="phase-alert-row ${level}" data-project-id="${w.project.id}">
+        <div><b>${escapeHtml(w.project.projectName)}</b></div>
+        <span class="phase-alert-badge ${level}">${w.count} خطوة نشطة/مستحقة خلال 30 يومًا</span>
+      </div>`;
+    }).join("");
+
+  ["Danger","Cascade","Critical","Workload"].forEach(s=>{
+    const el = document.getElementById(containerPrefix+s+"List");
+    if(el) el.querySelectorAll("[data-project-id]").forEach(row=>{
+      row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, row.dataset.phaseIdx!=null?Number(row.dataset.phaseIdx):undefined, row.dataset.stepIdx!=null?Number(row.dataset.stepIdx):undefined);
+    });
+  });
+}
 function computeWorkloadMap(){
   const today = new Date(); today.setHours(0,0,0,0);
   const in30 = new Date(today); in30.setDate(in30.getDate()+30);
@@ -2794,6 +2938,29 @@ function getChallengeUpdatesForManager(projects){
   });
   return updates;
 }
+// نفس مستجدات التحديات، لكن فقط ما لم يظهر بعد كنافذة منبثقة لهذا الشخص تحديدًا — الشارة الدائمة (badge) تبقى تعتمد على القائمة الكاملة أعلاه دون هذا الفلتر
+function getUnseenChallengeUpdatesForPopup(projects, viewerName){
+  return getChallengeUpdatesForManager(projects).filter(({challenge})=> !Array.isArray(challenge.popupSeenBy) || !challenge.popupSeenBy.includes(viewerName));
+}
+// يُسجِّل أن هذا الشخص قد شاهد هذه التحديثات كنافذة منبثقة، حتى لا تظهر له مجددًا (تبقى ظاهرة في السجل وفي الشارة الدائمة كما هي)
+function markChallengeUpdatesSeenInPopup(updates, viewerName){
+  if(!viewerName || updates.length===0) return;
+  const byProject = {};
+  updates.forEach(({project, challenge})=>{
+    if(!byProject[project.id]) byProject[project.id] = [];
+    byProject[project.id].push(challenge.id);
+  });
+  Object.entries(byProject).forEach(([projectId, challengeIds])=>{
+    const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+    const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
+    const updated = list.map(c=>{
+      if(!challengeIds.includes(c.id)) return c;
+      const seenBy = Array.isArray(c.popupSeenBy) ? c.popupSeenBy : [];
+      return seenBy.includes(viewerName) ? c : { ...c, popupSeenBy: [...seenBy, viewerName] };
+    });
+    saveProjectDetail(projectId, { challengesList: updated });
+  });
+}
 // يبني قائمة عرض (للقراءة فقط) لتحديات مدير معيّن — تُستخدم في تبويب "التواصل مع قسم التخطيط"
 function myChallengesListHTML(projects){
   const entries = getMyChallenges(projects);
@@ -2810,7 +2977,7 @@ function myChallengesListHTML(projects){
     const dgResponseInfo = challenge.dgResponse
       ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
     return `
-      <div class="planning-note-row ${statusInfo.cls}" data-project-id="${project.id}" style="cursor:pointer;">
+      <div class="planning-note-row ${statusInfo.cls}" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="cursor:pointer;">
         <div class="note-body">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${escapeHtml(project.projectName)}</div>
           <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
@@ -2924,11 +3091,11 @@ function renderAllPlanningNotes(){
   });
 }
 // يجمع كل تحديات المشاريع عبر كل المشاريع في مكان واحد لقسم التخطيط، مع الفلاتر النشطة
-function renderAllChallenges(){
+// يُعيد قائمة التحديات المُفلترة حاليًا حسب فلاتر شاشة "سجل تحديات المشاريع" — دالة مشتركة تُستخدَم للعرض والطباعة معًا
+function getFilteredChallengesEntries(){
   const goalFilter = document.getElementById("chFilterGoal").value;
   const programFilter = document.getElementById("chFilterProgram").value;
   const statusFilter = document.getElementById("chFilterStatus").value;
-
   const allEntries = [];
   ALL_PROJECT_DETAILS.forEach(detail=>{
     if(!Array.isArray(detail.challengesList)) return;
@@ -2936,13 +3103,48 @@ function renderAllChallenges(){
     if(!project) return;
     detail.challengesList.forEach(challenge=> allEntries.push({ project, challenge }));
   });
-
   const filtered = allEntries.filter(({project, challenge})=>{
     if(goalFilter && String(project.goalId)!==goalFilter) return false;
     if(programFilter && project.programCode!==programFilter) return false;
     if(statusFilter && challenge.status!==statusFilter) return false;
     return true;
   });
+  const statusOrder = { open:0, escalated:1, answered:2, resolved:3 };
+  filtered.sort((a,b)=> statusOrder[a.challenge.status]-statusOrder[b.challenge.status]);
+  return { allEntries, filtered };
+}
+// يبني ويطبع جدولًا نظيفًا لقائمة التحديات المُفلترة حاليًا
+function printChallengesReport(){
+  const { filtered } = getFilteredChallengesEntries();
+  if(filtered.length===0){ alert("لا توجد تحديات مطابقة للفلاتر الحالية لطباعتها."); return; }
+  const statusLabels = { open:"⚪ لم يُعالَج بعد", resolved:"🟢 تم الحل داخليًا", escalated:"🔴 مُصعَّد — بانتظار الرد", answered:"🔵 ردّ المدير العام" };
+  const rowsHtml = filtered.map(({project, challenge})=>{
+    const responseText = challenge.status==="resolved" ? (challenge.resolutionNote||"—")
+      : challenge.status==="answered" ? (challenge.dgResponse||"—")
+      : challenge.status==="escalated" ? "بانتظار رد المدير العام" : "—";
+    return `
+      <tr>
+        <td>${escapeHtml(project.projectName)}<br><span style="font-size:9px;color:#666;">${project.programCode} — ${escapeHtml(project.programName)}</span></td>
+        <td>${statusLabels[challenge.status]||challenge.status}</td>
+        <td>${escapeHtml(challenge.text)}</td>
+        <td>${escapeHtml(challenge.createdBy||"—")}</td>
+        <td>${escapeHtml(responseText)}</td>
+      </tr>`;
+  }).join("");
+  document.getElementById("challengesPrintTableContainer").innerHTML = `
+    <div class="chpt-container">
+      <div class="chpt-title">سجل تحديات المشاريع — رصد</div>
+      <table class="chpt-table">
+        <thead><tr><th>المشروع</th><th>الحالة</th><th>نص التحدي</th><th>سجَّله</th><th>الرد/الملاحظة</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+  document.body.classList.add("printing-challenges-table");
+  window.print();
+  setTimeout(()=> document.body.classList.remove("printing-challenges-table"), 500);
+}
+function renderAllChallenges(){
+  const { allEntries, filtered } = getFilteredChallengesEntries();
 
   const openCount = allEntries.filter(e=>e.challenge.status==="open").length;
   const resolvedCount = allEntries.filter(e=>e.challenge.status==="resolved").length;
@@ -2954,10 +3156,6 @@ function renderAllChallenges(){
     <div class="summary-card"><div class="num">${escalatedCount}</div><div class="lbl">🔴 مُصعَّد — بانتظار الرد</div></div>
     <div class="summary-card"><div class="num">${resolvedCount+answeredCount}</div><div class="lbl">✅ مُعالَج (حلًا أو ردًا)</div></div>
   `;
-
-  // ترتيب: المفتوحة أولًا (أكثر إلحاحًا)، ثم المُصعَّدة، ثم المُجاب عنها، ثم المحلولة أخيرًا
-  const statusOrder = { open:0, escalated:1, answered:2, resolved:3 };
-  filtered.sort((a,b)=> statusOrder[a.challenge.status]-statusOrder[b.challenge.status]);
 
   const list = document.getElementById("allChallengesList");
   list.innerHTML = filtered.length===0 ? `<div class="empty-note">لا توجد تحديات مطابقة لهذا الاختيار.</div>` : filtered.map(({project, challenge})=>{
@@ -4029,10 +4227,12 @@ function switchPMTab(tab){
   document.getElementById("pmTabOverview").classList.toggle("active", tab==="overview");
   document.getElementById("pmTabComms").classList.toggle("active", tab==="comms");
   document.getElementById("pmTabSPI").classList.toggle("active", tab==="spi");
+  document.getElementById("pmTabAnalytics").classList.toggle("active", tab==="analytics");
   document.getElementById("pmInputView").classList.toggle("hidden", tab!=="input");
   document.getElementById("pmOverviewView").classList.toggle("hidden", tab!=="overview");
   document.getElementById("pmCommsView").classList.toggle("hidden", tab!=="comms");
   document.getElementById("pmSPIView").classList.toggle("hidden", tab!=="spi");
+  document.getElementById("pmAnalyticsView").classList.toggle("hidden", tab!=="analytics");
   if(tab==="input") renderPMProjectsList();
   if(tab==="overview") renderPMOverview();
   if(tab==="comms"){ buildPMRequestForm(); renderPMComms(); }
@@ -4040,11 +4240,23 @@ function switchPMTab(tab){
     buildSPIFilterSelects("pmSpiFilterYear","pmSpiFilterGoal","pmSpiFilterProgram", renderPMSPIScreen);
     renderPMSPIScreen();
   }
+  if(tab==="analytics") renderPersonalAnalyticsHTML("pmAn", getPMProjects());
 }
 document.getElementById("pmTabInput").onclick = ()=> switchPMTab("input");
 document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
 document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
 document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
+document.getElementById("pmTabAnalytics").onclick = ()=> switchPMTab("analytics");
+function switchPMAnSubTab(sub){
+  ["Danger","Cascade","Critical","Workload"].forEach(s=>{
+    document.getElementById("pmAnTab"+s).classList.toggle("active", s.toLowerCase()===sub);
+    document.getElementById("pmAn"+s+"Wrap").classList.toggle("hidden", s.toLowerCase()!==sub);
+  });
+}
+document.getElementById("pmAnTabDanger").onclick = ()=> switchPMAnSubTab("danger");
+document.getElementById("pmAnTabCascade").onclick = ()=> switchPMAnSubTab("cascade");
+document.getElementById("pmAnTabCritical").onclick = ()=> switchPMAnSubTab("critical");
+document.getElementById("pmAnTabWorkload").onclick = ()=> switchPMAnSubTab("workload");
 function renderPMSPIScreen(){
   const myProjects = getPMProjects();
   const container = document.getElementById("pmSPIContent");
@@ -4067,7 +4279,7 @@ function renderPMProjectsList(){
     const goal = program ? STRATEGIC_GOALS.find(g=>g.id===program.goalId) : null;
     return `
       <div class="report-program-block">
-        <div class="report-program-header"><span class="rp-title">${goal ? goal.id+". "+goal.name : ""}</span></div>
+        <div class="report-program-header"><span class="rp-title">${goal ? "البرنامج الاستراتيجي: "+goal.id+". "+goal.name : ""}</span></div>
         <div class="report-project-item" style="border-top:none;">
           <div>
             <div class="rpi-name">${escapeHtml(pr.projectName)}</div>
@@ -4241,7 +4453,13 @@ function renderPMComms(){
   const projectIds = projects.map(p=>p.id);
   document.getElementById("pmChallengesList").innerHTML = myChallengesListHTML(projects);
   document.getElementById("pmChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
-    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
+    row.onclick = ()=>{
+      const project = projects.find(p=>p.id===row.dataset.projectId);
+      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===row.dataset.projectId);
+      const challenge = detail && Array.isArray(detail.challengesList) ? detail.challengesList.find(c=>c.id===row.dataset.challengeId) : null;
+      if(project && challenge) markChallengeUpdatesSeenInPopup([{project, challenge}], currentProjectManagerName);
+      openProjectDetailForm(row.dataset.projectId);
+    };
   });
   const myDecisions = ALL_DECISIONS.filter(d=> d.projectId && projectIds.includes(d.projectId))
     .sort((a,b)=>{
@@ -4303,10 +4521,11 @@ function checkAndShowLateStepsPopup(){
   const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
   const activeAnnouncements = getActiveAnnouncementsFor(currentManager);
   const pendingNotes = getPendingPlanningNotes(myProjects);
-  const challengeUpdates = getChallengeUpdatesForManager(myProjects);
+  const challengeUpdates = getUnseenChallengeUpdatesForPopup(myProjects, currentManager);
 
   if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && challengeUpdates.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
+  window.__pendingPopupChallengeUpdates = challengeUpdates;
   let html = "";
   if(activeAnnouncements.length>0){
     html += `<div class="popup-section-label">📢 رسائل من قسم التخطيط والدراسات</div>`;
@@ -4381,6 +4600,10 @@ document.getElementById("lateStepsPopupClose").onclick = ()=>{
   const pendingIds = (overlay.dataset.pendingAnnouncementIds||"").split(",").filter(Boolean);
   const viewerName = currentManager || currentProjectManagerName;
   if(viewerName) pendingIds.forEach(id=> markAnnouncementSeen(id, viewerName));
+  if(viewerName && window.__pendingPopupChallengeUpdates){
+    markChallengeUpdatesSeenInPopup(window.__pendingPopupChallengeUpdates, viewerName);
+  }
+  window.__pendingPopupChallengeUpdates = null;
   overlay.dataset.pendingAnnouncementIds = "";
   overlay.classList.add("hidden");
 };
@@ -4395,10 +4618,11 @@ function checkAndShowPMPopup(){
   });
   const activeAnnouncements = getActiveAnnouncementsFor(currentProjectManagerName);
   const pendingNotes = getPendingPlanningNotes(myProjects);
-  const challengeUpdates = getChallengeUpdatesForManager(myProjects);
+  const challengeUpdates = getUnseenChallengeUpdatesForPopup(myProjects, currentProjectManagerName);
 
   if(lateEntries.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && challengeUpdates.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
+  window.__pendingPopupChallengeUpdates = challengeUpdates;
   let html = "";
   if(activeAnnouncements.length>0){
     html += `<div class="popup-section-label">📢 رسائل من قسم التخطيط والدراسات</div>`;
@@ -4461,10 +4685,12 @@ function switchMgrTab(tab){
   document.getElementById("mgrTabOverview").classList.toggle("active", tab==="overview");
   document.getElementById("mgrTabComms").classList.toggle("active", tab==="comms");
   document.getElementById("mgrTabSPI").classList.toggle("active", tab==="spi");
+  document.getElementById("mgrTabAnalytics").classList.toggle("active", tab==="analytics");
   document.getElementById("mgrInputView").classList.toggle("hidden", tab!=="input");
   document.getElementById("mgrOverviewView").classList.toggle("hidden", tab!=="overview");
   document.getElementById("mgrCommsView").classList.toggle("hidden", tab!=="comms");
   document.getElementById("mgrSPIView").classList.toggle("hidden", tab!=="spi");
+  document.getElementById("mgrAnalyticsView").classList.toggle("hidden", tab!=="analytics");
   if(tab==="overview"){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
   if(tab==="comms"){ buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط"); }
   if(tab==="spi"){
@@ -4472,11 +4698,26 @@ function switchMgrTab(tab){
     renderManagerSPIScreen();
     logActivity(currentManager, "view_spi_screen", "");
   }
+  if(tab==="analytics"){
+    renderPersonalAnalyticsHTML("mgrAn", ALL_PROJECTS.filter(p=>p.govManager===currentManager));
+    logActivity(currentManager, "view_analytics_screen", "");
+  }
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
+document.getElementById("mgrTabAnalytics").onclick = ()=> switchMgrTab("analytics");
+function switchMgrAnSubTab(sub){
+  ["Danger","Cascade","Critical","Workload"].forEach(s=>{
+    document.getElementById("mgrAnTab"+s).classList.toggle("active", s.toLowerCase()===sub);
+    document.getElementById("mgrAn"+s+"Wrap").classList.toggle("hidden", s.toLowerCase()!==sub);
+  });
+}
+document.getElementById("mgrAnTabDanger").onclick = ()=> switchMgrAnSubTab("danger");
+document.getElementById("mgrAnTabCascade").onclick = ()=> switchMgrAnSubTab("cascade");
+document.getElementById("mgrAnTabCritical").onclick = ()=> switchMgrAnSubTab("critical");
+document.getElementById("mgrAnTabWorkload").onclick = ()=> switchMgrAnSubTab("workload");
 function renderManagerSPIScreen(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const container = document.getElementById("mgrSPIContent");
@@ -4607,7 +4848,7 @@ function updateMgrCommsBadge(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const myProjectIds = myProjects.map(p=>p.id);
   const openCount = ALL_REQUESTS.filter(r=> (r.managerName===currentManager || (r.projectId && myProjectIds.includes(r.projectId))) && r.status==="open").length;
-  const challengeUpdatesCount = getChallengeUpdatesForManager(myProjects).length;
+  const challengeUpdatesCount = getUnseenChallengeUpdatesForPopup(myProjects, currentManager).length;
   const total = openCount + challengeUpdatesCount;
   if(total>0){
     badge.textContent = total;
@@ -4621,7 +4862,7 @@ function updatePMCommsBadge(){
   if(!badge || !currentProjectManagerId) return;
   const myProjects = getPMProjects();
   const openCount = ALL_REQUESTS.filter(r=> r.managerName===currentProjectManagerName && r.status==="open").length;
-  const challengeUpdatesCount = getChallengeUpdatesForManager(myProjects).length;
+  const challengeUpdatesCount = getUnseenChallengeUpdatesForPopup(myProjects, currentProjectManagerName).length;
   const total = openCount + challengeUpdatesCount;
   if(total>0){
     badge.textContent = total;
@@ -4634,7 +4875,13 @@ function renderManagerComms(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   document.getElementById("mgrChallengesList").innerHTML = myChallengesListHTML(myProjects);
   document.getElementById("mgrChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
-    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId);
+    row.onclick = ()=>{
+      const project = myProjects.find(p=>p.id===row.dataset.projectId);
+      const detail = ALL_PROJECT_DETAILS.find(d=>d.id===row.dataset.projectId);
+      const challenge = detail && Array.isArray(detail.challengesList) ? detail.challengesList.find(c=>c.id===row.dataset.challengeId) : null;
+      if(project && challenge) markChallengeUpdatesSeenInPopup([{project, challenge}], currentManager);
+      openProjectDetailForm(row.dataset.projectId);
+    };
   });
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
   const myDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode))
@@ -5437,6 +5684,7 @@ function switchDLTab(tab){
 document.getElementById("dlTabDecisions").onclick = ()=> switchDLTab("decisions");
 document.getElementById("dlTabNotes").onclick = ()=> switchDLTab("notes");
 document.getElementById("dlTabChallenges").onclick = ()=> switchDLTab("challenges");
+document.getElementById("printChallengesBtn").onclick = printChallengesReport;
 document.getElementById("dlTabAnnounce").onclick = ()=> switchDLTab("announce");
 document.getElementById("navWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
 document.getElementById("weeklyReportPrintBtn").onclick = ()=> window.print();
@@ -7917,22 +8165,22 @@ function renderAnalyticsScreen(){
   document.getElementById("anDangerList").innerHTML = dangerSteps.length===0
     ? `<div class="empty-note">لا توجد خطوات في منطقة الخطر حاليًا.</div>`
     : dangerSteps.sort((a,b)=>a.daysLeft-b.daysLeft).map(d=>`
-      <div class="phase-alert-row upcoming" data-project-id="${d.project.id}">
-        <div><b>${escapeHtml(d.project.projectName)}</b> — ${d.phaseName} / ${escapeHtml(d.stepName)}</div>
+      <div class="phase-alert-row upcoming" data-project-id="${d.project.id}" data-phase-idx="${d.phaseIdx}" data-step-idx="${d.stepIdx}">
+        <div><b>${escapeHtml(d.project.projectName)}</b> — [${d.seq}] ${d.phaseName} / ${escapeHtml(d.stepName)}</div>
         <span class="phase-alert-badge upcoming">⚠️ ${d.elapsedPct}% من الوقت منقضٍ — تبقّى ${d.daysLeft} يوم</span>
       </div>`).join("");
-  document.getElementById("anDangerList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+  document.getElementById("anDangerList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId, Number(el.dataset.phaseIdx), Number(el.dataset.stepIdx)));
 
   // الأثر التسلسلي
   const cascadeWarnings = getCascadeWarnings(activeProjects);
   document.getElementById("anCascadeList").innerHTML = cascadeWarnings.length===0
     ? `<div class="empty-note">لا توجد مراحل مهدَّدة بتأخر تسلسلي حاليًا.</div>`
     : cascadeWarnings.map(c=>`
-      <div class="phase-alert-row late" data-project-id="${c.project.id}">
-        <div><b>${escapeHtml(c.project.projectName)}</b> — مرحلة "${c.curPhaseName}" قد يتأخر بدؤها</div>
+      <div class="phase-alert-row late" data-project-id="${c.project.id}" data-phase-idx="${c.phaseIdx}" data-step-idx="0">
+        <div><b>${escapeHtml(c.project.projectName)}</b> — [مرحلة ${c.seq}] "${c.curPhaseName}" قد يتأخر بدؤها</div>
         <span class="phase-alert-badge late">🔗 لأن "${c.prevPhaseName}" لم تكتمل بعد</span>
       </div>`).join("");
-  document.getElementById("anCascadeList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+  document.getElementById("anCascadeList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId, Number(el.dataset.phaseIdx), Number(el.dataset.stepIdx)));
 
   // المسار الحرج
   const criticalRows = activeProjects.map(pr=>{
@@ -7943,11 +8191,11 @@ function renderAnalyticsScreen(){
   document.getElementById("anCriticalList").innerHTML = criticalRows.length===0
     ? `<div class="empty-note">لا توجد بيانات كافية حاليًا.</div>`
     : criticalRows.sort((a,b)=> b.crit.phaseWeight-a.crit.phaseWeight).map(r=>`
-      <div class="phase-alert-row late" data-project-id="${r.project.id}">
-        <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
+      <div class="phase-alert-row late" data-project-id="${r.project.id}" data-phase-idx="${r.crit.phaseIdx}" data-step-idx="${r.crit.stepIdx}">
+        <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: [${r.crit.seq}] ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
         <span class="phase-alert-badge late">🎯 وزن مرحلتها ${Math.round(r.crit.phaseWeight*100)}%</span>
       </div>`).join("");
-  document.getElementById("anCriticalList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId));
+  document.getElementById("anCriticalList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId, Number(el.dataset.phaseIdx), Number(el.dataset.stepIdx)));
 
   // خريطة الحمل الوظيفي
   const workload = computeWorkloadMap();
@@ -9700,6 +9948,8 @@ listenToProjectDetails(()=>{
   const loggedIn = document.getElementById("loginScreen").classList.contains("hidden");
   if(loggedIn && currentManager===null && currentProjectManagerId===null && !currentDG) updateAdminChallengesBadge();
   if(!document.getElementById("dgScreen").classList.contains("hidden")) updateDGChallengesBadge();
+  if(!document.getElementById("managerScreen").classList.contains("hidden")) updateMgrCommsBadge();
+  if(!document.getElementById("projectManagerScreen").classList.contains("hidden")) updatePMCommsBadge();
   refreshOpenPlanningNotesIfNeeded();
 });
 listenToProgramCards(()=>{
