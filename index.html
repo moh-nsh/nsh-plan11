@@ -980,9 +980,11 @@ tr.rejected-row td{background:#FDF6F6;}
 .planning-note-row.note-status-marked{background:#FFFBEF;border-color:#F0DBA0;}
 .planning-note-row.note-status-confirmed{background:#F1F8F4;border-color:#B9DFC4;opacity:.85;}
 .planning-note-row.chal-status-open{background:#FFF5F5;border-color:#F0B8BE;border-right:4px solid var(--red);}
+.planning-note-row.chal-status-inprogress{background:#FFFBEF;border-color:#F0DBA0;border-right:4px solid #C9962E;}
 .planning-note-row.chal-status-escalated{background:#FDEAEA;border-color:#E89AA1;border-right:4px solid #8B1420;}
-.planning-note-row.chal-status-answered{background:#EEF3FB;border-color:#B7CBEA;border-right:4px solid #1E4E8C;}
+.planning-note-row.chal-status-dgpending{background:#F5F0FC;border-color:#D2BEF0;border-right:4px solid #5B3EAF;}
 .planning-note-row.chal-status-resolved{background:#F1F8F4;border-color:#B9DFC4;opacity:.8;border-right:4px solid #1E7A3D;}
+.planning-note-row.chal-status-closed{background:#F1F8F4;border-color:#B9DFC4;opacity:.65;border-right:4px solid #1E7A3D;}
 .note-body{flex:1;min-width:180px;}
 .note-text{font-size:13px;color:#2b2b2b;line-height:1.6;}
 .note-revert-reason{font-size:11.5px;color:var(--red);margin-top:4px;font-weight:700;}
@@ -2019,10 +2021,12 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="chFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
       <select id="chFilterStatus">
         <option value="">كل الحالات</option>
-        <option value="open">لم يُعالَج بعد</option>
-        <option value="resolved">تم الحل داخليًا</option>
-        <option value="escalated">مُصعَّد — بانتظار رد المدير العام</option>
-        <option value="answered">ردّ المدير العام</option>
+        <option value="open">⚪ لم يُعالَج بعد</option>
+        <option value="in_progress">🟡 قيد المعالجة من المدير التنفيذي</option>
+        <option value="resolved">🟢 حُلّ من المدير التنفيذي</option>
+        <option value="escalated">🔴 مُصعَّد — بانتظار حل المدير العام</option>
+        <option value="dg_solution_pending">🟣 حل معتمَد — قيد التنفيذ</option>
+        <option value="closed">✅ مغلق نهائيًا</option>
       </select>
       <button class="print-btn" id="printChallengesBtn">🖨️ طباعة القائمة المُفلترة</button>
     </div>
@@ -2660,33 +2664,62 @@ function deletePlanningNote(projectId, noteId){
 function addChallenge(projectId, text, actorName){
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
   const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
-  const challenge = { id:"c"+Date.now()+Math.random().toString(36).slice(2,7), text, status:"open", createdBy:actorName, createdAt:new Date().toISOString(), resolvedBy:null, resolvedAt:null, resolutionNote:null, escalatedBy:null, escalatedAt:null, dgResponse:null, dgResponseAt:null };
+  const challenge = {
+    id:"c"+Date.now()+Math.random().toString(36).slice(2,7), text, status:"open", createdBy:actorName, createdAt:new Date().toISOString(),
+    progressNote:null, progressBy:null, progressAt:null,
+    resolutionNote:null, resolvedBy:null, resolvedAt:null,
+    escalatedBy:null, escalatedAt:null,
+    dgSolution:null, dgSolutionAt:null,
+    closedBy:null, closedAt:null,
+    lastFollowUpReminderAt:null
+  };
   saveProjectDetail(projectId, { challengesList: [...list, challenge] }).then(ok=>{
     if(ok) logActivity(actorName, "add_challenge", text.slice(0,60));
   });
 }
-function resolveChallenge(projectId, challengeId, resolutionNote){
+// المدير التنفيذي يبدأ معالجة التحدي — تسجيل إلزامي لما قام به حتى الآن (خطوة إلزامية قبل الحل أو التصعيد)
+function startChallengeProgress(projectId, challengeId, progressNote, actorName){
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
   const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
-  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"resolved", resolvedBy:ADMIN_NAME, resolvedAt:new Date().toISOString(), resolutionNote:resolutionNote||"" } : c);
+  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"in_progress", progressNote, progressBy:actorName, progressAt:new Date().toISOString() } : c);
   saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
-    if(ok) logActivity(ADMIN_NAME, "resolve_challenge", challengeId);
+    if(ok) logActivity(actorName, "start_challenge_progress", challengeId);
   });
 }
-function escalateChallenge(projectId, challengeId){
+// المدير التنفيذي يحلّ التحدي مباشرة (بعد قيد المعالجة) — حالة نهائية فورية
+function resolveChallengeByExec(projectId, challengeId, resolutionNote, actorName){
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
   const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
-  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"escalated", escalatedBy:ADMIN_NAME, escalatedAt:new Date().toISOString() } : c);
+  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"resolved", resolvedBy:actorName, resolvedAt:new Date().toISOString(), resolutionNote } : c);
   saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
-    if(ok) logActivity(ADMIN_NAME, "escalate_challenge", challengeId);
+    if(ok) logActivity(actorName, "resolve_challenge", challengeId);
   });
 }
-function respondToChallengeDG(projectId, challengeId, responseText){
+// المدير التنفيذي يُصعِّد للمدير العام — يعتمد على ملاحظة "قيد المعالجة" المُسجَّلة سلفًا كسجل للإجراءات المتخذة
+function escalateChallenge(projectId, challengeId, actorName){
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
   const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
-  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"answered", dgResponse:responseText, dgResponseAt:new Date().toISOString() } : c);
+  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"escalated", escalatedBy:actorName, escalatedAt:new Date().toISOString() } : c);
+  saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
+    if(ok) logActivity(actorName, "escalate_challenge", challengeId);
+  });
+}
+// المدير العام يسجّل الحل المُعتمَد — تنتقل الكرة للمدير التنفيذي لتنفيذه ومتابعته حتى الإغلاق
+function respondToChallengeDG(projectId, challengeId, solutionText){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
+  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"dg_solution_pending", dgSolution:solutionText, dgSolutionAt:new Date().toISOString(), lastFollowUpReminderAt:null } : c);
   saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
     if(ok) logActivity("المدير العام", "dg_respond_challenge", challengeId);
+  });
+}
+// المدير التنفيذي يُغلِق التحدي نهائيًا — إما بعد حلّه مباشرة أو بعد تنفيذ حل المدير العام
+function closeChallengeByExec(projectId, challengeId, actorName){
+  const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
+  const updated = list.map(c=> c.id===challengeId ? { ...c, status:"closed", closedBy:actorName, closedAt:new Date().toISOString() } : c);
+  saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
+    if(ok) logActivity(actorName, "close_challenge", challengeId);
   });
 }
 function deleteChallenge(projectId, challengeId){
@@ -2695,6 +2728,42 @@ function deleteChallenge(projectId, challengeId){
   const updated = list.filter(c=> c.id!==challengeId);
   saveProjectDetail(projectId, { challengesList: updated }).then(ok=>{
     if(ok) logActivity(ADMIN_NAME, "delete_challenge", challengeId);
+  });
+}
+// يجمع التحديات التي تحتاج تذكير متابعة (كل 14 يومًا) لدور معيّن — "exec" لكل حالة غير مغلقة، "dg" فقط للمُصعَّدة بانتظار حله
+function getChallengesNeedingFollowUp(projects, forRole){
+  const FOLLOWUP_DAYS = 14;
+  const now = Date.now();
+  const results = [];
+  projects.forEach(pr=>{
+    if(pr.closed) return;
+    const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
+    if(!detail || !Array.isArray(detail.challengesList)) return;
+    detail.challengesList.forEach(c=>{
+      if(c.status==="closed") return;
+      if(forRole==="dg" && c.status!=="escalated") return;
+      if(forRole==="exec" && c.status==="escalated") return; // بانتظار المدير العام، لا داعي لتذكير المدير التنفيذي بها الآن
+      const refDate = c.lastFollowUpReminderAt || c.createdAt;
+      const refMs = new Date(refDate).getTime();
+      if(isNaN(refMs)) return;
+      const daysSince = (now-refMs)/86400000;
+      if(daysSince >= FOLLOWUP_DAYS) results.push({ project:pr, challenge:c });
+    });
+  });
+  return results;
+}
+// يُسجِّل أن تذكير المتابعة عُرض الآن لهذا التحدي — يُعيد ضبط عدّاد الأيام لـ14 يومًا القادمة
+function markChallengeFollowUpShown(updates){
+  const byProject = {};
+  updates.forEach(({project, challenge})=>{
+    if(!byProject[project.id]) byProject[project.id] = [];
+    byProject[project.id].push(challenge.id);
+  });
+  Object.entries(byProject).forEach(([projectId, challengeIds])=>{
+    const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+    const list = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
+    const updated = list.map(c=> challengeIds.includes(c.id) ? { ...c, lastFollowUpReminderAt:new Date().toISOString() } : c);
+    saveProjectDetail(projectId, { challengesList: updated });
   });
 }
 /* ==================== خط الأساس ومؤشر الأداء الزمني (SPI) — نسخة مُجمَّدة من تواريخ الخطة لحظة الاعتماد، لا تتأثر بأي تعديل لاحق على التواريخ الفعلية ==================== */
@@ -2994,20 +3063,24 @@ function myChallengesListHTML(projects){
   return entries.map(({project, challenge})=>{
     const statusInfo = {
       open: { icon:"⚪", label:"لم يُعالَج بعد", cls:"chal-status-open" },
-      resolved: { icon:"🟢", label:"تم الحل", cls:"chal-status-resolved" },
-      escalated: { icon:"🔴", label:"مُصعَّد للمدير العام — بانتظار الرد", cls:"chal-status-escalated" },
-      answered: { icon:"🔵", label:"ردّ المدير العام", cls:"chal-status-answered" }
+      in_progress: { icon:"🟡", label:"قيد المعالجة من المدير التنفيذي", cls:"chal-status-inprogress" },
+      resolved: { icon:"🟢", label:"حُلّ من المدير التنفيذي", cls:"chal-status-resolved" },
+      escalated: { icon:"🔴", label:"مُصعَّد للمدير العام — بانتظار الحل", cls:"chal-status-escalated" },
+      dg_solution_pending: { icon:"🟣", label:"حل معتمَد من المدير العام — قيد التنفيذ", cls:"chal-status-dgpending" },
+      closed: { icon:"✅", label:"مغلق نهائيًا", cls:"chal-status-closed" }
     }[challenge.status] || { icon:"⚪", label:"", cls:"" };
-    const resolutionInfo = challenge.status==="resolved" && challenge.resolutionNote
+    const progressInfo = challenge.progressNote
+      ? `<div class="note-meta" style="color:#8a6d1f;">🟡 ${escapeHtml(challenge.progressBy)}: ${escapeHtml(challenge.progressNote)}</div>` : "";
+    const resolutionInfo = challenge.resolutionNote
       ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
-    const dgResponseInfo = challenge.dgResponse
-      ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
+    const dgSolutionInfo = challenge.dgSolution
+      ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : "";
     return `
       <div class="planning-note-row ${statusInfo.cls}" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="cursor:pointer;">
         <div class="note-body">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${escapeHtml(project.projectName)}</div>
           <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
-          ${resolutionInfo}${dgResponseInfo}
+          ${progressInfo}${resolutionInfo}${dgSolutionInfo}
         </div>
       </div>`;
   }).join("");
@@ -3030,9 +3103,10 @@ function refreshOpenPlanningNotesIfNeeded(){
   const challengesContainer = document.getElementById("challengesListContainer");
   if(challengesContainer){
     const allChallenges = (existing && Array.isArray(existing.challengesList)) ? existing.challengesList : [];
+    const challengeRole = isAdminContext ? "admin" : (currentManager!==null ? "exec" : "pm");
     challengesContainer.innerHTML = allChallenges.length===0
       ? `<div class="empty-note">لا توجد تحديات مُسجَّلة بعد.</div>`
-      : allChallenges.map(c=> challengeRowHTML(c, isAdminContext)).join("");
+      : allChallenges.map(c=> challengeRowHTML(c, challengeRole)).join("");
   }
 }
 // يجمع كل نقاط ملاحظات الخطط التفصيلية عبر كل المشاريع في مكان واحد لقسم التخطيط، مع الفلاتر النشطة
@@ -3135,33 +3209,37 @@ function getFilteredChallengesEntries(){
     if(statusFilter && challenge.status!==statusFilter) return false;
     return true;
   });
-  const statusOrder = { open:0, escalated:1, answered:2, resolved:3 };
+  const statusOrder = { open:0, in_progress:1, escalated:2, dg_solution_pending:3, resolved:4, closed:5 };
   filtered.sort((a,b)=> statusOrder[a.challenge.status]-statusOrder[b.challenge.status]);
   return { allEntries, filtered };
 }
-// يبني ويطبع جدولًا نظيفًا لقائمة التحديات المُفلترة حاليًا
+// يبني ويطبع جدولًا نظيفًا لقائمة التحديات المُفلترة حاليًا — يعكس سير العمل الكامل (رفع، معالجة، حل/تصعيد، حل المدير العام، إغلاق)
 function printChallengesReport(){
   const { filtered } = getFilteredChallengesEntries();
   if(filtered.length===0){ alert("لا توجد تحديات مطابقة للفلاتر الحالية لطباعتها."); return; }
-  const statusLabels = { open:"⚪ لم يُعالَج بعد", resolved:"🟢 تم الحل داخليًا", escalated:"🔴 مُصعَّد — بانتظار الرد", answered:"🔵 ردّ المدير العام" };
+  const statusLabels = { open:"⚪ لم يُعالَج بعد", in_progress:"🟡 قيد المعالجة", resolved:"🟢 حُلّ من المدير التنفيذي", escalated:"🔴 مُصعَّد — بانتظار حل المدير العام", dg_solution_pending:"🟣 حل معتمَد — قيد التنفيذ", closed:"✅ مغلق نهائيًا" };
   const rowsHtml = filtered.map(({project, challenge})=>{
-    const responseText = challenge.status==="resolved" ? (challenge.resolutionNote||"—")
-      : challenge.status==="answered" ? (challenge.dgResponse||"—")
-      : challenge.status==="escalated" ? "بانتظار رد المدير العام" : "—";
+    const historyParts = [];
+    if(challenge.progressNote) historyParts.push(`🟡 ${escapeHtml(challenge.progressBy)}: ${escapeHtml(challenge.progressNote)}`);
+    if(challenge.resolutionNote) historyParts.push(`✅ ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}`);
+    if(challenge.escalatedBy) historyParts.push(`⬆️ صعّدها ${escapeHtml(challenge.escalatedBy)}`);
+    if(challenge.dgSolution) historyParts.push(`🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}`);
+    if(challenge.status==="closed") historyParts.push(`✅ أُغلق بواسطة ${escapeHtml(challenge.closedBy)}`);
+    const historyText = historyParts.length>0 ? historyParts.join(" | ") : "—";
     return `
       <tr>
         <td>${escapeHtml(project.projectName)}<br><span style="font-size:9px;color:#666;">${project.programCode} — ${escapeHtml(project.programName)}</span></td>
         <td>${statusLabels[challenge.status]||challenge.status}</td>
         <td>${escapeHtml(challenge.text)}</td>
         <td>${escapeHtml(challenge.createdBy||"—")}</td>
-        <td>${escapeHtml(responseText)}</td>
+        <td>${historyText}</td>
       </tr>`;
   }).join("");
   document.getElementById("challengesPrintTableContainer").innerHTML = `
     <div class="chpt-container">
       <div class="chpt-title">سجل تحديات المشاريع — رصد</div>
       <table class="chpt-table">
-        <thead><tr><th>المشروع</th><th>الحالة</th><th>نص التحدي</th><th>سجَّله</th><th>الرد/الملاحظة</th></tr></thead>
+        <thead><tr><th>المشروع</th><th>الحالة</th><th>نص التحدي</th><th>سجَّله</th><th>سجل المعالجة الكامل</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>`;
@@ -3173,58 +3251,51 @@ function renderAllChallenges(){
   const { allEntries, filtered } = getFilteredChallengesEntries();
 
   const openCount = allEntries.filter(e=>e.challenge.status==="open").length;
-  const resolvedCount = allEntries.filter(e=>e.challenge.status==="resolved").length;
+  const inProgressCount = allEntries.filter(e=>e.challenge.status==="in_progress").length;
   const escalatedCount = allEntries.filter(e=>e.challenge.status==="escalated").length;
-  const answeredCount = allEntries.filter(e=>e.challenge.status==="answered").length;
+  const dgPendingCount = allEntries.filter(e=>e.challenge.status==="dg_solution_pending").length;
+  const closedCount = allEntries.filter(e=>e.challenge.status==="closed" || e.challenge.status==="resolved").length;
   document.getElementById("challengesSummaryGrid").innerHTML = `
     <div class="summary-card"><div class="num">${allEntries.length}</div><div class="lbl">إجمالي التحديات</div></div>
-    <div class="summary-card"><div class="num">${openCount}</div><div class="lbl">⚪ لم يُعالَج بعد</div></div>
-    <div class="summary-card"><div class="num">${escalatedCount}</div><div class="lbl">🔴 مُصعَّد — بانتظار الرد</div></div>
-    <div class="summary-card"><div class="num">${resolvedCount+answeredCount}</div><div class="lbl">✅ مُعالَج (حلًا أو ردًا)</div></div>
+    <div class="summary-card"><div class="num">${openCount+inProgressCount}</div><div class="lbl">⚪🟡 لدى المدير التنفيذي</div></div>
+    <div class="summary-card"><div class="num">${escalatedCount+dgPendingCount}</div><div class="lbl">🔴🟣 لدى المدير العام / قيد التنفيذ</div></div>
+    <div class="summary-card"><div class="num">${closedCount}</div><div class="lbl">✅ مُغلَق</div></div>
   `;
 
   const list = document.getElementById("allChallengesList");
   list.innerHTML = filtered.length===0 ? `<div class="empty-note">لا توجد تحديات مطابقة لهذا الاختيار.</div>` : filtered.map(({project, challenge})=>{
     const statusInfo = {
-      open: { icon:"⚪", cls:"chal-status-open" }, resolved: { icon:"🟢", cls:"chal-status-resolved" },
-      escalated: { icon:"🔴", cls:"chal-status-escalated" }, answered: { icon:"🔵", cls:"chal-status-answered" }
+      open: { icon:"⚪", cls:"chal-status-open" }, in_progress: { icon:"🟡", cls:"chal-status-inprogress" },
+      resolved: { icon:"🟢", cls:"chal-status-resolved" }, escalated: { icon:"🔴", cls:"chal-status-escalated" },
+      dg_solution_pending: { icon:"🟣", cls:"chal-status-dgpending" }, closed: { icon:"✅", cls:"chal-status-closed" }
     }[challenge.status] || { icon:"⚪", cls:"" };
     const createdInfo = `<div class="note-meta">سجّله ${escapeHtml(challenge.createdBy)}</div>`;
-    const resolutionInfo = challenge.status==="resolved" && challenge.resolutionNote
+    const progressInfo = challenge.progressNote
+      ? `<div class="note-meta" style="color:#8a6d1f;">🟡 قيد المعالجة (${escapeHtml(challenge.progressBy)}): ${escapeHtml(challenge.progressNote)}</div>` : "";
+    const resolutionInfo = challenge.resolutionNote
       ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
-    const escalatedInfo = (challenge.status==="escalated" || challenge.status==="answered") && challenge.escalatedBy
+    const escalatedInfo = challenge.escalatedBy
       ? `<div class="note-meta">⬆️ صعّدها ${escapeHtml(challenge.escalatedBy)} للمدير العام</div>` : "";
-    const dgResponseInfo = challenge.dgResponse
-      ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
+    const dgSolutionInfo = challenge.dgSolution
+      ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : "";
+    const closedInfo = challenge.status==="closed"
+      ? `<div class="note-meta" style="color:#1E7A3D;font-weight:700;">✅ أُغلق نهائيًا بواسطة ${escapeHtml(challenge.closedBy)}</div>` : "";
     return `
       <div class="planning-note-row ${statusInfo.cls}" style="flex-wrap:wrap;">
         <div class="note-body">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${project.programCode} — ${escapeHtml(project.programName)} | 👤 ${escapeHtml(project.govManager)}</div>
           <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${statusInfo.icon} ${escapeHtml(challenge.text)}</div>
-          ${createdInfo}${resolutionInfo}${escalatedInfo}${dgResponseInfo}
+          ${createdInfo}${progressInfo}${resolutionInfo}${escalatedInfo}${dgSolutionInfo}${closedInfo}
         </div>
-        <div class="note-actions">          <button class="ach-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
-          ${challenge.status==="open" ? `<button class="ach-resolve-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">✅ حل داخليًا</button><button class="ach-escalate-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">⬆️ تصعيد</button>` : ""}
-          <button class="ach-delete-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" title="حذف نهائي">🗑️</button>
+        <div class="note-actions">
+          <button class="ach-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
+          <button class="ach-delete-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" title="حذف نهائي (إجراء إداري فقط)">🗑️</button>
         </div>
       </div>`;
   }).join("");
 
   list.querySelectorAll(".ach-open-btn").forEach(btn=>{
     btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId);
-  });
-  list.querySelectorAll(".ach-resolve-btn").forEach(btn=>{
-    btn.onclick = ()=>{
-      const note = prompt("وصف مختصر لكيفية حل هذا التحدي (اختياري):", "");
-      if(note===null) return;
-      resolveChallenge(btn.dataset.projectId, btn.dataset.challengeId, note.trim());
-    };
-  });
-  list.querySelectorAll(".ach-escalate-btn").forEach(btn=>{
-    btn.onclick = ()=>{
-      if(!confirm("سيتم تصعيد هذا التحدي للمدير العام مباشرة. هل أنت متأكد؟")) return;
-      escalateChallenge(btn.dataset.projectId, btn.dataset.challengeId);
-    };
   });
   list.querySelectorAll(".ach-delete-btn").forEach(btn=>{
     btn.onclick = ()=>{
@@ -4584,15 +4655,26 @@ function checkAndShowLateStepsPopup(){
   if(challengeUpdates.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">🚨 مستجدات على تحدياتك (${challengeUpdates.length})</div>`;
     html += challengeUpdates.map(({project, challenge})=>{
-      const statusLabel = { resolved:"✅ تم الحل", escalated:"⬆️ صُعِّد للمدير العام", answered:"💬 ردّ المدير العام" }[challenge.status] || "";
+      const statusLabel = { in_progress:"🟡 قيد المعالجة", resolved:"✅ حُلّت", escalated:"⬆️ صُعِّدت للمدير العام", dg_solution_pending:"🟣 حل معتمَد — نفِّذه", closed:"✅ أُغلقت" }[challenge.status] || "";
       return `
-      <div class="phase-alert-row ${challenge.status==='escalated'?'late':'upcoming'}" data-project-id="${project.id}">
+      <div class="phase-alert-row ${challenge.status==='dg_solution_pending'?'late':'upcoming'}" data-project-id="${project.id}">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
-        ${challenge.dgResponse ? `<div style="font-size:11px;color:#1E4E8C;margin-top:2px;">💬 ${escapeHtml(challenge.dgResponse)}</div>` : ""}
+        ${challenge.dgSolution ? `<div style="font-size:11px;color:#5B3EAF;margin-top:2px;">🟣 ${escapeHtml(challenge.dgSolution)}</div>` : ""}
         </div>
-        <span class="phase-alert-badge ${challenge.status==='escalated'?'late':'upcoming'}">${statusLabel}</span>
+        <span class="phase-alert-badge ${challenge.status==='dg_solution_pending'?'late':'upcoming'}">${statusLabel}</span>
       </div>`;}).join("");
   }
+  const followUps = getChallengesNeedingFollowUp(myProjects, "exec");
+  window.__pendingFollowUpChallenges = followUps;
+  if(followUps.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">🔔 تحديات تحتاج متابعتك (لم تُحدَّث منذ أسبوعين أو أكثر) — ${followUps.length}</div>`;
+    html += followUps.map(({project, challenge})=>`
+      <div class="phase-alert-row upcoming" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
+        <span class="phase-alert-badge upcoming">🔔 يحتاج متابعة</span>
+      </div>`).join("");
+  }
+
   if(pendingNotes.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
     html += pendingNotes.map(({project, note})=>`
@@ -4650,7 +4732,11 @@ document.getElementById("lateStepsPopupClose").onclick = ()=>{
   if(viewerName && window.__pendingPopupChallengeUpdates){
     markChallengeUpdatesSeenInPopup(window.__pendingPopupChallengeUpdates, viewerName);
   }
+  if(window.__pendingFollowUpChallenges && window.__pendingFollowUpChallenges.length>0){
+    markChallengeFollowUpShown(window.__pendingFollowUpChallenges);
+  }
   window.__pendingPopupChallengeUpdates = null;
+  window.__pendingFollowUpChallenges = null;
   overlay.dataset.pendingAnnouncementIds = "";
   overlay.classList.add("hidden");
 };
@@ -4681,15 +4767,16 @@ function checkAndShowPMPopup(){
   if(challengeUpdates.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">🚨 مستجدات على تحدياتك (${challengeUpdates.length})</div>`;
     html += challengeUpdates.map(({project, challenge})=>{
-      const statusLabel = { resolved:"✅ تم الحل", escalated:"⬆️ صُعِّد للمدير العام", answered:"💬 ردّ المدير العام" }[challenge.status] || "";
+      const statusLabel = { in_progress:"🟡 قيد المعالجة", resolved:"✅ حُلّت", escalated:"⬆️ صُعِّدت للمدير العام", dg_solution_pending:"🟣 حل معتمَد — قيد التنفيذ", closed:"✅ أُغلقت" }[challenge.status] || "";
       return `
-      <div class="phase-alert-row ${challenge.status==='escalated'?'late':'upcoming'}" data-project-id="${project.id}">
+      <div class="phase-alert-row ${challenge.status==='dg_solution_pending'?'late':'upcoming'}" data-project-id="${project.id}">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
-        ${challenge.dgResponse ? `<div style="font-size:11px;color:#1E4E8C;margin-top:2px;">💬 ${escapeHtml(challenge.dgResponse)}</div>` : ""}
+        ${challenge.dgSolution ? `<div style="font-size:11px;color:#5B3EAF;margin-top:2px;">🟣 ${escapeHtml(challenge.dgSolution)}</div>` : ""}
         </div>
-        <span class="phase-alert-badge ${challenge.status==='escalated'?'late':'upcoming'}">${statusLabel}</span>
+        <span class="phase-alert-badge ${challenge.status==='dg_solution_pending'?'late':'upcoming'}">${statusLabel}</span>
       </div>`;}).join("");
   }
+
   if(pendingNotes.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">📝 ملاحظات قسم التخطيط تحتاج إجراء (${pendingNotes.length})</div>`;
     html += pendingNotes.map(({project, note})=>`
@@ -5668,20 +5755,15 @@ function updateDGChallengesBadge(){
 }
 // يجمع كل التحديات المُصعَّدة (🔴 لم يُردَّ عليها بعد) — لعرضها كتنبيه فوري للمدير العام
 function checkAndShowDGChallengesPopup(){
-  const escalatedEntries = [];
-  ALL_PROJECT_DETAILS.forEach(detail=>{
-    if(!Array.isArray(detail.challengesList)) return;
-    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
-    if(!project) return;
-    detail.challengesList.forEach(c=>{
-      if(c.status==="escalated") escalatedEntries.push({ project, challenge:c });
-    });
-  });
-  if(escalatedEntries.length===0) return;
+  const followUps = getChallengesNeedingFollowUp(ALL_PROJECTS.filter(p=>!p.closed), "dg");
+  window.__pendingDGFollowUpChallenges = followUps;
+  if(followUps.length===0) return;
   const list = document.getElementById("dgChallengesPopupList");
-  list.innerHTML = escalatedEntries.map(({project, challenge})=>`
+  list.innerHTML = followUps.map(({project, challenge})=>`
     <div class="phase-alert-row late" data-project-id="${project.id}">
-      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
+      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
+      ${challenge.progressNote ? `<div style="font-size:11px;color:#8a6d1f;margin-top:2px;">🟡 ${escapeHtml(challenge.progressBy)}: ${escapeHtml(challenge.progressNote)}</div>` : ""}
+      </div>
       <span class="phase-alert-badge late">صعّدها ${escapeHtml(challenge.escalatedBy||"")}</span>
     </div>`).join("");
   list.querySelectorAll(".phase-alert-row").forEach(row=>{
@@ -5692,7 +5774,13 @@ function checkAndShowDGChallengesPopup(){
   });
   document.getElementById("dgChallengesPopupOverlay").classList.remove("hidden");
 }
-document.getElementById("dgChallengesPopupClose").onclick = ()=> document.getElementById("dgChallengesPopupOverlay").classList.add("hidden");
+document.getElementById("dgChallengesPopupClose").onclick = ()=>{
+  if(window.__pendingDGFollowUpChallenges && window.__pendingDGFollowUpChallenges.length>0){
+    markChallengeFollowUpShown(window.__pendingDGFollowUpChallenges);
+  }
+  window.__pendingDGFollowUpChallenges = null;
+  document.getElementById("dgChallengesPopupOverlay").classList.add("hidden");
+};
 
 document.getElementById("dgLogoutBtn").onclick = ()=>{ currentDG = false; resetLoginForm(); showScreen("loginScreen"); };
 document.getElementById("dgChangePasswordBtn").onclick = ()=>{
@@ -6695,35 +6783,46 @@ function noteRowHTML(note, isAdmin){
     </div>`;
 }
 // يبني صفًا واحدًا لتحدٍّ ضمن سجل تحديات المشروع (⚪ مُسجَّل ← 🟢 حُلّ / 🔴 مُصعَّد ← 🔵 رَدّ المدير العام)
-function challengeRowHTML(challenge, isAdmin){
+function challengeRowHTML(challenge, role){
   const statusInfo = {
     open: { icon:"⚪", label:"لم يُعالَج بعد", cls:"chal-status-open" },
-    resolved: { icon:"🟢", label:"تم الحل", cls:"chal-status-resolved" },
-    escalated: { icon:"🔴", label:"مُصعَّد للمدير العام", cls:"chal-status-escalated" },
-    answered: { icon:"🔵", label:"ردّ المدير العام", cls:"chal-status-answered" }
+    in_progress: { icon:"🟡", label:"قيد المعالجة من المدير التنفيذي", cls:"chal-status-inprogress" },
+    resolved: { icon:"🟢", label:"حُلّ من المدير التنفيذي", cls:"chal-status-resolved" },
+    escalated: { icon:"🔴", label:"مُصعَّد — بانتظار حل المدير العام", cls:"chal-status-escalated" },
+    dg_solution_pending: { icon:"🟣", label:"حل معتمَد من المدير العام — قيد التنفيذ", cls:"chal-status-dgpending" },
+    closed: { icon:"✅", label:"مغلق نهائيًا", cls:"chal-status-closed" }
   }[challenge.status] || { icon:"⚪", label:"", cls:"" };
   const createdInfo = `<div class="note-meta">سجّله ${escapeHtml(challenge.createdBy)}</div>`;
-  const resolutionInfo = challenge.status==="resolved" && challenge.resolutionNote
+  const progressInfo = challenge.progressNote
+    ? `<div class="note-meta" style="color:#8a6d1f;">🟡 قيد المعالجة (${escapeHtml(challenge.progressBy)}): ${escapeHtml(challenge.progressNote)}</div>` : "";
+  const resolutionInfo = challenge.resolutionNote
     ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
-  const escalatedInfo = (challenge.status==="escalated" || challenge.status==="answered") && challenge.escalatedBy
+  const escalatedInfo = challenge.escalatedBy
     ? `<div class="note-meta">⬆️ صعّدها ${escapeHtml(challenge.escalatedBy)} للمدير العام</div>` : "";
-  const dgResponseInfo = challenge.dgResponse
-    ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّ المدير العام: ${escapeHtml(challenge.dgResponse)}</div>` : "";
+  const dgSolutionInfo = challenge.dgSolution
+    ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : "";
+  const closedInfo = challenge.status==="closed"
+    ? `<div class="note-meta" style="color:#1E7A3D;font-weight:700;">✅ أُغلق نهائيًا بواسطة ${escapeHtml(challenge.closedBy)}</div>` : "";
   let actionsHtml = "";
-  if(isAdmin && challenge.status==="open"){
-    actionsHtml = `<div class="note-actions">
-      <button class="chal-resolve-btn" data-id="${challenge.id}">✅ حل داخليًا</button>
-      <button class="chal-escalate-btn" data-id="${challenge.id}">⬆️ تصعيد للمدير العام</button>
-      <button class="chal-delete-btn" data-id="${challenge.id}" title="حذف نهائي">🗑️</button>
-    </div>`;
-  }else if(isAdmin){
-    actionsHtml = `<div class="note-actions"><button class="chal-delete-btn" data-id="${challenge.id}" title="حذف نهائي">🗑️</button></div>`;
+  if(role==="exec"){
+    if(challenge.status==="open"){
+      actionsHtml = `<div class="note-actions"><button class="chal-start-progress-btn" data-id="${challenge.id}">🟡 بدء المعالجة</button></div>`;
+    }else if(challenge.status==="in_progress"){
+      actionsHtml = `<div class="note-actions">
+        <button class="chal-resolve-exec-btn" data-id="${challenge.id}">✅ حل المشكلة</button>
+        <button class="chal-escalate-btn" data-id="${challenge.id}">⬆️ تصعيد للمدير العام</button>
+      </div>`;
+    }else if(challenge.status==="resolved" || challenge.status==="dg_solution_pending"){
+      actionsHtml = `<div class="note-actions"><button class="chal-close-btn" data-id="${challenge.id}">🔒 إغلاق نهائي</button></div>`;
+    }
+  }else if(role==="admin"){
+    actionsHtml = `<div class="note-actions"><button class="chal-delete-btn" data-id="${challenge.id}" title="حذف نهائي (إجراء إداري فقط)">🗑️</button></div>`;
   }
   return `
     <div class="planning-note-row ${statusInfo.cls}">
       <div class="note-body">
-        <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)}</div>
-        ${createdInfo}${resolutionInfo}${escalatedInfo}${dgResponseInfo}
+        <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
+        ${createdInfo}${progressInfo}${resolutionInfo}${escalatedInfo}${dgSolutionInfo}${closedInfo}
       </div>
       ${actionsHtml}
     </div>`;
@@ -7780,22 +7879,23 @@ function renderDGScreen(){
     const project = ALL_PROJECTS.find(p=>p.id===detail.id);
     if(!project) return;
     detail.challengesList.forEach(c=>{
-      if(c.status==="escalated" || c.status==="answered") escalatedEntries.push({ project, challenge:c });
+      if(c.status==="escalated" || c.status==="dg_solution_pending") escalatedEntries.push({ project, challenge:c });
     });
   });
   escalatedEntries.sort((a,b)=> (a.challenge.status==="escalated"?0:1) - (b.challenge.status==="escalated"?0:1));
   const dgList = document.getElementById("dgEscalatedChallengesList");
   dgList.innerHTML = escalatedEntries.length===0 ? `<div class="empty-note">لا توجد تحديات مُصعَّدة حاليًا ✅</div>` : escalatedEntries.map(({project, challenge})=>`
-    <div class="planning-note-row ${challenge.status==='answered'?'note-status-confirmed':'note-status-marked'}">
+    <div class="planning-note-row ${challenge.status==='dg_solution_pending'?'note-status-confirmed':'note-status-marked'}">
       <div class="note-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${project.programCode} — ${escapeHtml(project.projectName)}</div>
-        <div class="note-text">${challenge.status==='answered'?'🔵':'🔴'} ${escapeHtml(challenge.text)}</div>
+        <div class="note-text">${challenge.status==='dg_solution_pending'?'🟣':'🔴'} ${escapeHtml(challenge.text)}</div>
         <div class="note-meta">صعّدها ${escapeHtml(challenge.escalatedBy||"")}</div>
-        ${challenge.dgResponse ? `<div class="note-revert-reason" style="color:#1E4E8C;">💬 ردّك: ${escapeHtml(challenge.dgResponse)}</div>` : ""}
+        ${challenge.progressNote ? `<div class="note-meta">🟡 الإجراءات السابقة (${escapeHtml(challenge.progressBy)}): ${escapeHtml(challenge.progressNote)}</div>` : ""}
+        ${challenge.dgSolution ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حلّك: ${escapeHtml(challenge.dgSolution)} ${challenge.status==='dg_solution_pending'?'— قيد التنفيذ من المدير التنفيذي':''}</div>` : ""}
       </div>
       <div class="note-actions">
         <button class="dg-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
-        <button class="dg-respond-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">${challenge.dgResponse?'✎ تعديل الرد':'💬 الرد'}</button>
+        ${challenge.status==='escalated' ? `<button class="dg-respond-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}">🟣 تسجيل الحل</button>` : ""}
       </div>
     </div>`).join("");
   dgList.querySelectorAll(".dg-open-btn").forEach(btn=>{
@@ -7803,7 +7903,7 @@ function renderDGScreen(){
   });
   dgList.querySelectorAll(".dg-respond-btn").forEach(btn=>{
     btn.onclick = ()=>{
-      const response = prompt("ردّك على هذا التحدي (سيظهر لقسم التخطيط ومدير المشروع):", "");
+      const response = prompt("الحل المُعتمَد لهذا التحدي (سيتولّى المدير التنفيذي تنفيذه ومتابعته حتى الإغلاق):", "");
       if(response===null || !response.trim()) return;
       respondToChallengeDG(btn.dataset.projectId, btn.dataset.challengeId, response.trim());
     };
@@ -8605,26 +8705,29 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, s
     }
   }
 
-  // سجل تحديات المشروع (بالاتجاه العكسي: مدير المشروع/التنفيذي يكتب، قسم التخطيط يحل أو يُصعِّد)
+  // سجل تحديات المشروع — مدير المشروع يرفع، المدير التنفيذي يعالج/يحل/يُصعِّد، المدير العام يحل المُصعَّد، قسم التخطيط دوره إشرافي فقط
   const challengesList = Array.isArray(existing.challengesList) ? existing.challengesList : [];
   if(isAdminContext){
     bodyHtml += `
-      <div class="planning-notes-box" style="background:#FFF5F5;">
-        <label style="color:#B3202E;">🚨 سجل تحديات المشروع <span style="font-weight:400;color:var(--text-muted);">(يكتبها مدير المشروع/المدير التنفيذي — حلّها داخليًا أو صعّدها للمدير العام إن تعذّر ذلك)</span></label>
+      <div class="planning-notes-box readonly" style="background:#FFF5F5;">
+        <label style="color:#B3202E;">🚨 سجل تحديات المشروع <span style="font-weight:400;color:var(--text-muted);">(دور قسم التخطيط إشرافي فقط — متابعة سير معالجة التحدي دون تدخّل مباشر)</span></label>
         <div id="challengesListContainer">
-          ${challengesList.length===0 ? `<div class="empty-note">لا توجد تحديات مُسجَّلة بعد.</div>` : challengesList.map(c=> challengeRowHTML(c, true)).join("")}
+          ${challengesList.length===0 ? `<div class="empty-note">لا توجد تحديات مُسجَّلة بعد.</div>` : challengesList.map(c=> challengeRowHTML(c, "admin")).join("")}
         </div>
       </div>`;
   }else{
-    bodyHtml += `
-      <div class="planning-notes-box readonly" style="background:#FFF5F5;">
-        <label style="color:#B3202E;">🚨 سجل تحديات المشروع <span style="font-weight:400;color:var(--text-muted);">(اكتب أي تحدٍّ يواجهك في تنفيذ هذا المشروع — يصل مباشرة لقسم التخطيط)</span></label>
+    const role = currentManager!==null ? "exec" : "pm";
+    const addFormHtml = `
         <div class="planning-note-add-row">
           <input type="text" id="newChallengeInput" placeholder="صف التحدي الذي تواجهه...">
           <button type="button" id="addChallengeBtn" style="background:#B3202E;">➕ تسجيل التحدي</button>
-        </div>
+        </div>`;
+    bodyHtml += `
+      <div class="planning-notes-box readonly" style="background:#FFF5F5;">
+        <label style="color:#B3202E;">🚨 سجل تحديات المشروع <span style="font-weight:400;color:var(--text-muted);">${role==="exec" ? "(يرفعها مدير المشروع أو أنت — تتولّى معالجتها أو تصعيدها للمدير العام)" : "(اكتب أي تحدٍّ يواجهك — يصل للمدير التنفيذي لمعالجته)"}</span></label>
+        ${addFormHtml}
         <div id="challengesListContainer">
-          ${challengesList.length===0 ? `<div class="empty-note">لا توجد تحديات مُسجَّلة بعد.</div>` : challengesList.map(c=> challengeRowHTML(c, false)).join("")}
+          ${challengesList.length===0 ? `<div class="empty-note">لا توجد تحديات مُسجَّلة بعد.</div>` : challengesList.map(c=> challengeRowHTML(c, role)).join("")}
         </div>
       </div>`;
   }
@@ -9123,16 +9226,29 @@ function wireDetailModalStaticEvents(){
       addChallenge(projectId, text, getActorName());
       input.value = "";
     }
-    if(e.target.classList.contains("chal-resolve-btn")){
-      const note = prompt("وصف مختصر لكيفية حل هذا التحدي (اختياري):", "");
+    if(e.target.classList.contains("chal-start-progress-btn")){
+      const note = prompt("اذكر الإجراءات/الخطوات التي قمت بها حتى الآن لمعالجة هذا التحدي (إلزامي):", "");
       if(note===null) return;
+      if(!note.trim()){ alert("هذا الحقل إلزامي — يجب توضيح ما تم القيام به."); return; }
       const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
-      resolveChallenge(projectId, e.target.dataset.id, note.trim());
+      startChallengeProgress(projectId, e.target.dataset.id, note.trim(), getActorName());
+    }
+    if(e.target.classList.contains("chal-resolve-exec-btn")){
+      const note = prompt("اذكر كيف تم حل هذا التحدي (إلزامي):", "");
+      if(note===null) return;
+      if(!note.trim()){ alert("هذا الحقل إلزامي — يجب توضيح كيفية الحل."); return; }
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      resolveChallengeByExec(projectId, e.target.dataset.id, note.trim(), getActorName());
     }
     if(e.target.classList.contains("chal-escalate-btn")){
       if(!confirm("سيتم تصعيد هذا التحدي للمدير العام مباشرة. هل أنت متأكد؟")) return;
       const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
-      escalateChallenge(projectId, e.target.dataset.id);
+      escalateChallenge(projectId, e.target.dataset.id, getActorName());
+    }
+    if(e.target.classList.contains("chal-close-btn")){
+      if(!confirm("سيُغلَق هذا التحدي نهائيًا. هل تأكّدت من اكتمال التنفيذ؟")) return;
+      const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
+      closeChallengeByExec(projectId, e.target.dataset.id, getActorName());
     }
     if(e.target.classList.contains("chal-delete-btn")){
       if(!confirm("هل أنت متأكد من حذف هذا التحدي نهائيًا؟")) return;
