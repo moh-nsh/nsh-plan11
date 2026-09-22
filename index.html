@@ -8218,10 +8218,16 @@ document.getElementById("navAnalyticsBtn").onclick = ()=>{
   const prevYear = document.getElementById("anFilterYear").value;
   document.getElementById("anFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
   document.getElementById("anFilterYear").value = prevYear;
-  document.getElementById("anFilterYear").onchange = renderAnalyticsScreen;
+  document.getElementById("anFilterYear").onchange = renderActiveAnalyticsTab;
   renderAnalyticsScreen();
   logActivity(ADMIN_NAME, "view_analytics_screen", "");
 };
+// يُعيد رسم التبويب النشط حاليًا في صفحة التحليلات المتقدمة فقط — يُستدعى عند تغيير فلتر السنة، بحيث يعمل الفلتر بشكل صحيح مهما كان التبويب المفتوح
+function renderActiveAnalyticsTab(){
+  if(!document.getElementById("anYearlyView").classList.contains("hidden")){ renderYearlyComparisonChart(); return; }
+  if(!document.getElementById("anMonthlyView").classList.contains("hidden")){ renderMonthlySnapshotChart(); return; }
+  renderAnalyticsScreen();
+}
 function switchAnalyticsTab(tab){
   document.getElementById("anTabDanger").classList.toggle("active", tab==="danger");
   document.getElementById("anTabCascade").classList.toggle("active", tab==="cascade");
@@ -8307,33 +8313,39 @@ let anYearlyChartInstance = null;
 function renderYearlyComparisonChart(){
   const programCode = document.getElementById("anYearlyProgramSelect").value;
   if(!programCode) return;
+  const yearFilter = document.getElementById("anFilterYear").value;
   const data = computeYearlyProgramComparison(programCode);
   const ctx = document.getElementById("anYearlyChart").getContext("2d");
   if(anYearlyChartInstance) anYearlyChartInstance.destroy();
+  // فلتر السنة هنا لا يُخفي بقية السنوات (سيُفرغ التبويب من معناه المقارن)، بل يُبرز السنة المُختارة بلون مختلف وسط بقية السنوات
   anYearlyChartInstance = new Chart(ctx, {
     type: "bar",
     data: {
       labels: data.map(d=>String(d.year)),
-      datasets: [{ label: "متوسط الإنجاز %", data: data.map(d=>d.avg), backgroundColor: "#1E4E8C" }]
+      datasets: [{ label: "متوسط الإنجاز %", data: data.map(d=>d.avg), backgroundColor: data.map(d=> (!yearFilter || String(d.year)===yearFilter) ? "#1E4E8C" : "#C9CED6") }]
     },
     options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100 } } }
   });
 }
 let anMonthlyChartInstance = null;
 function renderMonthlySnapshotChart(){
-  const ctx = document.getElementById("anMonthlyChart").getContext("2d");
+  const yearFilter = document.getElementById("anFilterYear").value;
+  const snapshots = yearFilter ? ALL_MONTHLY_SNAPSHOTS.filter(s=> s.id.startsWith(yearFilter)) : ALL_MONTHLY_SNAPSHOTS;
+  const chartBox = document.getElementById("anMonthlyView").querySelector(".chart-box");
+  chartBox.innerHTML = `<canvas id="anMonthlyChart"></canvas>`;
   if(anMonthlyChartInstance) anMonthlyChartInstance.destroy();
-  if(ALL_MONTHLY_SNAPSHOTS.length===0){
-    document.getElementById("anMonthlyView").querySelector(".chart-box").innerHTML = `<div class="empty-note" style="padding:40px;">لا توجد لقطات شهرية بعد — ستُلتقَط أول لقطة تلقائيًا عند دخولك القادم في شهر جديد.</div>`;
+  if(snapshots.length===0){
+    chartBox.innerHTML = `<div class="empty-note" style="padding:40px;">${yearFilter ? "لا توجد لقطات شهرية لهذه السنة." : "لا توجد لقطات شهرية بعد — ستُلتقَط أول لقطة تلقائيًا عند دخولك القادم في شهر جديد."}</div>`;
     return;
   }
+  const ctx = document.getElementById("anMonthlyChart").getContext("2d");
   anMonthlyChartInstance = new Chart(ctx, {
     type: "line",
     data: {
-      labels: ALL_MONTHLY_SNAPSHOTS.map(s=>s.id),
+      labels: snapshots.map(s=>s.id),
       datasets: [
-        { label: "متوسط الإنجاز العام %", data: ALL_MONTHLY_SNAPSHOTS.map(s=>s.overallAvg), borderColor:"#1E4E8C", tension:0.3 },
-        { label: "الالتزام بالجدول الزمني %", data: ALL_MONTHLY_SNAPSHOTS.map(s=>s.overallAdherence), borderColor:"#1E7A3D", tension:0.3 }
+        { label: "متوسط الإنجاز العام %", data: snapshots.map(s=>s.overallAvg), borderColor:"#1E4E8C", tension:0.3 },
+        { label: "الالتزام بالجدول الزمني %", data: snapshots.map(s=>s.overallAdherence), borderColor:"#1E7A3D", tension:0.3 }
       ]
     },
     options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100 } } }
