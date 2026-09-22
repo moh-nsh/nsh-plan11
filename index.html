@@ -1241,6 +1241,22 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<!-- ===================== ADD CHALLENGE MODAL (تسجيل تحدٍّ جديد من تبويب الملاحظات والتحديات) ===================== -->
+<div id="addChallengeModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>🚨 تسجيل تحدٍّ جديد</h3>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 4px;">المشروع المعني</label>
+    <select id="addChallengeProjectSelect" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;"></select>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin:12px 0 4px;">وصف التحدي</label>
+    <textarea id="addChallengeTextInput" rows="3" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;" placeholder="صف التحدي الذي تواجهه..."></textarea>
+    <div class="modal-error" id="addChallengeError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="addChallengeCancel">إلغاء</button>
+      <button class="btn-primary" id="addChallengeSubmit">🚨 تسجيل التحدي</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== CLOSE PROJECT MODAL ===================== -->
 <div id="closeProjectModal" class="modal-overlay hidden">
   <div class="modal-box" style="width:400px;">
@@ -1487,7 +1503,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
       <button class="mgr-tab" id="mgrTabByProgram">📂 مشاريعي حسب البرنامج</button>
-      <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل/ملاحظات التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 الملاحظات والتحديات <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="mgrTabSPI">📈 مؤشر الأداء الزمني SPI</button>
       <button class="mgr-tab" id="mgrTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
@@ -1534,34 +1550,49 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 
   <div class="dash-wrap hidden" id="mgrCommsView">
-    <div class="section-title">📨 التواصل/ملاحظات التخطيط</div>
-    <div class="section-desc">ملاحظات الخطط التفصيلية تحتاج إجراء منك، قرارات وملاحظات الاجتماعات الخاصة ببرامجك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="section-title">📨 الملاحظات والتحديات</div>
+    <div class="section-desc">ملاحظات الخطط التفصيلية، قرارات الاجتماعات الخاصة ببرامجك، سجل تحديات مشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
     <div class="filters-bar" style="margin-bottom:16px;">
       <select id="mgrCommsFilterYear"><option value="">كل السنوات</option></select>
     </div>
-    <div class="pending-list">
-      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
-      <div id="mgrPendingNotesList"></div>
+    <div class="mgr-tabs" style="margin-bottom:18px;">
+      <button class="mgr-tab active" id="mgrCommsSubTabNotes">📝 ملاحظات قسم التخطيط</button>
+      <button class="mgr-tab" id="mgrCommsSubTabDecisions">📝 قرارات خاصة بمشاريعك</button>
+      <button class="mgr-tab" id="mgrCommsSubTabChallenges" style="position:relative;">🚨 التحديات</button>
+      <button class="mgr-tab" id="mgrCommsSubTabRequests">📮 الطلبات لقسم التخطيط</button>
     </div>
-    <div class="pending-list">
-      <h3>📝 قرارات وملاحظات الاجتماعات الخاصة ببرامجك</h3>
-      <div id="mgrDecisionsList"></div>
-    </div>
-    <div class="pending-list">
-      <h3>🚨 سجل تحديات مشاريعك</h3>
-      <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
-      <div id="mgrChallengesList"></div>
-    </div>
-    <div class="pending-list">
-      <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
-      <div class="section-desc" style="margin-bottom:14px;">مثلاً: طلب فتح مشروع لتعديل الاسم، أو ملاحظة عامة (تغيير كلمة المرور...) أو أي طلب آخر</div>
-      <div class="request-add-form">
-        <select id="mgrRequestProgram"><option value="">البرنامج المعني (اختياري)</option></select>
-        <select id="mgrRequestProject"><option value="">المشروع المعني (اختياري)</option></select>
-        <textarea id="mgrRequestText" rows="2" placeholder="نص الطلب أو الملاحظة..."></textarea>
-        <button class="add-btn" id="mgrSendRequestBtn">📮 إرسال الطلب</button>
+    <div id="mgrCommsNotesWrap">
+      <div class="pending-list">
+        <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+        <div id="mgrPendingNotesList"></div>
       </div>
-      <div id="mgrRequestsList" style="margin-top:16px;"></div>
+    </div>
+    <div id="mgrCommsDecisionsWrap" class="hidden">
+      <div class="pending-list">
+        <h3>📝 قرارات وملاحظات الاجتماعات الخاصة ببرامجك</h3>
+        <div id="mgrDecisionsList"></div>
+      </div>
+    </div>
+    <div id="mgrCommsChallengesWrap" class="hidden">
+      <div class="pending-list">
+        <h3>🚨 سجل تحديات مشاريعك</h3>
+        <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
+        <button class="add-btn" id="mgrAddChallengeBtn" style="background:#B3202E;margin-bottom:16px;">🚨 تسجيل تحدٍّ جديد</button>
+        <div id="mgrChallengesList"></div>
+      </div>
+    </div>
+    <div id="mgrCommsRequestsWrap" class="hidden">
+      <div class="pending-list">
+        <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
+        <div class="section-desc" style="margin-bottom:14px;">مثلاً: طلب فتح مشروع لتعديل الاسم، أو ملاحظة عامة (تغيير كلمة المرور...) أو أي طلب آخر</div>
+        <div class="request-add-form">
+          <select id="mgrRequestProgram"><option value="">البرنامج المعني (اختياري)</option></select>
+          <select id="mgrRequestProject"><option value="">المشروع المعني (اختياري)</option></select>
+          <textarea id="mgrRequestText" rows="2" placeholder="نص الطلب أو الملاحظة..."></textarea>
+          <button class="add-btn" id="mgrSendRequestBtn">📮 إرسال الطلب</button>
+        </div>
+        <div id="mgrRequestsList" style="margin-top:16px;"></div>
+      </div>
     </div>
   </div>
   <div class="dash-wrap hidden" id="mgrSPIView">
@@ -1626,7 +1657,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="pmTabInput">📥 مشاريعي</button>
       <button class="mgr-tab" id="pmTabOverview">📊 لوحة المتابعة</button>
-      <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 التواصل/ملاحظات التخطيط <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 الملاحظات والتحديات <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="pmTabSPI">📈 مؤشر الأداء الزمني SPI</button>
       <button class="mgr-tab" id="pmTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
@@ -1655,32 +1686,47 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 
   <div class="dash-wrap hidden" id="pmCommsView">
-    <div class="section-title">📨 التواصل/ملاحظات التخطيط</div>
-    <div class="section-desc">ملاحظات الخطط التفصيلية تحتاج إجراء منك، قرارات وملاحظات خاصة بمشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="section-title">📨 الملاحظات والتحديات</div>
+    <div class="section-desc">ملاحظات الخطط التفصيلية، قرارات خاصة بمشاريعك، سجل تحديات مشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
     <div class="filters-bar" style="margin-bottom:16px;">
       <select id="pmCommsFilterYear"><option value="">كل السنوات</option></select>
     </div>
-    <div class="pending-list">
-      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
-      <div id="pmPendingNotesList"></div>
+    <div class="mgr-tabs" style="margin-bottom:18px;">
+      <button class="mgr-tab active" id="pmCommsSubTabNotes">📝 ملاحظات قسم التخطيط</button>
+      <button class="mgr-tab" id="pmCommsSubTabDecisions">📝 قرارات خاصة بمشاريعك</button>
+      <button class="mgr-tab" id="pmCommsSubTabChallenges">🚨 التحديات</button>
+      <button class="mgr-tab" id="pmCommsSubTabRequests">📮 الطلبات لقسم التخطيط</button>
     </div>
-    <div class="pending-list">
-      <h3>📝 قرارات وملاحظات خاصة بمشاريعك</h3>
-      <div id="pmDecisionsList"></div>
-    </div>
-    <div class="pending-list">
-      <h3>🚨 سجل تحديات مشاريعك</h3>
-      <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
-      <div id="pmChallengesList"></div>
-    </div>
-    <div class="pending-list">
-      <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
-      <div class="request-add-form">
-        <select id="pmRequestProject"><option value="">المشروع المعني (اختياري)</option></select>
-        <textarea id="pmRequestText" rows="2" placeholder="نص الطلب أو الملاحظة..."></textarea>
-        <button class="add-btn" id="pmSendRequestBtn">📮 إرسال الطلب</button>
+    <div id="pmCommsNotesWrap">
+      <div class="pending-list">
+        <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+        <div id="pmPendingNotesList"></div>
       </div>
-      <div id="pmRequestsList" style="margin-top:16px;"></div>
+    </div>
+    <div id="pmCommsDecisionsWrap" class="hidden">
+      <div class="pending-list">
+        <h3>📝 قرارات وملاحظات خاصة بمشاريعك</h3>
+        <div id="pmDecisionsList"></div>
+      </div>
+    </div>
+    <div id="pmCommsChallengesWrap" class="hidden">
+      <div class="pending-list">
+        <h3>🚨 سجل تحديات مشاريعك</h3>
+        <div class="section-desc" style="margin-bottom:14px;">كل التحديات التي سجّلتها عبر مشاريعك، وحالتها الحالية (بما في ذلك ردّ قسم التخطيط أو المدير العام)</div>
+        <button class="add-btn" id="pmAddChallengeBtn" style="background:#B3202E;margin-bottom:16px;">🚨 تسجيل تحدٍّ جديد</button>
+        <div id="pmChallengesList"></div>
+      </div>
+    </div>
+    <div id="pmCommsRequestsWrap" class="hidden">
+      <div class="pending-list">
+        <h3>📮 طلباتي لقسم التخطيط والدراسات</h3>
+        <div class="request-add-form">
+          <select id="pmRequestProject"><option value="">المشروع المعني (اختياري)</option></select>
+          <textarea id="pmRequestText" rows="2" placeholder="نص الطلب أو الملاحظة..."></textarea>
+          <button class="add-btn" id="pmSendRequestBtn">📮 إرسال الطلب</button>
+        </div>
+        <div id="pmRequestsList" style="margin-top:16px;"></div>
+      </div>
     </div>
   </div>
   <div class="dash-wrap hidden" id="pmSPIView">
@@ -4371,6 +4417,7 @@ function switchPMTab(tab){
     document.getElementById("pmCommsFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
     document.getElementById("pmCommsFilterYear").value = prevY;
     document.getElementById("pmCommsFilterYear").onchange = renderPMComms;
+    switchPMCommsSubTab("notes");
     buildPMRequestForm(); renderPMComms();
   }
   if(tab==="spi"){
@@ -4398,6 +4445,21 @@ document.getElementById("pmTabOverview").onclick = ()=> switchPMTab("overview");
 document.getElementById("pmTabComms").onclick = ()=> switchPMTab("comms");
 document.getElementById("pmTabSPI").onclick = ()=> switchPMTab("spi");
 document.getElementById("pmTabAnalytics").onclick = ()=> switchPMTab("analytics");
+function switchPMCommsSubTab(sub){
+  document.getElementById("pmCommsSubTabNotes").classList.toggle("active", sub==="notes");
+  document.getElementById("pmCommsSubTabDecisions").classList.toggle("active", sub==="decisions");
+  document.getElementById("pmCommsSubTabChallenges").classList.toggle("active", sub==="challenges");
+  document.getElementById("pmCommsSubTabRequests").classList.toggle("active", sub==="requests");
+  document.getElementById("pmCommsNotesWrap").classList.toggle("hidden", sub!=="notes");
+  document.getElementById("pmCommsDecisionsWrap").classList.toggle("hidden", sub!=="decisions");
+  document.getElementById("pmCommsChallengesWrap").classList.toggle("hidden", sub!=="challenges");
+  document.getElementById("pmCommsRequestsWrap").classList.toggle("hidden", sub!=="requests");
+}
+document.getElementById("pmCommsSubTabNotes").onclick = ()=> switchPMCommsSubTab("notes");
+document.getElementById("pmCommsSubTabDecisions").onclick = ()=> switchPMCommsSubTab("decisions");
+document.getElementById("pmCommsSubTabChallenges").onclick = ()=> switchPMCommsSubTab("challenges");
+document.getElementById("pmCommsSubTabRequests").onclick = ()=> switchPMCommsSubTab("requests");
+document.getElementById("pmAddChallengeBtn").onclick = ()=> openAddChallengeModal("pm");
 function switchPMAnSubTab(sub){
   ["Danger","Cascade","Critical","Workload"].forEach(s=>{
     document.getElementById("pmAnTab"+s).classList.toggle("active", s.toLowerCase()===sub);
@@ -4890,6 +4952,7 @@ function switchMgrTab(tab){
     document.getElementById("mgrCommsFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
     document.getElementById("mgrCommsFilterYear").value = prevY;
     document.getElementById("mgrCommsFilterYear").onchange = renderManagerComms;
+    switchMgrCommsSubTab("notes");
     buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط");
   }
   if(tab==="spi"){
@@ -4920,6 +4983,21 @@ document.getElementById("mgrTabByProgram").onclick = ()=> switchMgrTab("byprogra
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
 document.getElementById("mgrTabAnalytics").onclick = ()=> switchMgrTab("analytics");
+function switchMgrCommsSubTab(sub){
+  document.getElementById("mgrCommsSubTabNotes").classList.toggle("active", sub==="notes");
+  document.getElementById("mgrCommsSubTabDecisions").classList.toggle("active", sub==="decisions");
+  document.getElementById("mgrCommsSubTabChallenges").classList.toggle("active", sub==="challenges");
+  document.getElementById("mgrCommsSubTabRequests").classList.toggle("active", sub==="requests");
+  document.getElementById("mgrCommsNotesWrap").classList.toggle("hidden", sub!=="notes");
+  document.getElementById("mgrCommsDecisionsWrap").classList.toggle("hidden", sub!=="decisions");
+  document.getElementById("mgrCommsChallengesWrap").classList.toggle("hidden", sub!=="challenges");
+  document.getElementById("mgrCommsRequestsWrap").classList.toggle("hidden", sub!=="requests");
+}
+document.getElementById("mgrCommsSubTabNotes").onclick = ()=> switchMgrCommsSubTab("notes");
+document.getElementById("mgrCommsSubTabDecisions").onclick = ()=> switchMgrCommsSubTab("decisions");
+document.getElementById("mgrCommsSubTabChallenges").onclick = ()=> switchMgrCommsSubTab("challenges");
+document.getElementById("mgrCommsSubTabRequests").onclick = ()=> switchMgrCommsSubTab("requests");
+document.getElementById("mgrAddChallengeBtn").onclick = ()=> openAddChallengeModal("exec");
 function switchMgrAnSubTab(sub){
   ["Danger","Cascade","Critical","Workload"].forEach(s=>{
     document.getElementById("mgrAnTab"+s).classList.toggle("active", s.toLowerCase()===sub);
@@ -6969,6 +7047,26 @@ document.getElementById("editEmailSubmit").onclick = ()=>{
   savePromise.then(ok=>{
     if(ok){ document.getElementById("editEmailModal").classList.add("hidden"); }
   });
+};
+// يفتح نافذة "تسجيل تحدٍّ جديد" من تبويب الملاحظات والتحديات — مباشرةً دون الحاجة لفتح الخطة التفصيلية الكاملة
+function openAddChallengeModal(role){
+  const myProjects = role==="exec" ? ALL_PROJECTS.filter(p=>p.govManager===currentManager && !p.closed) : getPMProjects().filter(p=>!p.closed);
+  const sel = document.getElementById("addChallengeProjectSelect");
+  sel.innerHTML = myProjects.map(p=>`<option value="${p.id}">${escapeHtml(p.projectName)} — ${p.programCode}</option>`).join("");
+  document.getElementById("addChallengeTextInput").value = "";
+  document.getElementById("addChallengeError").textContent = "";
+  document.getElementById("addChallengeModal").dataset.role = role;
+  document.getElementById("addChallengeModal").classList.remove("hidden");
+}
+document.getElementById("addChallengeCancel").onclick = ()=> document.getElementById("addChallengeModal").classList.add("hidden");
+document.getElementById("addChallengeSubmit").onclick = ()=>{
+  const projectId = document.getElementById("addChallengeProjectSelect").value;
+  const text = document.getElementById("addChallengeTextInput").value.trim();
+  const errEl = document.getElementById("addChallengeError");
+  if(!projectId){ errEl.textContent = "يجب اختيار المشروع المعني."; return; }
+  if(!text){ errEl.textContent = "يجب كتابة وصف التحدي."; return; }
+  addChallenge(projectId, text, getActorName());
+  document.getElementById("addChallengeModal").classList.add("hidden");
 };
 function openCloseProjectModal(id){
   pendingCloseProjectId = id;
@@ -10239,6 +10337,8 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("dgScreen").classList.contains("hidden")) updateDGChallengesBadge();
   if(!document.getElementById("managerScreen").classList.contains("hidden")) updateMgrCommsBadge();
   if(!document.getElementById("projectManagerScreen").classList.contains("hidden")) updatePMCommsBadge();
+  if(!document.getElementById("mgrCommsView").classList.contains("hidden")) renderManagerComms();
+  if(!document.getElementById("pmCommsView").classList.contains("hidden")) renderPMComms();
   refreshOpenPlanningNotesIfNeeded();
 });
 listenToProgramCards(()=>{
