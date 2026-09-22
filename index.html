@@ -2448,10 +2448,15 @@ function getCriticalStepForProject(detail){
   for(let pi=0; pi<detail.phases.length; pi++){
     const ph = detail.phases[pi];
     const steps = ph.steps||[];
+    const namedSteps = steps.filter(s=>s.name);
+    const phaseTotalWeeks = namedSteps.reduce((s,st)=>s+(st.durationWeeks||0),0);
     for(let si=0; si<steps.length; si++){
       const st = steps[si];
       if(st.name && st.status!=="مكتمل"){
-        return { phaseName: ph.name, phaseWeight: ph.weight, stepName: st.name, seq:`${pi+1}.${si+1}`, phaseIdx:pi, stepIdx:si };
+        // وزن الخطوة نفسها ضمن المشروع الكامل = وزن مرحلتها × حصّتها من مدة المرحلة (وليس وزن المرحلة كاملة)
+        const stepShareOfPhase = phaseTotalWeeks>0 ? (st.durationWeeks||0)/phaseTotalWeeks : (namedSteps.length>0 ? 1/namedSteps.length : 1);
+        const stepWeight = ph.weight * stepShareOfPhase;
+        return { phaseName: ph.name, phaseWeight: ph.weight, stepWeight, stepName: st.name, seq:`${pi+1}.${si+1}`, phaseIdx:pi, stepIdx:si };
       }
     }
   }
@@ -2505,10 +2510,10 @@ function renderPersonalAnalyticsHTML(containerPrefix, projects){
   }).filter(r=>r.crit);
   document.getElementById(containerPrefix+"CriticalList").innerHTML = criticalRows.length===0
     ? `<div class="empty-note">لا توجد بيانات كافية حاليًا.</div>`
-    : criticalRows.sort((a,b)=> b.crit.phaseWeight-a.crit.phaseWeight).map(r=>`
+    : criticalRows.sort((a,b)=> b.crit.stepWeight-a.crit.stepWeight).map(r=>`
       <div class="phase-alert-row late" data-project-id="${r.project.id}" data-phase-idx="${r.crit.phaseIdx}" data-step-idx="${r.crit.stepIdx}">
         <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: [${r.crit.seq}] ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
-        <span class="phase-alert-badge late">🎯 وزن مرحلتها ${Math.round(r.crit.phaseWeight*100)}%</span>
+        <span class="phase-alert-badge late">🎯 وزن الخطوة ${Math.round(r.crit.stepWeight*100)}%</span>
       </div>`).join("");
 
   const workloadRows = computePersonalWorkload(projects);
@@ -8190,10 +8195,10 @@ function renderAnalyticsScreen(){
   }).filter(r=>r.crit);
   document.getElementById("anCriticalList").innerHTML = criticalRows.length===0
     ? `<div class="empty-note">لا توجد بيانات كافية حاليًا.</div>`
-    : criticalRows.sort((a,b)=> b.crit.phaseWeight-a.crit.phaseWeight).map(r=>`
+    : criticalRows.sort((a,b)=> b.crit.stepWeight-a.crit.stepWeight).map(r=>`
       <div class="phase-alert-row late" data-project-id="${r.project.id}" data-phase-idx="${r.crit.phaseIdx}" data-step-idx="${r.crit.stepIdx}">
         <div><b>${escapeHtml(r.project.projectName)}</b> — الخطوة الحرجة: [${r.crit.seq}] ${r.crit.phaseName} / ${escapeHtml(r.crit.stepName)}</div>
-        <span class="phase-alert-badge late">🎯 وزن مرحلتها ${Math.round(r.crit.phaseWeight*100)}%</span>
+        <span class="phase-alert-badge late">🎯 وزن الخطوة ${Math.round(r.crit.stepWeight*100)}%</span>
       </div>`).join("");
   document.getElementById("anCriticalList").querySelectorAll("[data-project-id]").forEach(el=> el.onclick = ()=> openProjectDetailForm(el.dataset.projectId, Number(el.dataset.phaseIdx), Number(el.dataset.stepIdx)));
 
