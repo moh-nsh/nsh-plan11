@@ -1345,6 +1345,9 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap" style="padding-bottom:0;">
     <div class="section-title">🔬 تحليلات متقدمة</div>
     <div class="section-desc">نظام إنذار مبكر وتحليل أعمق لتفاصيل الخطة — يعتمد على البيانات الحالية دون الحاجة لأي إدخال إضافي</div>
+    <div class="filters-bar">
+      <select id="anFilterYear"><option value="">كل السنوات</option></select>
+    </div>
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="anTabDanger">⚠️ منطقة الخطر</button>
       <button class="mgr-tab" id="anTabCascade">🔗 الأثر التسلسلي</button>
@@ -1481,7 +1484,8 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="mgrTabInput">📥 إدخال المشاريع</button>
       <button class="mgr-tab" id="mgrTabOverview">📊 لوحة المتابعة</button>
-      <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrTabByProgram">📂 مشاريعي حسب البرنامج</button>
+      <button class="mgr-tab" id="mgrTabComms" style="position:relative;">📨 التواصل/ملاحظات التخطيط <span id="mgrCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="mgrTabSPI">📈 مؤشر الأداء الزمني SPI</button>
       <button class="mgr-tab" id="mgrTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
@@ -1509,10 +1513,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="mgrPerformanceChartWrap" style="margin-bottom:24px;"></div>
 
     <div class="pending-list">
-      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
-      <div id="mgrPendingNotesList"></div>
-    </div>
-    <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
       <div id="mgrUpcomingList"></div>
     </div>
@@ -1520,15 +1520,21 @@ tr.rejected-row td{background:#FDF6F6;}
       <h3>🔴 مراحل متأخرة</h3>
       <div id="mgrLateList"></div>
     </div>
+  </div>
 
-    <div class="section-title" style="margin-top:6px;font-size:17px;">📂 مشاريعي حسب البرنامج</div>
+  <div class="dash-wrap hidden" id="mgrByProgramView">
+    <div class="section-title" style="margin-top:0;">📂 مشاريعي حسب البرنامج</div>
     <div class="section-desc" style="margin-bottom:14px;">اضغط على أي مشروع لعرض تفاصيله الكاملة والخط الزمني مباشرة هنا، بدون الحاجة لفتح الخطة التفصيلية</div>
     <div id="mgrOverviewContent"></div>
   </div>
 
   <div class="dash-wrap hidden" id="mgrCommsView">
-    <div class="section-title">📨 التواصل مع قسم التخطيط والدراسات</div>
-    <div class="section-desc">قرارات وملاحظات الاجتماعات الخاصة ببرامجك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="section-title">📨 التواصل/ملاحظات التخطيط</div>
+    <div class="section-desc">ملاحظات الخطط التفصيلية تحتاج إجراء منك، قرارات وملاحظات الاجتماعات الخاصة ببرامجك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="pending-list">
+      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+      <div id="mgrPendingNotesList"></div>
+    </div>
     <div class="pending-list">
       <h3>📝 قرارات وملاحظات الاجتماعات الخاصة ببرامجك</h3>
       <div id="mgrDecisionsList"></div>
@@ -1609,7 +1615,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="pmTabInput">📥 مشاريعي</button>
       <button class="mgr-tab" id="pmTabOverview">📊 لوحة المتابعة</button>
-      <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 التواصل مع قسم التخطيط <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmTabComms" style="position:relative;">📨 التواصل/ملاحظات التخطيط <span id="pmCommsBadge" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="pmTabSPI">📈 مؤشر الأداء الزمني SPI</button>
       <button class="mgr-tab" id="pmTabAnalytics">🔬 تحليلات متقدمة</button>
     </div>
@@ -1628,10 +1634,6 @@ tr.rejected-row td{background:#FDF6F6;}
     <div id="pmRankingCards" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
     <div id="pmPerformanceChartWrap" style="margin-bottom:24px;"></div>
     <div class="pending-list">
-      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
-      <div id="pmPendingNotesList"></div>
-    </div>
-    <div class="pending-list">
       <h3>⏰ مراحل ستنتهي خلال أسبوع</h3>
       <div id="pmUpcomingList"></div>
     </div>
@@ -1642,8 +1644,12 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 
   <div class="dash-wrap hidden" id="pmCommsView">
-    <div class="section-title">📨 التواصل مع قسم التخطيط والدراسات</div>
-    <div class="section-desc">قرارات وملاحظات خاصة بمشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="section-title">📨 التواصل/ملاحظات التخطيط</div>
+    <div class="section-desc">ملاحظات الخطط التفصيلية تحتاج إجراء منك، قرارات وملاحظات خاصة بمشاريعك، وطلباتك المرسلة لقسم التخطيط</div>
+    <div class="pending-list">
+      <h3>📝 ملاحظات قسم التخطيط تحتاج إجراء منك</h3>
+      <div id="pmPendingNotesList"></div>
+    </div>
     <div class="pending-list">
       <h3>📝 قرارات وملاحظات خاصة بمشاريعك</h3>
       <div id="pmDecisionsList"></div>
@@ -4390,23 +4396,6 @@ function renderPMOverview(){
       </div>`;
   }
 
-  // ملاحظات قسم التخطيط التي تحتاج إجراء
-  const pmPendingNotesBox = document.getElementById("pmPendingNotesList");
-  const pmPendingNotes = getPendingPlanningNotes(projects);
-  pmPendingNotesBox.innerHTML = pmPendingNotes.length===0
-    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
-    : pmPendingNotes.map(({project, note})=>`
-      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
-        <div>
-          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
-          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
-        </div>
-        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
-      </div>`).join("");
-  pmPendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
-    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
-  });
-
   const upcomingEntries = [], lateEntries = [];
   projects.forEach(pr=>{
     findUpcomingSteps(pr,7).forEach(s=> upcomingEntries.push({project:pr, step:s}));
@@ -4456,6 +4445,22 @@ document.getElementById("pmSendRequestBtn").onclick = ()=>{
 function renderPMComms(){
   const projects = getPMProjects();
   const projectIds = projects.map(p=>p.id);
+  // ملاحظات قسم التخطيط التي تحتاج إجراء
+  const pmPendingNotesBox = document.getElementById("pmPendingNotesList");
+  const pmPendingNotes = getPendingPlanningNotes(projects);
+  pmPendingNotesBox.innerHTML = pmPendingNotes.length===0
+    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
+    : pmPendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
+      </div>`).join("");
+  pmPendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
+  });
   document.getElementById("pmChallengesList").innerHTML = myChallengesListHTML(projects);
   document.getElementById("pmChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
@@ -4688,15 +4693,18 @@ function checkAndShowPMPopup(){
 function switchMgrTab(tab){
   document.getElementById("mgrTabInput").classList.toggle("active", tab==="input");
   document.getElementById("mgrTabOverview").classList.toggle("active", tab==="overview");
+  document.getElementById("mgrTabByProgram").classList.toggle("active", tab==="byprogram");
   document.getElementById("mgrTabComms").classList.toggle("active", tab==="comms");
   document.getElementById("mgrTabSPI").classList.toggle("active", tab==="spi");
   document.getElementById("mgrTabAnalytics").classList.toggle("active", tab==="analytics");
   document.getElementById("mgrInputView").classList.toggle("hidden", tab!=="input");
   document.getElementById("mgrOverviewView").classList.toggle("hidden", tab!=="overview");
+  document.getElementById("mgrByProgramView").classList.toggle("hidden", tab!=="byprogram");
   document.getElementById("mgrCommsView").classList.toggle("hidden", tab!=="comms");
   document.getElementById("mgrSPIView").classList.toggle("hidden", tab!=="spi");
   document.getElementById("mgrAnalyticsView").classList.toggle("hidden", tab!=="analytics");
   if(tab==="overview"){ buildManagerOverviewFilters(); renderManagerOverview(); logActivity(currentManager, "view_overview", ""); }
+  if(tab==="byprogram"){ renderManagerOverview(); logActivity(currentManager, "view_overview", "مشاريعي حسب البرنامج"); }
   if(tab==="comms"){ buildManagerRequestForm(); renderManagerComms(); logActivity(currentManager, "view_overview", "التواصل مع قسم التخطيط"); }
   if(tab==="spi"){
     buildSPIFilterSelects("mgrSpiFilterYear","mgrSpiFilterGoal","mgrSpiFilterProgram", renderManagerSPIScreen);
@@ -4710,6 +4718,7 @@ function switchMgrTab(tab){
 }
 document.getElementById("mgrTabInput").onclick = ()=> switchMgrTab("input");
 document.getElementById("mgrTabOverview").onclick = ()=> switchMgrTab("overview");
+document.getElementById("mgrTabByProgram").onclick = ()=> switchMgrTab("byprogram");
 document.getElementById("mgrTabComms").onclick = ()=> switchMgrTab("comms");
 document.getElementById("mgrTabSPI").onclick = ()=> switchMgrTab("spi");
 document.getElementById("mgrTabAnalytics").onclick = ()=> switchMgrTab("analytics");
@@ -4878,6 +4887,22 @@ function updatePMCommsBadge(){
 }
 function renderManagerComms(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
+  // ملاحظات قسم التخطيط التي تحتاج إجراء
+  const pendingNotesBox = document.getElementById("mgrPendingNotesList");
+  const pendingNotes = getPendingPlanningNotes(myProjects);
+  pendingNotesBox.innerHTML = pendingNotes.length===0
+    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
+    : pendingNotes.map(({project, note})=>`
+      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
+        <div>
+          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
+          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
+        </div>
+        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
+      </div>`).join("");
+  pendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
+    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
+  });
   document.getElementById("mgrChallengesList").innerHTML = myChallengesListHTML(myProjects);
   document.getElementById("mgrChallengesList").querySelectorAll("[data-project-id]").forEach(row=>{
     row.onclick = ()=>{
@@ -5057,23 +5082,6 @@ function renderManagerOverview(){
         }).join("")}
       </div>`;
   }
-
-  // ملاحظات قسم التخطيط التي تحتاج إجراء
-  const pendingNotesBox = document.getElementById("mgrPendingNotesList");
-  const pendingNotes = getPendingPlanningNotes(myProjects);
-  pendingNotesBox.innerHTML = pendingNotes.length===0
-    ? `<div class="empty-note">لا توجد ملاحظات تحتاج إجراء حاليًا ✅</div>`
-    : pendingNotes.map(({project, note})=>`
-      <div class="phase-alert-row ${note.revertReason?'late':'upcoming'} pending-note-alert" data-project-id="${project.id}">
-        <div>
-          <b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(note.text)}
-          ${note.revertReason ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">🔁 أُعيدت — السبب: ${escapeHtml(note.revertReason)}</div>` : ""}
-        </div>
-        <span class="phase-alert-badge ${note.revertReason?'late':'upcoming'}">${note.revertReason?"يحتاج إعادة":"جديدة"}</span>
-      </div>`).join("");
-  pendingNotesBox.querySelectorAll(".pending-note-alert").forEach(row=>{
-    row.onclick = ()=> openProjectDetailForm(row.dataset.projectId, null, null, true);
-  });
 
   // مراحل ستنتهي خلال أسبوع + مراحل متأخرة
   const upcomingBox = document.getElementById("mgrUpcomingList");
@@ -8139,6 +8147,10 @@ function renderAdminSPIScreen(){
 document.getElementById("navAnalyticsBtn").onclick = ()=>{
   showScreen("analyticsScreen");
   switchAnalyticsTab("danger");
+  const prevYear = document.getElementById("anFilterYear").value;
+  document.getElementById("anFilterYear").innerHTML = "<option value=''>كل السنوات</option>" + YEARS.map(y=>`<option value="${y}">${y}</option>`).join("");
+  document.getElementById("anFilterYear").value = prevYear;
+  document.getElementById("anFilterYear").onchange = renderAnalyticsScreen;
   renderAnalyticsScreen();
   logActivity(ADMIN_NAME, "view_analytics_screen", "");
 };
@@ -8163,7 +8175,8 @@ document.getElementById("anTabWorkload").onclick = ()=> switchAnalyticsTab("work
 document.getElementById("anTabYearly").onclick = ()=>{ switchAnalyticsTab("yearly"); renderYearlyComparisonChart(); };
 document.getElementById("anTabMonthly").onclick = ()=>{ switchAnalyticsTab("monthly"); renderMonthlySnapshotChart(); };
 function renderAnalyticsScreen(){
-  const activeProjects = ALL_PROJECTS.filter(p=>!p.closed);
+  const yearFilter = document.getElementById("anFilterYear").value;
+  const activeProjects = ALL_PROJECTS.filter(p=>!p.closed && (!yearFilter || String(p.year)===yearFilter));
 
   // منطقة الخطر
   const dangerSteps = getDangerZoneSteps(activeProjects);
