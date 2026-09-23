@@ -24,6 +24,10 @@
 <script src="exceljs.min.js"></script>
 <script src="chart.min.js"></script>
 <style>
+/* حجم/هامش الصفحة الافتراضي لكل التقارير المطبوعة (بورتريه دائمًا) — قاعدة @page واحدة موحَّدة فقط،
+   لأن قواعد @page لا تُقيَّد بسياق عنصر معيّن مهما وُضعت داخل أي استعلام وسائط، بل تُطبَّق على كل عملية طباعة في المستند بأكمله.
+   الاستثناء الوحيد (الخطة التفصيلية بشكل جدول أفقي) يُضبَط ببطاقة أنماط تُحقَن ديناميكيًا لحظة الطباعة فقط ثم تُزال فورًا — لا قاعدة @page ثابتة أخرى أبدًا */
+@page{ size:A4; margin:8mm; }
 :root{
   --navy:#1B2A3A;
   --navy-light:#2A3F55;
@@ -472,7 +476,6 @@ input,select{font-family:inherit;}
   .fm-table th,.fm-table td{padding:5px 3px;}
   .fm-table th{position:static;}
   .fm-table tr{page-break-inside:avoid;}
-  @page{ margin:8mm; }
 }
 @media print{ .comp-no-print{display:none !important;} }
 /* الشريط العلوي الثابت (يشمل قائمة الجوال المنسدلة) يجب أن يختفي دائمًا عند الطباعة —
@@ -567,7 +570,6 @@ input,select{font-family:inherit;}
 .cm-proj-name{text-align:right !important;font-weight:700;color:var(--navy);background:#FAFAFB;}
 @media print{
   #competitionReportScreen .filters-bar,#competitionReportScreen #competitionPrintBtn{display:none;}
-  @page{ margin:8mm; }
   .comp-page{box-shadow:none;border-radius:0;padding:6px 20px;}
   .comp-page:not(:last-child){page-break-after:always;}
   .comp-gauge-card{page-break-inside:avoid;}
@@ -856,7 +858,6 @@ tr.rejected-row td{background:#FDF6F6;}
   body.printing-detail-table #detailPrintTableContainer{display:block !important;}
   body.printing-challenges-table > *:not(#challengesPrintTableContainer){display:none !important;}
   body.printing-challenges-table #challengesPrintTableContainer{display:block !important;}
-  @page{ size:A4 landscape; margin:12mm; }
 }
 .dpt-container{font-family:'Cairo',sans-serif;direction:rtl;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 .dpt-title{background:var(--navy);color:#fff;font-weight:800;font-size:16px;padding:10px 14px;text-align:center;margin-bottom:0;}
@@ -1059,7 +1060,6 @@ tr.rejected-row td{background:#FDF6F6;}
 .exec-lbl{font-size:11.5px;color:var(--text-muted);margin-top:6px;}
 @media (max-width:900px){ .exec-stats-grid{grid-template-columns:repeat(2,1fr);} }
 @media print{
-  @page{ margin:12mm; }
   html,body{width:100%;}
   #execSummaryScreen .chart-box,#weeklyReportScreen .chart-box{height:220px;page-break-inside:avoid;}
   #execSummaryScreen,#weeklyReportScreen,#meetingScreen{max-width:100%;}
@@ -3161,6 +3161,8 @@ function myChallengesListHTML(projects){
       ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
     const dgSolutionInfo = challenge.dgSolution
       ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : "";
+    const alertBtn = challenge.status==="open"
+      ? `<div class="note-actions"><button class="chal-alert-exec-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="background:#25D366;">📤 تنبيه واتساب للمدير التنفيذي</button></div>` : "";
     return `
       <div class="planning-note-row ${statusInfo.cls}" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="cursor:pointer;">
         <div class="note-body">
@@ -3168,6 +3170,7 @@ function myChallengesListHTML(projects){
           <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
           ${progressInfo}${resolutionInfo}${dgSolutionInfo}
         </div>
+        ${alertBtn}
       </div>`;
   }).join("");
 }
@@ -3373,6 +3376,7 @@ function renderAllChallenges(){
         </div>
         <div class="note-actions">
           <button class="ach-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>
+          ${challenge.status==="open" ? `<button class="ach-alert-exec-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="background:#25D366;">📤 تنبيه للمدير التنفيذي</button>` : ""}
           <button class="ach-delete-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" title="حذف نهائي (إجراء إداري فقط)">🗑️</button>
         </div>
       </div>`;
@@ -3380,6 +3384,9 @@ function renderAllChallenges(){
 
   list.querySelectorAll(".ach-open-btn").forEach(btn=>{
     btn.onclick = ()=> openProjectDetailForm(btn.dataset.projectId);
+  });
+  list.querySelectorAll(".ach-alert-exec-btn").forEach(btn=>{
+    btn.onclick = ()=> sendChallengeAlertToExec(btn.dataset.projectId, btn.dataset.challengeId);
   });
   list.querySelectorAll(".ach-delete-btn").forEach(btn=>{
     btn.onclick = ()=>{
@@ -3666,6 +3673,25 @@ function buildReminderMessage(project, lateSteps, recipientLabel, recipientName,
   body += `يُرجى تحديث حالة التنفيذ على منصة "رصد" في أقرب وقت ممكن، عبر الرابط التالي:\n${PLATFORM_URL}\n\nأو التواصل مع قسم التخطيط والدراسات في حال وجود أي معوقات.\n\n`;
   body += `مع الشكر،\nقسم التخطيط والدراسات\nدائرة التخطيط والتنظيم الصحي\nالمديرية العامة للخدمات الصحية - محافظة شمال الشرقية`;
   return { subject, body };
+}
+// يبني ويرسل تنبيه واتساب للمدير التنفيذي عند وجود تحدٍّ جديد يحتاج معالجته — بنفس أسلوب تذكير الخطوات المتأخرة (تاريخ + اسم المُرسِل)
+function sendChallengeAlertToExec(projectId, challengeId){
+  const project = ALL_PROJECTS.find(p=>p.id===projectId);
+  if(!project){ alert("تعذّر العثور على المشروع."); return; }
+  const detail = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
+  const challenge = detail && Array.isArray(detail.challengesList) ? detail.challengesList.find(c=>c.id===challengeId) : null;
+  if(!challenge){ alert("تعذّر العثور على التحدي."); return; }
+  const authRec = ALL_MANAGER_AUTH.find(a=>a.id===project.govManager);
+  const phone = authRec && authRec.phone;
+  if(!phone){ alert("لا يوجد رقم جوال مسجَّل للمدير التنفيذي. أضفه من صفحة كلمات المرور."); return; }
+  const senderName = prompt("اسمك (لتوثيق من قام بإرسال هذا التنبيه):", getActorName());
+  if(senderName===null) return;
+  if(!senderName.trim()){ alert("الرجاء كتابة الاسم."); return; }
+  const greeting = authRec && authRec.gender==="female" ? "الفاضلة" : (authRec && authRec.gender==="male" ? "الفاضل" : "الفاضل/الفاضلة");
+  const todayStr = new Date().toLocaleDateString("ar-OM", { year:"numeric", month:"2-digit", day:"2-digit" });
+  const msg = `${greeting} ${project.govManager}،\nيوجد تحدٍّ جديد سجّله ${challenge.createdBy} يحتاج متابعتك في مشروع "${project.projectName}" (${project.programCode}):\n"${challenge.text}"\n\nيُرجى الدخول لمنصة "رصد" لمتابعته:\n${PLATFORM_URL}\n\nتم إرسال هذا التنبيه بواسطة: ${senderName.trim()}\nالتاريخ: ${todayStr}\n\nقسم التخطيط والدراسات`;
+  window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(phone)}&text=${encodeURIComponent(msg)}`, "_blank");
+  logActivity(senderName.trim(), "send_challenge_whatsapp_alert", `${project.projectName} → ${project.govManager}`);
 }
 // channel: "email" | "whatsapp" | recipientType: "exec" | "pm" | pmEmployeeId مطلوب فقط لو recipientType==="pm"
 function sendDelayReminder(projectId, channel, recipientType, pmEmployeeId){
@@ -4679,6 +4705,12 @@ function renderPMComms(){
       openProjectDetailForm(row.dataset.projectId);
     };
   });
+  document.getElementById("pmChallengesList").querySelectorAll(".chal-alert-exec-btn").forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      sendChallengeAlertToExec(btn.dataset.projectId, btn.dataset.challengeId);
+    };
+  });
   const myDecisions = ALL_DECISIONS.filter(d=> d.projectId && projectIds.includes(d.projectId))
     .sort((a,b)=>{
       const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
@@ -5204,6 +5236,12 @@ function renderManagerComms(){
       const challenge = detail && Array.isArray(detail.challengesList) ? detail.challengesList.find(c=>c.id===row.dataset.challengeId) : null;
       if(project && challenge) markChallengeUpdatesSeenInPopup([{project, challenge}], currentManager);
       openProjectDetailForm(row.dataset.projectId);
+    };
+  });
+  document.getElementById("mgrChallengesList").querySelectorAll(".chal-alert-exec-btn").forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      sendChallengeAlertToExec(btn.dataset.projectId, btn.dataset.challengeId);
     };
   });
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
@@ -9529,8 +9567,17 @@ function wireDetailModalStaticEvents(){
     });
     document.getElementById("detailPrintTableContainer").innerHTML = buildDetailPrintTableHTML(project, fieldsData, phases);
     document.body.classList.add("printing-detail-table");
+    // حقن قاعدة @page بالاتجاه الأفقي مؤقتًا لهذه الطباعة فقط (جدول الخطة التفصيلية وحده يحتاج أفقيًا)، ثم إزالتها فورًا — لتفادي تأثيرها على أي تقرير آخر لاحقًا
+    const landscapeStyleTag = document.createElement("style");
+    landscapeStyleTag.id = "tempLandscapePageStyle";
+    landscapeStyleTag.textContent = "@media print{ @page{ size:A4 landscape; margin:12mm; } }";
+    document.head.appendChild(landscapeStyleTag);
     window.print();
-    setTimeout(()=> document.body.classList.remove("printing-detail-table"), 500);
+    setTimeout(()=>{
+      document.body.classList.remove("printing-detail-table");
+      const tag = document.getElementById("tempLandscapePageStyle");
+      if(tag) tag.remove();
+    }, 500);
   };
   document.getElementById("detailICSBtn").onclick = ()=>{
     const overlay = document.getElementById("detailModalOverlay");
