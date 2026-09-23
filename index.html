@@ -567,12 +567,16 @@ input,select{font-family:inherit;}
 .cm-proj-name{text-align:right !important;font-weight:700;color:var(--navy);background:#FAFAFB;}
 @media print{
   #competitionReportScreen .filters-bar,#competitionReportScreen #competitionPrintBtn{display:none;}
-  .comp-page{box-shadow:none;border-radius:0;}
+  @page{ margin:8mm; }
+  .comp-page{box-shadow:none;border-radius:0;padding:6px 20px;}
   .comp-page:not(:last-child){page-break-after:always;}
   .comp-gauge-card{page-break-inside:avoid;}
   .comp-program-group{page-break-inside:avoid;}
   .lb-mini-card,.lb-podium-card{page-break-inside:avoid;}
   .comp-matrix tr{page-break-inside:avoid;}
+  .comp-hero{margin-bottom:8px;padding-bottom:6px;}
+  .comp-hero-title{font-size:16px;}
+  .comp-stats-grid{margin-bottom:10px;}
 }
 
 .summary-card{
@@ -1556,10 +1560,10 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="mgrCommsFilterYear"><option value="">كل السنوات</option></select>
     </div>
     <div class="mgr-tabs" style="margin-bottom:18px;">
-      <button class="mgr-tab active" id="mgrCommsSubTabNotes">📝 ملاحظات قسم التخطيط</button>
-      <button class="mgr-tab" id="mgrCommsSubTabDecisions">📝 قرارات خاصة بمشاريعك</button>
-      <button class="mgr-tab" id="mgrCommsSubTabChallenges" style="position:relative;">🚨 التحديات</button>
-      <button class="mgr-tab" id="mgrCommsSubTabRequests">📮 الطلبات لقسم التخطيط</button>
+      <button class="mgr-tab active" id="mgrCommsSubTabNotes" style="position:relative;">📝 ملاحظات قسم التخطيط <span id="mgrCommsSubBadgeNotes" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrCommsSubTabDecisions" style="position:relative;">📝 قرارات خاصة بمشاريعك <span id="mgrCommsSubBadgeDecisions" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrCommsSubTabChallenges" style="position:relative;">🚨 التحديات <span id="mgrCommsSubBadgeChallenges" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="mgrCommsSubTabRequests" style="position:relative;">📮 الطلبات لقسم التخطيط <span id="mgrCommsSubBadgeRequests" class="req-badge hidden">0</span></button>
     </div>
     <div id="mgrCommsNotesWrap">
       <div class="pending-list">
@@ -1692,10 +1696,10 @@ tr.rejected-row td{background:#FDF6F6;}
       <select id="pmCommsFilterYear"><option value="">كل السنوات</option></select>
     </div>
     <div class="mgr-tabs" style="margin-bottom:18px;">
-      <button class="mgr-tab active" id="pmCommsSubTabNotes">📝 ملاحظات قسم التخطيط</button>
-      <button class="mgr-tab" id="pmCommsSubTabDecisions">📝 قرارات خاصة بمشاريعك</button>
-      <button class="mgr-tab" id="pmCommsSubTabChallenges">🚨 التحديات</button>
-      <button class="mgr-tab" id="pmCommsSubTabRequests">📮 الطلبات لقسم التخطيط</button>
+      <button class="mgr-tab active" id="pmCommsSubTabNotes" style="position:relative;">📝 ملاحظات قسم التخطيط <span id="pmCommsSubBadgeNotes" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmCommsSubTabDecisions" style="position:relative;">📝 قرارات خاصة بمشاريعك <span id="pmCommsSubBadgeDecisions" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmCommsSubTabChallenges" style="position:relative;">🚨 التحديات <span id="pmCommsSubBadgeChallenges" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="pmCommsSubTabRequests" style="position:relative;">📮 الطلبات لقسم التخطيط <span id="pmCommsSubBadgeRequests" class="req-badge hidden">0</span></button>
     </div>
     <div id="pmCommsNotesWrap">
       <div class="pending-list">
@@ -3306,7 +3310,7 @@ function printChallengesReport(){
     if(challenge.resolutionNote) historyParts.push(`✅ ${escapeHtml(challenge.resolvedBy)} (${fmtChallengeDate(challenge.resolvedAt)}): ${escapeHtml(challenge.resolutionNote)}`);
     if(challenge.dgSolution) historyParts.push(`🟣 حل المدير العام (${fmtChallengeDate(challenge.dgSolutionAt)}): ${escapeHtml(challenge.dgSolution)}`);
     if(challenge.status==="closed") historyParts.push(`✅ أُغلق بواسطة ${escapeHtml(challenge.closedBy)} (${fmtChallengeDate(challenge.closedAt)})`);
-    const historyText = historyParts.length>0 ? historyParts.join(" | ") : "—";
+    const historyText = historyParts.length>0 ? historyParts.join("<br>") : "—";
     return `
       <tr>
         <td>${escapeHtml(project.projectName)}<br><span style="font-size:9px;color:#666;">${project.programCode} — ${escapeHtml(project.programName)}</span></td>
@@ -4722,6 +4726,17 @@ function renderPMComms(){
             <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
           </div>`;
       }).join("");
+
+  // شارات التبويبات الفرعية الأربعة
+  const setSubBadgePM = (id, count)=>{
+    const el = document.getElementById(id);
+    if(count>0){ el.textContent = count; el.classList.remove("hidden"); }
+    else el.classList.add("hidden");
+  };
+  setSubBadgePM("pmCommsSubBadgeNotes", pmPendingNotes.length);
+  setSubBadgePM("pmCommsSubBadgeDecisions", myDecisions.filter(d=>!d.resolved).length);
+  setSubBadgePM("pmCommsSubBadgeChallenges", getUnseenChallengeUpdatesForPopup(projects, currentProjectManagerName).length);
+  setSubBadgePM("pmCommsSubBadgeRequests", myRequests.filter(r=>r.status==="open").length);
 }
 
 function checkAndShowLateStepsPopup(){
@@ -5248,6 +5263,17 @@ function renderManagerComms(){
         </div>`;
     }).join("");
   }
+
+  // شارات التبويبات الفرعية الأربعة
+  const setSubBadge = (id, count)=>{
+    const el = document.getElementById(id);
+    if(count>0){ el.textContent = count; el.classList.remove("hidden"); }
+    else el.classList.add("hidden");
+  };
+  setSubBadge("mgrCommsSubBadgeNotes", pendingNotes.length);
+  setSubBadge("mgrCommsSubBadgeDecisions", myDecisions.filter(d=>!d.resolved).length);
+  setSubBadge("mgrCommsSubBadgeChallenges", getUnseenChallengeUpdatesForPopup(myProjects, currentManager).length + getNewOpenChallengesForExec(myProjects, currentManager).length);
+  setSubBadge("mgrCommsSubBadgeRequests", myRequests.filter(r=>r.status==="open").length);
 }
 
 function renderManagerOverview(){
