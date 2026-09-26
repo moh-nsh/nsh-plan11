@@ -8518,7 +8518,18 @@ document.getElementById("navFullMatrixBtn").onclick = ()=>{
   renderFullMatrix();
   logActivity(ADMIN_NAME, "view_full_matrix", "");
 };
-document.getElementById("fullMatrixPrintBtn").onclick = ()=> window.print();
+document.getElementById("fullMatrixPrintBtn").onclick = ()=>{
+  // حقن قاعدة @page بالاتجاه الأفقي مؤقتًا لهذه الطباعة فقط (المصفوفة الشاملة تحتاج أفقيًا لعرض أعمدتها الـ11 بوضوح)، ثم إزالتها فورًا — بنفس الأسلوب المُستخدَم لجدول الخطة التفصيلية
+  const landscapeStyleTag = document.createElement("style");
+  landscapeStyleTag.id = "tempLandscapePageStyle";
+  landscapeStyleTag.textContent = "@media print{ @page{ size:A4 landscape; margin:10mm; } }";
+  document.head.appendChild(landscapeStyleTag);
+  window.print();
+  setTimeout(()=>{
+    const tag = document.getElementById("tempLandscapePageStyle");
+    if(tag) tag.remove();
+  }, 500);
+};
 document.getElementById("navSPIBtn").onclick = ()=>{
   showScreen("spiScreen");
   buildSPIFilterSelects("spiFilterYear","spiFilterGoal","spiFilterProgram", renderAdminSPIScreen);
