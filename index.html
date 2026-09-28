@@ -2147,12 +2147,10 @@ tr.rejected-row td{background:#FDF6F6;}
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">البرنامج التنفيذي (اختياري)</label><select id="corrProgram" class="corr-inp"></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المشروع (اختياري)</label><select id="corrProject" class="corr-inp"></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المستلم <span style="font-weight:400;color:var(--text-muted);">(تتحدد القائمة حسب اختياراتك)</span></label><select id="corrRecipient" class="corr-inp"></select></div>
-        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">قناة الإرسال</label>
-          <select id="corrChannel" class="corr-inp"><option value="whatsapp">💬 واتساب</option><option value="email">📧 بريد إلكتروني</option></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">اسم المُرسِل (للتوثيق)</label><input type="text" id="corrSender" class="corr-inp" maxlength="80"></div>
       </div>
-      <div id="corrSubjectWrap" style="display:none;flex-direction:column;gap:4px;margin-bottom:12px;">
-        <label class="corr-lbl">عنوان البريد</label>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+        <label class="corr-lbl">عنوان البريد <span style="font-weight:400;color:var(--text-muted);">(يُستخدم عند الإرسال بالبريد فقط، وله عنوان افتراضي إن تركته فارغًا)</span></label>
         <input type="text" id="corrSubject" class="corr-inp" maxlength="150" placeholder="مثال: دعوة لمناقشة نقاط على مشروعكم">
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
@@ -2166,7 +2164,10 @@ tr.rejected-row td{background:#FDF6F6;}
         <label class="corr-lbl" style="display:block;margin-bottom:4px;">معاينة الرسالة</label>
         <div id="corrPreview" style="white-space:pre-wrap;background:#F7F8FA;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#333;min-height:44px;"></div>
       </div>
-      <button class="add-btn" id="corrSendBtn">✉️ إرسال (فتح واتساب / البريد)</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="add-btn" id="corrSendWaBtn" style="background:#25D366;">💬 إرسال عبر واتساب</button>
+        <button class="add-btn" id="corrSendEmailBtn" style="background:#1E4E8C;">📧 إرسال عبر البريد الإلكتروني</button>
+      </div>
     </div>
 
     <div class="section-title" style="font-size:17px;">📜 سجل المراسلات المُرسَلة</div>
@@ -6167,17 +6168,14 @@ function corrUpdatePreview(){
   const box = document.getElementById("corrPreview");
   const rec = corrCurrentRecipient();
   const text = document.getElementById("corrText").value;
-  const isEmail = document.getElementById("corrChannel").value==="email";
-  document.getElementById("corrSubjectWrap").style.display = isEmail ? "flex" : "none";
   if(!rec){ box.textContent = "اختر المستلم لتظهر معاينة الرسالة."; return; }
   const sender = document.getElementById("corrSender").value || "…";
   box.textContent = corrComposeMessage(rec, text || "(نص الرسالة)", sender, document.getElementById("corrIncludeCtx").checked);
 }
-function corrSend(){
+function corrSend(channel){
   const rec = corrCurrentRecipient();
   const text = document.getElementById("corrText").value.trim();
   const sender = document.getElementById("corrSender").value.trim();
-  const channel = document.getElementById("corrChannel").value;
   const subject = (document.getElementById("corrSubject").value.trim()) || "مراسلة من قسم التخطيط والدراسات — منصة رصد";
   if(!rec){ alert("اختر المستلم أولًا."); return; }
   if(!text){ alert("اكتب نص الرسالة."); return; }
@@ -6276,10 +6274,10 @@ document.getElementById("dlTabAnnounce").onclick = ()=> switchDLTab("announce");
 document.getElementById("dlTabCorr").onclick = ()=> switchDLTab("corr");
 ["corrGoal","corrProgram","corrProject"].forEach(id=> document.getElementById(id).onchange = corrBuildSelects);
 document.getElementById("corrRecipient").onchange = corrUpdatePreview;
-document.getElementById("corrChannel").onchange = corrUpdatePreview;
 document.getElementById("corrIncludeCtx").onchange = corrUpdatePreview;
 ["corrText","corrSender"].forEach(id=> document.getElementById(id).oninput = corrUpdatePreview);
-document.getElementById("corrSendBtn").onclick = corrSend;
+document.getElementById("corrSendWaBtn").onclick = ()=> corrSend("whatsapp");
+document.getElementById("corrSendEmailBtn").onclick = ()=> corrSend("email");
 document.getElementById("corrLogSearch").oninput = renderCorrespondenceLog;
 document.getElementById("corrLogChannel").onchange = renderCorrespondenceLog;
 document.getElementById("corrDetailClose").onclick = ()=> document.getElementById("corrDetailModal").classList.add("hidden");
