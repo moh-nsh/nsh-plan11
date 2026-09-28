@@ -995,10 +995,18 @@ tr.rejected-row td{background:#FDF6F6;}
 .note-revert-reason{font-size:11.5px;color:var(--red);margin-top:4px;font-weight:700;}
 .note-meta{font-size:10.5px;color:var(--text-muted);margin-top:3px;}
 .note-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.corr-lbl{font-size:11.5px;font-weight:700;color:var(--navy);}
+.corr-inp{padding:9px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;}
 .note-mark-btn{background:#1E7A3D;color:#fff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:8px;white-space:nowrap;}
 .note-confirm-btn{background:#1E7A3D;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;}
 .note-revertback-btn{background:#EEF0F3;color:var(--navy);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;}
 .note-delete-btn{background:#FDEAEA;color:#B3202E;font-size:12px;padding:5px 9px;border-radius:8px;}
+.chal-start-progress-btn,.chal-add-action-btn,.chal-resolve-exec-btn,.chal-escalate-btn,.chal-close-btn{color:#fff;font-size:11.5px;font-weight:700;padding:7px 12px;border-radius:8px;white-space:nowrap;cursor:pointer;border:none;font-family:inherit;}
+.chal-start-progress-btn{background:#C9962E;}
+.chal-add-action-btn{background:#2A3F55;}
+.chal-resolve-exec-btn{background:#1E7A3D;}
+.chal-escalate-btn{background:#8B1420;}
+.chal-close-btn{background:#1B2A3A;}
 
 .docs-link-box{
   background:#EAF4FB;border:1px solid #B8DCF0;border-radius:10px;padding:14px 16px;margin-bottom:18px;
@@ -1257,6 +1265,19 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="modal-actions">
       <button class="btn-secondary" id="addChallengeCancel">إلغاء</button>
       <button class="btn-primary" id="addChallengeSubmit">🚨 تسجيل التحدي</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CORRESPONDENCE DETAIL MODAL (تفاصيل مراسلة مُرسَلة) ===================== -->
+<div id="corrDetailModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;text-align:right;">
+    <h3>✉️ تفاصيل المراسلة</h3>
+    <div id="corrDetailBody"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="corrDetailDelete" style="color:#B3202E;">🗑️ حذف من السجل</button>
+      <button class="btn-secondary" id="corrDetailCopy">📋 نسخ النص</button>
+      <button class="btn-primary" id="corrDetailClose">إغلاق</button>
     </div>
   </div>
 </div>
@@ -2017,6 +2038,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab" id="dlTabNotes">📋 ملاحظات الخطط التفصيلية</button>
       <button class="mgr-tab" id="dlTabChallenges">🚨 سجل التحديات</button>
       <button class="mgr-tab" id="dlTabAnnounce">📢 رسالة تنبيه منبثقة</button>
+      <button class="mgr-tab" id="dlTabCorr">✉️ مراسلات مخصصة</button>
     </div>
   </div>
 
@@ -2114,6 +2136,45 @@ tr.rejected-row td{background:#FDF6F6;}
       </div>
     </div>
     <div id="announcementsList"></div>
+  </div>
+
+  <div class="dash-wrap hidden" id="dlCorrView">
+    <div class="section-title" style="margin-top:0;">✉️ مراسلات مخصصة</div>
+    <div class="section-desc">أرسل رسالة واتساب أو بريدًا إلكترونيًا لمدير تنفيذي أو مدير مشروع بنص تكتبه أنت (مثل طلب حضور لمناقشة نقاط معيّنة)، مع تفاصيل البرنامج الاستراتيجي/التنفيذي/المشروع المختارة. تُسجَّل كل مراسلة بتاريخها ويمكن فتح تفاصيلها لاحقًا.</div>
+    <div class="pending-list">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:12px;">
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">البرنامج الاستراتيجي (اختياري)</label><select id="corrGoal" class="corr-inp"></select></div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">البرنامج التنفيذي (اختياري)</label><select id="corrProgram" class="corr-inp"></select></div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المشروع (اختياري)</label><select id="corrProject" class="corr-inp"></select></div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المستلم <span style="font-weight:400;color:var(--text-muted);">(تتحدد القائمة حسب اختياراتك)</span></label><select id="corrRecipient" class="corr-inp"></select></div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">قناة الإرسال</label>
+          <select id="corrChannel" class="corr-inp"><option value="whatsapp">💬 واتساب</option><option value="email">📧 بريد إلكتروني</option></select></div>
+        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">اسم المُرسِل (للتوثيق)</label><input type="text" id="corrSender" class="corr-inp" maxlength="80"></div>
+      </div>
+      <div id="corrSubjectWrap" style="display:none;flex-direction:column;gap:4px;margin-bottom:12px;">
+        <label class="corr-lbl">عنوان البريد</label>
+        <input type="text" id="corrSubject" class="corr-inp" maxlength="150" placeholder="مثال: دعوة لمناقشة نقاط على مشروعكم">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+        <label class="corr-lbl">نص الرسالة</label>
+        <textarea id="corrText" rows="4" class="corr-inp" placeholder="اكتب نص المراسلة، مثال: نأمل حضوركم يوم ... لمناقشة ..."></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;">
+        <input type="checkbox" id="corrIncludeCtx" checked style="width:16px;height:16px;"> تضمين تفاصيل البرنامج الاستراتيجي/التنفيذي/المشروع المختارة في الرسالة
+      </label>
+      <div style="margin-bottom:12px;">
+        <label class="corr-lbl" style="display:block;margin-bottom:4px;">معاينة الرسالة</label>
+        <div id="corrPreview" style="white-space:pre-wrap;background:#F7F8FA;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#333;min-height:44px;"></div>
+      </div>
+      <button class="add-btn" id="corrSendBtn">✉️ إرسال (فتح واتساب / البريد)</button>
+    </div>
+
+    <div class="section-title" style="font-size:17px;">📜 سجل المراسلات المُرسَلة</div>
+    <div class="filters-bar" style="margin-bottom:12px;">
+      <input type="text" id="corrLogSearch" class="corr-inp" placeholder="🔍 بحث في السجل (المستلم، المشروع، النص)..." style="min-width:260px;">
+      <select id="corrLogChannel" class="corr-inp"><option value="">كل القنوات</option><option value="whatsapp">واتساب</option><option value="email">بريد</option></select>
+    </div>
+    <div id="corrLog"></div>
   </div>
 </div>
 
@@ -2306,6 +2367,7 @@ const MONTHLY_SNAPSHOTS_COLLECTION = "nsh_plan11_monthly_snapshots"; // لقطة
 const PROGRAMS_COLLECTION = "nsh_plan11_programs"; // البرامج التنفيذية (ديناميكية - قابلة للإضافة والتعديل)
 const MANAGERS_COLLECTION = "nsh_plan11_managers"; // قائمة مدراء البرامج التنفيذية بالمحافظة (ديناميكية)
 const PROJECT_MANAGERS_COLLECTION = "nsh_plan11_project_managers"; // حسابات مدراء المشاريع (جديد) — قد يُسنَد للمشروع الواحد أكثر من مدير، وللمدير الواحد أكثر من مشروع
+const CORRESPONDENCE_COLLECTION = "nsh_plan11_correspondence"; // سجل المراسلات المخصصة المُرسَلة من قسم التخطيط (واتساب/بريد)
 const ANNOUNCEMENTS_COLLECTION = "nsh_plan11_announcements"; // رسائل تنبيه منبثقة تظهر للمدراء عند الدخول
 const DEFAULT_MANAGER_PASSWORD = "plan2026"; // كلمة المرور المبدئية لكل المدراء قبل أن يغيّرها كل واحد بنفسه
 const ADMIN_PASSWORD = "plan"; // كلمة المرور الافتراضية الأولى فقط — تُستبدل تلقائيًا بأي كلمة مرور مُحدَّثة من Firestore بعد أول تغيير
@@ -2385,6 +2447,7 @@ let ALL_PROJECT_MANAGERS = []; // كاش محلي لحسابات مدراء ال
 let ALL_ACTIVITY_LOG = []; // كاش محلي لسجل نشاط المدراء (دخول/خروج/إضافة)
 let ALL_DECISIONS = []; // كاش محلي لسجل قرارات وملاحظات الاجتماعات
 let ALL_REQUESTS = []; // كاش محلي لطلبات مدراء البرامج
+let ALL_CORRESPONDENCE = []; // كاش محلي لسجل المراسلات المخصصة
 let ALL_ANNOUNCEMENTS = []; // كاش محلي لرسائل التنبيه المنبثقة
 let COUNTDOWN_SETTINGS = { mode:"plan" }; // إعدادات شريط العد التنازلي (الافتراضي: حتى نهاية الخطة)
 let pendingLoginManager = null; // اسم المدير الذي يحاول تسجيل الدخول حاليًا (أو null لدخول الإدارة)
@@ -3161,8 +3224,6 @@ function myChallengesListHTML(projects){
       ? `<div class="note-meta" style="color:#1E7A3D;">✅ حلّها ${escapeHtml(challenge.resolvedBy)}: ${escapeHtml(challenge.resolutionNote)}</div>` : "";
     const dgSolutionInfo = challenge.dgSolution
       ? `<div class="note-revert-reason" style="color:#5B3EAF;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : "";
-    const alertBtn = challenge.status==="open"
-      ? `<div class="note-actions"><button class="chal-alert-exec-btn" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="background:#25D366;">📤 تنبيه واتساب للمدير التنفيذي</button></div>` : "";
     return `
       <div class="planning-note-row ${statusInfo.cls}" data-project-id="${project.id}" data-challenge-id="${challenge.id}" style="cursor:pointer;">
         <div class="note-body">
@@ -3170,7 +3231,6 @@ function myChallengesListHTML(projects){
           <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
           ${progressInfo}${resolutionInfo}${dgSolutionInfo}
         </div>
-        ${alertBtn}
       </div>`;
   }).join("");
 }
@@ -4705,12 +4765,6 @@ function renderPMComms(){
       openProjectDetailForm(row.dataset.projectId);
     };
   });
-  document.getElementById("pmChallengesList").querySelectorAll(".chal-alert-exec-btn").forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      sendChallengeAlertToExec(btn.dataset.projectId, btn.dataset.challengeId);
-    };
-  });
   const myDecisions = ALL_DECISIONS.filter(d=> d.projectId && projectIds.includes(d.projectId))
     .sort((a,b)=>{
       const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
@@ -5236,12 +5290,6 @@ function renderManagerComms(){
       const challenge = detail && Array.isArray(detail.challengesList) ? detail.challengesList.find(c=>c.id===row.dataset.challengeId) : null;
       if(project && challenge) markChallengeUpdatesSeenInPopup([{project, challenge}], currentManager);
       openProjectDetailForm(row.dataset.projectId);
-    };
-  });
-  document.getElementById("mgrChallengesList").querySelectorAll(".chal-alert-exec-btn").forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      sendChallengeAlertToExec(btn.dataset.projectId, btn.dataset.challengeId);
     };
   });
   const myProgramCodes = new Set(PROGRAMS.filter(p=>p.govManager===currentManager).map(p=>p.code));
@@ -6031,21 +6079,221 @@ document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activitySc
 document.getElementById("navBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("navDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); switchDLTab("decisions"); };
+/* ---------------- المراسلات المخصصة (واتساب/بريد) من قسم التخطيط ---------------- */
+function listenToCorrespondence(cb){
+  if(!firebaseReady){ cb([]); return; }
+  db.collection(CORRESPONDENCE_COLLECTION).onSnapshot(snap=>{
+    const arr=[];
+    snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}));
+    arr.sort((a,b)=> String(b.sentAt||"").localeCompare(String(a.sentAt||"")));
+    ALL_CORRESPONDENCE = arr;
+    cb(arr);
+  }, err=>{ console.error(err); cb([]); });
+}
+function corrGreeting(gender){ return gender==="male" ? "الفاضل" : (gender==="female" ? "الفاضلة" : "الفاضل/الفاضلة"); }
+// يبني قوائم الاختيار المتسلسلة (هدف ← برنامج ← مشروع ← مستلم) مع الحفاظ على الاختيار الحالي إن بقي صالحًا
+function corrBuildSelects(){
+  const goalSel = document.getElementById("corrGoal"), progSel = document.getElementById("corrProgram"), projSel = document.getElementById("corrProject");
+  const prevGoal = goalSel.value, prevProg = progSel.value, prevProj = projSel.value;
+  goalSel.innerHTML = `<option value="">— الكل —</option>` + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${escapeHtml(g.name)}</option>`).join("");
+  goalSel.value = prevGoal;
+  const progs = PROGRAMS.filter(p=> !goalSel.value || String(p.goalId)===goalSel.value);
+  progSel.innerHTML = `<option value="">— الكل —</option>` + progs.map(p=>`<option value="${p.code}">${p.code} — ${escapeHtml(p.name)}</option>`).join("");
+  progSel.value = progs.some(p=>p.code===prevProg) ? prevProg : "";
+  const projs = ALL_PROJECTS.filter(p=> (!goalSel.value || String(p.goalId)===goalSel.value) && (!progSel.value || p.programCode===progSel.value));
+  projSel.innerHTML = `<option value="">— الكل —</option>` + projs.map(p=>`<option value="${p.id}">${escapeHtml(p.projectName)} (${p.programCode} · ${p.year})</option>`).join("");
+  projSel.value = projs.some(p=>p.id===prevProj) ? prevProj : "";
+  corrBuildRecipients();
+}
+// المشاريع/البرامج الداخلة في نطاق الاختيار الحالي
+function corrScope(){
+  const goalId = document.getElementById("corrGoal").value, programCode = document.getElementById("corrProgram").value, projectId = document.getElementById("corrProject").value;
+  const project = projectId ? ALL_PROJECTS.find(p=>p.id===projectId) : null;
+  const projects = ALL_PROJECTS.filter(p=> project ? p.id===project.id : ((!goalId || String(p.goalId)===goalId) && (!programCode || p.programCode===programCode)));
+  const programs = PROGRAMS.filter(p=> project ? p.code===project.programCode : ((!goalId || String(p.goalId)===goalId) && (!programCode || p.code===programCode)));
+  return { goalId, programCode, projectId, project, projects, programs, hasFilter: !!(goalId||programCode||projectId) };
+}
+function corrRecipientsList(){
+  const sc = corrScope();
+  const execNames = [...new Set([...sc.programs.map(p=>p.govManager), ...sc.projects.map(p=>p.govManager)].filter(Boolean))];
+  const execs = execNames.map(name=>{
+    const a = ALL_MANAGER_AUTH.find(x=>x.id===name) || {};
+    return { key:"exec:"+name, type:"exec", id:name, name, phone:a.phone||"", email:a.email||"", gender:a.gender||"", label:`👤 مدير تنفيذي — ${name}` };
+  });
+  const pms = ALL_PROJECT_MANAGERS.filter(pm=> !sc.hasFilter || sc.projects.some(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId)))
+    .map(pm=>({ key:"pm:"+pm.employeeId, type:"pm", id:pm.employeeId, name:pm.name, phone:pm.phone||"", email:pm.email||"", gender:pm.gender||"", label:`🧑‍💼 مدير مشروع — ${pm.name}` }));
+  return [...execs, ...pms];
+}
+function corrBuildRecipients(){
+  const sel = document.getElementById("corrRecipient");
+  const prev = sel.value;
+  const list = corrRecipientsList();
+  sel.innerHTML = `<option value="">— اختر المستلم —</option>` + list.map(r=>`<option value="${escapeAttr(r.key)}">${escapeHtml(r.label)}</option>`).join("");
+  sel.value = list.some(r=>r.key===prev) ? prev : "";
+  corrUpdatePreview();
+}
+function corrContext(){
+  const sc = corrScope();
+  const project = sc.project;
+  const programCode = project ? project.programCode : sc.programCode;
+  const program = programCode ? PROGRAMS.find(p=>p.code===programCode) : null;
+  const goalId = project ? project.goalId : (program ? program.goalId : sc.goalId);
+  const goal = goalId ? STRATEGIC_GOALS.find(g=>String(g.id)===String(goalId)) : null;
+  return {
+    goalName: goal ? `${goal.id}. ${goal.name}` : "",
+    programLabel: program ? `${program.code} — ${program.name}` : (project ? `${project.programCode} — ${project.programName||""}` : ""),
+    projectName: project ? project.projectName : "",
+    projectId: project ? project.id : ""
+  };
+}
+function corrComposeMessage(rec, text, sender, includeCtx){
+  const ctx = corrContext();
+  const todayStr = new Date().toLocaleDateString("ar-OM", { year:"numeric", month:"2-digit", day:"2-digit" });
+  let msg = `${corrGreeting(rec.gender)} ${rec.name}،\n`;
+  if(includeCtx && (ctx.goalName || ctx.programLabel || ctx.projectName)){
+    msg += "\n";
+    if(ctx.goalName) msg += `البرنامج الاستراتيجي: ${ctx.goalName}\n`;
+    if(ctx.programLabel) msg += `البرنامج التنفيذي: ${ctx.programLabel}\n`;
+    if(ctx.projectName) msg += `المشروع: ${ctx.projectName}\n`;
+  }
+  msg += `\n${text.trim()}\n\nالمُرسِل: ${sender.trim()}\nالتاريخ: ${todayStr}\n\nقسم التخطيط والدراسات\nمنصة رصد: ${PLATFORM_URL}`;
+  return msg;
+}
+function corrCurrentRecipient(){
+  const key = document.getElementById("corrRecipient").value;
+  return corrRecipientsList().find(r=>r.key===key) || null;
+}
+function corrUpdatePreview(){
+  const box = document.getElementById("corrPreview");
+  const rec = corrCurrentRecipient();
+  const text = document.getElementById("corrText").value;
+  const isEmail = document.getElementById("corrChannel").value==="email";
+  document.getElementById("corrSubjectWrap").style.display = isEmail ? "flex" : "none";
+  if(!rec){ box.textContent = "اختر المستلم لتظهر معاينة الرسالة."; return; }
+  const sender = document.getElementById("corrSender").value || "…";
+  box.textContent = corrComposeMessage(rec, text || "(نص الرسالة)", sender, document.getElementById("corrIncludeCtx").checked);
+}
+function corrSend(){
+  const rec = corrCurrentRecipient();
+  const text = document.getElementById("corrText").value.trim();
+  const sender = document.getElementById("corrSender").value.trim();
+  const channel = document.getElementById("corrChannel").value;
+  const subject = (document.getElementById("corrSubject").value.trim()) || "مراسلة من قسم التخطيط والدراسات — منصة رصد";
+  if(!rec){ alert("اختر المستلم أولًا."); return; }
+  if(!text){ alert("اكتب نص الرسالة."); return; }
+  if(!sender){ alert("اكتب اسم المُرسِل لتوثيق المراسلة."); return; }
+  const contact = channel==="email" ? rec.email : rec.phone;
+  if(!contact){ alert(`لا يوجد ${channel==="email" ? "بريد إلكتروني" : "رقم جوال"} مسجَّل لـ ${rec.name}. أضفه من صفحة كلمات المرور.`); return; }
+  const message = corrComposeMessage(rec, text, sender, document.getElementById("corrIncludeCtx").checked);
+  // فتح القناة أولًا (ضمن نفس نقرة المستخدم حتى لا يحجبها المتصفح)، ثم التسجيل
+  if(channel==="whatsapp"){
+    window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(contact)}&text=${encodeURIComponent(message)}`, "_blank");
+  }else{
+    window.location.href = `mailto:${encodeURIComponent(contact)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  }
+  const ctx = corrContext();
+  db.collection(CORRESPONDENCE_COLLECTION).add({
+    recipientType: rec.type, recipientId: rec.id, recipientName: rec.name, channel, subject: channel==="email" ? subject : "",
+    text, message, goalName: ctx.goalName, programLabel: ctx.programLabel, projectName: ctx.projectName, projectId: ctx.projectId,
+    sentBy: sender, sentAt: new Date().toISOString(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    logActivity(sender, "send_custom_message", `${rec.name} — ${channel==="email"?"بريد":"واتساب"}`);
+    document.getElementById("corrText").value = "";
+    document.getElementById("corrSubject").value = "";
+    corrUpdatePreview();
+  }).catch(err=>{
+    console.error(err);
+    alert("فُتحت الرسالة لكن تعذّر حفظها في سجل المراسلات: " + err.message + "\nتأكد من إضافة قاعدة Firestore للمجموعة nsh_plan11_correspondence.");
+  });
+}
+function renderCorrespondenceLog(){
+  const box = document.getElementById("corrLog");
+  if(!box) return;
+  const q = (document.getElementById("corrLogSearch").value||"").trim().toLowerCase();
+  const ch = document.getElementById("corrLogChannel").value;
+  const rows = ALL_CORRESPONDENCE.filter(c=>{
+    if(ch && c.channel!==ch) return false;
+    if(!q) return true;
+    return [c.recipientName, c.projectName, c.programLabel, c.goalName, c.text, c.sentBy].some(v=> String(v||"").toLowerCase().includes(q));
+  });
+  if(rows.length===0){ box.innerHTML = `<div class="empty-note">${ALL_CORRESPONDENCE.length===0 ? "لم تُرسَل أي مراسلة بعد." : "لا توجد مراسلات مطابقة."}</div>`; return; }
+  box.innerHTML = rows.map(c=>{
+    const ctxParts = [c.projectName, c.programLabel, c.goalName].filter(Boolean);
+    return `
+    <div class="planning-note-row corr-row" data-id="${escapeAttr(c.id)}" style="cursor:pointer;">
+      <div class="note-body">
+        <div class="note-text">${c.channel==="email"?"📧":"💬"} ${c.recipientType==="pm"?"🧑‍💼":"👤"} <b>${escapeHtml(c.recipientName)}</b> <span style="font-size:11px;color:var(--text-muted);">— ${fmtChallengeDate(c.sentAt)}</span></div>
+        ${ctxParts.length ? `<div class="note-meta">${escapeHtml(ctxParts[0])}${ctxParts.length>1 ? " · "+escapeHtml(ctxParts[1]) : ""}</div>` : ""}
+        <div class="note-meta" style="color:#444;">${escapeHtml(String(c.text||"").slice(0,110))}${String(c.text||"").length>110?"…":""}</div>
+      </div>
+      <div class="note-actions"><span style="font-size:11px;color:var(--text-muted);">أرسلها ${escapeHtml(c.sentBy||"")} · اضغط للتفاصيل</span></div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".corr-row").forEach(row=>{ row.onclick = ()=> openCorrDetail(row.dataset.id); });
+}
+let corrOpenId = null;
+function openCorrDetail(id){
+  const c = ALL_CORRESPONDENCE.find(x=>x.id===id);
+  if(!c) return;
+  corrOpenId = id;
+  const line = (label, val)=> val ? `<div style="margin-bottom:8px;"><span style="font-size:11.5px;font-weight:700;color:var(--navy);">${label}:</span> <span style="font-size:13px;">${escapeHtml(val)}</span></div>` : "";
+  document.getElementById("corrDetailBody").innerHTML =
+    line("تاريخ ووقت الإرسال", fmtChallengeDate(c.sentAt)) + line("المُرسِل", c.sentBy) +
+    line("القناة", c.channel==="email" ? "📧 بريد إلكتروني" : "💬 واتساب") +
+    line("المستلم", `${c.recipientType==="pm"?"مدير مشروع":"مدير تنفيذي"} — ${c.recipientName}`) +
+    line("البرنامج الاستراتيجي", c.goalName) + line("البرنامج التنفيذي", c.programLabel) + line("المشروع", c.projectName) +
+    line("عنوان البريد", c.subject) +
+    `<div style="margin-top:10px;font-size:11.5px;font-weight:700;color:var(--navy);">النص المُرسَل:</div>
+     <div style="white-space:pre-wrap;background:#F7F8FA;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;margin-top:4px;">${escapeHtml(c.message||c.text||"")}</div>`;
+  document.getElementById("corrDetailModal").classList.remove("hidden");
+}
+function renderCorrespondenceTab(){
+  const sender = document.getElementById("corrSender");
+  if(!sender.value) sender.value = ADMIN_NAME;
+  corrBuildSelects();
+  renderCorrespondenceLog();
+}
+
 function switchDLTab(tab){
   document.getElementById("dlTabDecisions").classList.toggle("active", tab==="decisions");
   document.getElementById("dlTabNotes").classList.toggle("active", tab==="notes");
   document.getElementById("dlTabChallenges").classList.toggle("active", tab==="challenges");
   document.getElementById("dlTabAnnounce").classList.toggle("active", tab==="announce");
+  document.getElementById("dlTabCorr").classList.toggle("active", tab==="corr");
   document.getElementById("dlDecisionsView").classList.toggle("hidden", tab!=="decisions");
   document.getElementById("dlNotesView").classList.toggle("hidden", tab!=="notes");
   document.getElementById("dlChallengesView").classList.toggle("hidden", tab!=="challenges");
   document.getElementById("dlAnnounceView").classList.toggle("hidden", tab!=="announce");
+  document.getElementById("dlCorrView").classList.toggle("hidden", tab!=="corr");
+  if(tab==="corr") renderCorrespondenceTab();
 }
 document.getElementById("dlTabDecisions").onclick = ()=> switchDLTab("decisions");
 document.getElementById("dlTabNotes").onclick = ()=> switchDLTab("notes");
 document.getElementById("dlTabChallenges").onclick = ()=> switchDLTab("challenges");
 document.getElementById("printChallengesBtn").onclick = printChallengesReport;
 document.getElementById("dlTabAnnounce").onclick = ()=> switchDLTab("announce");
+document.getElementById("dlTabCorr").onclick = ()=> switchDLTab("corr");
+["corrGoal","corrProgram","corrProject"].forEach(id=> document.getElementById(id).onchange = corrBuildSelects);
+document.getElementById("corrRecipient").onchange = corrUpdatePreview;
+document.getElementById("corrChannel").onchange = corrUpdatePreview;
+document.getElementById("corrIncludeCtx").onchange = corrUpdatePreview;
+["corrText","corrSender"].forEach(id=> document.getElementById(id).oninput = corrUpdatePreview);
+document.getElementById("corrSendBtn").onclick = corrSend;
+document.getElementById("corrLogSearch").oninput = renderCorrespondenceLog;
+document.getElementById("corrLogChannel").onchange = renderCorrespondenceLog;
+document.getElementById("corrDetailClose").onclick = ()=> document.getElementById("corrDetailModal").classList.add("hidden");
+document.getElementById("corrDetailCopy").onclick = ()=>{
+  const c = ALL_CORRESPONDENCE.find(x=>x.id===corrOpenId);
+  if(c && navigator.clipboard) navigator.clipboard.writeText(c.message||c.text||"").then(()=> alert("تم نسخ النص."));
+};
+document.getElementById("corrDetailDelete").onclick = ()=>{
+  if(!corrOpenId || !confirm("حذف هذه المراسلة من السجل نهائيًا؟ (لا يؤثر على ما أُرسل فعليًا)")) return;
+  db.collection(CORRESPONDENCE_COLLECTION).doc(corrOpenId).delete().then(()=>{
+    logActivity(ADMIN_NAME, "delete_custom_message", corrOpenId);
+    document.getElementById("corrDetailModal").classList.add("hidden");
+  }).catch(err=>{ console.error(err); alert("تعذّر الحذف: "+err.message); });
+};
 document.getElementById("navWeeklyReportBtn").onclick = ()=>{ showScreen("weeklyReportScreen"); buildReportFilters(); renderWeeklyReportScreen(); logActivity(ADMIN_NAME, "weekly_report", ""); };
 document.getElementById("weeklyReportPrintBtn").onclick = ()=> window.print();
 document.getElementById("weeklyReportCopyBtn").onclick = ()=>{
@@ -6938,7 +7186,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة", send_custom_message:"✉️ إرسال مراسلة مخصصة", delete_custom_message:"🗑️ حذف مراسلة من السجل"
 };
 function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
 // يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
@@ -7004,7 +7252,7 @@ function challengeRowHTML(challenge, role){
   let actionsHtml = "";
   if(role==="exec"){
     if(challenge.status==="open"){
-      actionsHtml = `<div class="note-actions"><button class="chal-start-progress-btn" data-id="${challenge.id}">🟡 بدء المعالجة</button></div>`;
+      actionsHtml = `<div class="note-actions"><button class="chal-start-progress-btn" data-id="${challenge.id}">📝 تسجيل الإجراءات المتخذة</button></div>`;
     }else if(challenge.status==="in_progress"){
       actionsHtml = `<div class="note-actions">
         <button class="chal-add-action-btn" data-id="${challenge.id}">➕ إضافة إجراء جديد</button>
@@ -7017,13 +7265,17 @@ function challengeRowHTML(challenge, role){
   }else if(role==="admin"){
     actionsHtml = `<div class="note-actions"><button class="chal-delete-btn" data-id="${challenge.id}" title="حذف نهائي (إجراء إداري فقط)">🗑️</button></div>`;
   }
+  // أزرار المدير التنفيذي تظهر على يمين التحدي (أول عنصر في الصف بالاتجاه العربي) وبشكل عمودي لتسهيل المتابعة
+  const execActionsFirst = role==="exec" && actionsHtml;
+  const actionsBlock = execActionsFirst ? actionsHtml.replace('<div class="note-actions">','<div class="note-actions" style="flex-direction:column;align-items:stretch;">') : actionsHtml;
   return `
     <div class="planning-note-row ${statusInfo.cls}">
+      ${execActionsFirst ? actionsBlock : ""}
       <div class="note-body">
         <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
         ${createdInfo}${actionsLogInfo}${resolutionInfo}${dgSolutionInfo}${closedInfo}
       </div>
-      ${actionsHtml}
+      ${execActionsFirst ? "" : actionsBlock}
     </div>`;
 }
 
@@ -10456,6 +10708,9 @@ listenToRequests(()=>{
 });
 listenToAnnouncements(()=>{
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAnnouncementsList();
+});
+listenToCorrespondence(()=>{
+  if(!document.getElementById("dlCorrView").classList.contains("hidden")) renderCorrespondenceLog();
 });
 listenToSettings(()=>{
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderCountdownBar("adminCountdownBar", true);
