@@ -1145,7 +1145,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navWeeklyReportBtn" style="background:#0D6E6E;color:#fff;">📊 المشاريع</button>
     <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">📊 لوحة أداء الخطة</button>
     <button class="meeting-btn" id="navFullMatrixBtn" style="background:#0D6E6E;color:#fff;">📐 المصفوفة الشاملة</button>
-    <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;">📈 مؤشر الأداء الزمني SPI</button>
+    <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;position:relative;">📈 مؤشر الأداء الزمني SPI <span id="navSPIUnlockBadge" class="req-badge hidden">0</span></button>
     <button class="meeting-btn" id="navAnalyticsBtn" style="background:#0D6E6E;color:#fff;">🔬 تحليلات متقدمة</button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#1E4E8C;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navRequestsBtn" style="background:#1E4E8C;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
@@ -1511,6 +1511,15 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="lp-desc">سجّلها مدراء المشاريع/البرامج ولم يُتَّخذ إجراء بعد (حل أو تصعيد). اضغط على أي بند لفتح المشروع مباشرة.</div>
     <div id="adminChallengesPopupList"></div>
     <button class="late-popup-close" id="adminChallengesPopupClose">إغلاق</button>
+  </div>
+</div>
+
+<div id="spiUnlockPopupOverlay" class="modal-overlay hidden">
+  <div class="late-popup-box">
+    <h3>🔓 طلبات إعادة تحديد خط أساس SPI</h3>
+    <div class="lp-desc">طلبها مدير مشروع أو مدير تنفيذي وتنتظر سماحك. اضغط على أي بند لفتح المشروع مباشرة.</div>
+    <div id="spiUnlockPopupList"></div>
+    <button class="late-popup-close" id="spiUnlockPopupClose">إغلاق</button>
   </div>
 </div>
 
@@ -2938,21 +2947,21 @@ function setSPIBaseline(projectId, actorName, livePhases){
     if(ok) logActivity(actorName, "set_spi_baseline", "");
   });
 }
-// طلب من مالك المشروع لإعادة تحديد الخط الأساس (يحتاج سماح قسم التخطيط لاحقًا)
-function requestSPIBaselineUnlock(projectId, actorName){
-  saveProjectDetail(projectId, { spiUnlockRequested: { requestedBy: actorName, requestedAt: new Date().toISOString() } }).then(ok=>{
-    if(ok) logActivity(actorName, "request_spi_unlock", "");
+// طلب من مالك المشروع لإعادة تحديد الخط الأساس (يحتاج سماح قسم التخطيط لاحقًا) — السبب إلزامي لتوثيق دافع الطلب
+function requestSPIBaselineUnlock(projectId, actorName, reason){
+  saveProjectDetail(projectId, { spiUnlockRequested: { requestedBy: actorName, requestedAt: new Date().toISOString(), reason: (reason||"").trim() } }).then(ok=>{
+    if(ok) logActivity(actorName, "request_spi_unlock", (reason||"").trim().slice(0,80));
   });
 }
-// قسم التخطيط يسمح بإعادة التحديد — الخط الحالي يُنقَل للسجل التاريخي ويُفتح المجال لتحديد خط جديد
-function approveSPIBaselineUnlock(projectId){
+// قسم التخطيط يسمح بإعادة التحديد — الخط الحالي يُنقَل للسجل التاريخي ويُفتح المجال لتحديد خط جديد؛ الملاحظة اختيارية (من فتح التعيين ولماذا)
+function approveSPIBaselineUnlock(projectId, note){
   const existing = ALL_PROJECT_DETAILS.find(d=>d.id===projectId);
   if(!existing) return;
   const history = Array.isArray(existing.spiBaselineHistory) ? existing.spiBaselineHistory : [];
   const oldBaseline = existing.spiBaseline;
-  const newHistory = oldBaseline ? [...history, { ...oldBaseline, unlockedBy: ADMIN_NAME, unlockedAt: new Date().toISOString() }] : history;
+  const newHistory = oldBaseline ? [...history, { ...oldBaseline, unlockedBy: ADMIN_NAME, unlockedAt: new Date().toISOString(), unlockNote: (note||"").trim() }] : history;
   saveProjectDetail(projectId, { spiBaseline: null, spiBaselineHistory: newHistory, spiUnlockRequested: null }).then(ok=>{
-    if(ok) logActivity(ADMIN_NAME, "approve_spi_unlock", "");
+    if(ok) logActivity(ADMIN_NAME, "approve_spi_unlock", (note||"").trim().slice(0,80));
   });
 }
 // يحسب مؤشر الأداء الزمني (SPI) لمشروع له خط أساس محدَّد — يقارن الإنجاز الفعلي بالإنجاز المتوقَّع حسب الخط المُجمَّد، بأوزان المراحل الحقيقية
@@ -3007,6 +3016,7 @@ function spiScreenContentHTML(projects, canApprove){
         <div class="note-body">
           <div class="note-text"><b>${escapeHtml(project.projectName)}</b></div>
           <div class="note-meta">طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)} بتاريخ ${escapeHtml((detail.spiUnlockRequested.requestedAt||"").slice(0,10))}</div>
+          ${detail.spiUnlockRequested.reason ? `<div class="note-meta" style="color:#8B1420;font-weight:700;">السبب: ${escapeHtml(detail.spiUnlockRequested.reason)}</div>` : ""}
         </div>
         <div class="note-actions">
           <button class="spi-approve-unlock-btn" data-project-id="${project.id}">✅ سماح</button>
@@ -3112,7 +3122,9 @@ function wireSPIScreenButtons(container){
   container.querySelectorAll(".spi-approve-unlock-btn").forEach(btn=>{
     btn.onclick = ()=>{
       if(!confirm("سيُسمح لصاحب المشروع بتحديد خط أساس جديد، وسيُنقَل الخط الحالي للسجل التاريخي. هل أنت متأكد؟")) return;
-      approveSPIBaselineUnlock(btn.dataset.projectId);
+      const note = prompt("ملاحظة (اختياري) — مثلًا من قام بفتح التعيين:", "");
+      if(note===null) return;
+      approveSPIBaselineUnlock(btn.dataset.projectId, note);
     };
   });
 }
@@ -5929,8 +5941,10 @@ function enterAdmin(){
   switchAdminTab("overview");
   updateRequestsBadge();
   updateAdminChallengesBadge();
+  updateAdminSPIUnlockBadge();
   renderCountdownBar("adminCountdownBar", true);
   setTimeout(checkAndShowAdminChallengesPopup, 500);
+  setTimeout(checkAndShowAdminSPIUnlockPopup, 700);
   setTimeout(captureMonthlySnapshotIfNeeded, 800);
 }
 function switchAdminTab(tab){
@@ -5987,6 +6001,42 @@ function checkAndShowAdminChallengesPopup(){
   document.getElementById("adminChallengesPopupOverlay").classList.remove("hidden");
 }
 document.getElementById("adminChallengesPopupClose").onclick = ()=> document.getElementById("adminChallengesPopupOverlay").classList.add("hidden");
+
+// شارة عدد طلبات إعادة تحديد خط الأساس المعلَّقة — تظهر على زر SPI في القائمة الرئيسية
+function updateAdminSPIUnlockBadge(){
+  const badge = document.getElementById("navSPIUnlockBadge");
+  if(!badge) return;
+  const count = ALL_PROJECT_DETAILS.filter(d=>d.spiUnlockRequested).length;
+  if(count>0){
+    badge.textContent = count;
+    badge.classList.remove("hidden");
+  }else{
+    badge.classList.add("hidden");
+  }
+}
+// يجمع كل طلبات إعادة تحديد خط الأساس المعلَّقة عبر كل المشاريع — لعرضها كتنبيه فوري لقسم التخطيط، بفتح مباشر للمشروع
+function checkAndShowAdminSPIUnlockPopup(){
+  const pending = ALL_PROJECT_DETAILS.filter(d=>d.spiUnlockRequested).map(d=>({
+    project: ALL_PROJECTS.find(p=>p.id===d.id), detail:d
+  })).filter(x=>x.project);
+  if(pending.length===0) return;
+  const list = document.getElementById("spiUnlockPopupList");
+  list.innerHTML = pending.map(({project, detail})=>`
+    <div class="phase-alert-row late" data-project-id="${project.id}">
+      <div><b>${escapeHtml(project.projectName)}</b> — طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)}
+      ${detail.spiUnlockRequested.reason ? `<div style="font-size:12px;color:#8B1420;margin-top:2px;">السبب: ${escapeHtml(detail.spiUnlockRequested.reason)}</div>` : ""}
+      </div>
+      <span class="phase-alert-badge late">${escapeHtml((detail.spiUnlockRequested.requestedAt||"").slice(0,10))}</span>
+    </div>`).join("");
+  list.querySelectorAll(".phase-alert-row").forEach(row=>{
+    row.onclick = ()=>{
+      document.getElementById("spiUnlockPopupOverlay").classList.add("hidden");
+      openProjectDetailForm(row.dataset.projectId);
+    };
+  });
+  document.getElementById("spiUnlockPopupOverlay").classList.remove("hidden");
+}
+document.getElementById("spiUnlockPopupClose").onclick = ()=> document.getElementById("spiUnlockPopupOverlay").classList.add("hidden");
 
 document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
 function enterDG(){
@@ -9291,7 +9341,7 @@ function openProjectDetailForm(projectId, highlightPhaseIdx, highlightStepIdx, s
   let spiActionsHtml = "";
   if(isAdminContext){
     if(pendingUnlock){
-      spiActionsHtml = `<button class="spi-approve-unlock-btn" data-project-id="${projectId}">✅ سماح بإعادة تحديد الخط الأساس (طلبها ${escapeHtml(pendingUnlock.requestedBy)})</button>`;
+      spiActionsHtml = `<div>${pendingUnlock.reason ? `<div class="note-meta" style="color:#8B1420;font-weight:700;margin-bottom:6px;">السبب: ${escapeHtml(pendingUnlock.reason)}</div>` : ""}<button class="spi-approve-unlock-btn" data-project-id="${projectId}">✅ سماح بإعادة تحديد الخط الأساس (طلبها ${escapeHtml(pendingUnlock.requestedBy)})</button></div>`;
     }
   }else{
     if(!hasBaseline){
@@ -9877,14 +9927,18 @@ function wireDetailModalStaticEvents(){
       setTimeout(()=> openProjectDetailForm(projectId), 400);
     }
     if(e.target.classList.contains("spi-request-unlock-btn")){
-      if(!confirm("سيُرسَل طلب لقسم التخطيط للسماح بإعادة تحديد الخط الأساس. هل أنت متأكد؟")) return;
+      const reason = prompt("سبب طلب إعادة تحديد الخط الأساس (إلزامي):", "");
+      if(reason===null) return;
+      if(!reason.trim()){ alert("هذا الحقل إلزامي — يجب توضيح سبب الطلب."); return; }
       const projectId = document.getElementById("detailModalOverlay").dataset.projectId;
-      requestSPIBaselineUnlock(projectId, getActorName());
+      requestSPIBaselineUnlock(projectId, getActorName(), reason.trim());
       setTimeout(()=> openProjectDetailForm(projectId), 400);
     }
     if(e.target.classList.contains("spi-approve-unlock-btn")){
       if(!confirm("سيُسمح لصاحب المشروع بتحديد خط أساس جديد، وسيُنقَل الخط الحالي للسجل التاريخي. هل أنت متأكد؟")) return;
-      approveSPIBaselineUnlock(e.target.dataset.projectId);
+      const note = prompt("ملاحظة (اختياري) — مثلًا من قام بفتح التعيين:", "");
+      if(note===null) return;
+      approveSPIBaselineUnlock(e.target.dataset.projectId, note);
       setTimeout(()=> openProjectDetailForm(e.target.dataset.projectId), 400);
     }
   });
@@ -10775,7 +10829,7 @@ listenToProjectDetails(()=>{
   if(!document.getElementById("mgrSPIView").classList.contains("hidden")) renderManagerSPIScreen();
   if(!document.getElementById("pmSPIView").classList.contains("hidden")) renderPMSPIScreen();
   const loggedIn = document.getElementById("loginScreen").classList.contains("hidden");
-  if(loggedIn && currentManager===null && currentProjectManagerId===null && !currentDG) updateAdminChallengesBadge();
+  if(loggedIn && currentManager===null && currentProjectManagerId===null && !currentDG){ updateAdminChallengesBadge(); updateAdminSPIUnlockBadge(); }
   if(!document.getElementById("dgScreen").classList.contains("hidden")) updateDGChallengesBadge();
   if(!document.getElementById("managerScreen").classList.contains("hidden")) updateMgrCommsBadge();
   if(!document.getElementById("projectManagerScreen").classList.contains("hidden")) updatePMCommsBadge();
