@@ -936,6 +936,11 @@ tr.rejected-row td{background:#FDF6F6;}
   gap:6px;align-items:start;padding:6px 0;border-top:1px dashed var(--border);
 }
 .step-row:first-child{border-top:none;}
+.step-drag-handle{cursor:grab;font-size:13px;color:var(--text-muted);user-select:none;line-height:1;letter-spacing:-2px;}
+.step-drag-handle:active{cursor:grabbing;}
+.step-row.dragging-step{opacity:.35;}
+.step-row.drag-over-top{border-top:3px solid var(--gold);}
+.step-row.drag-over-bottom{border-bottom:3px solid var(--gold);}
 .step-row-highlight{
   animation:stepHighlightPulse 1.8s ease-in-out 2;
   border-radius:8px;
@@ -9090,7 +9095,10 @@ function stepRowHTML(step, locked, seqLabel){
     <div class="step-row">
       <div class="step-field">
         <span class="step-field-label">التسلسل</span>
-        <span class="step-seq ${stepIncomplete?'step-seq-incomplete':''}" title="${stepIncomplete?'يوجد حقل ناقص في هذه الخطوة (الاسم/الوثائق/التواريخ/الحالة)':''}">${seqLabel||""}</span>
+        <div style="display:flex;align-items:center;gap:4px;">
+          ${locked ? "" : `<span class="step-drag-handle" draggable="true" title="اسحب لإعادة ترتيب هذه الخطوة داخل المرحلة">⠿⠿</span>`}
+          <span class="step-seq ${stepIncomplete?'step-seq-incomplete':''}" title="${stepIncomplete?'يوجد حقل ناقص في هذه الخطوة (الاسم/الوثائق/التواريخ/الحالة)':''}">${seqLabel||""}</span>
+        </div>
       </div>
       <div class="step-field">
         <span class="step-field-label">اسم الخطوة</span>
@@ -9609,8 +9617,54 @@ function validateAllStepDateOrder(){
     }
   });
 }
+// إعادة ترتيب خطوات المرحلة بالسحب — لا حاجة لحذف/إعادة إضافة لإدراج خطوة في البداية أو منتصف المرحلة
+let draggedStepRow = null;
+function wireStepDragReorder(body){
+  body.addEventListener("dragstart", e=>{
+    if(!e.target.classList.contains("step-drag-handle")) return;
+    const row = e.target.closest(".step-row");
+    if(!row) return;
+    draggedStepRow = row;
+    row.classList.add("dragging-step");
+    e.dataTransfer.effectAllowed = "move";
+    try{ e.dataTransfer.setData("text/plain", "step"); }catch(err){}
+  });
+  body.addEventListener("dragover", e=>{
+    if(!draggedStepRow) return;
+    const container = e.target.closest(".phase-steps");
+    if(!container || container !== draggedStepRow.closest(".phase-steps")) return;
+    const targetRow = e.target.closest(".step-row");
+    if(!targetRow || targetRow===draggedStepRow) return;
+    e.preventDefault();
+    const rect = targetRow.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height/2;
+    container.querySelectorAll(".step-row").forEach(r=> r.classList.remove("drag-over-top","drag-over-bottom"));
+    targetRow.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+  });
+  body.addEventListener("drop", e=>{
+    if(!draggedStepRow) return;
+    const container = e.target.closest(".phase-steps");
+    if(!container || container !== draggedStepRow.closest(".phase-steps")) return;
+    const targetRow = e.target.closest(".step-row");
+    if(targetRow && targetRow!==draggedStepRow){
+      e.preventDefault();
+      const rect = targetRow.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height/2;
+      if(before) targetRow.parentNode.insertBefore(draggedStepRow, targetRow);
+      else targetRow.parentNode.insertBefore(draggedStepRow, targetRow.nextSibling);
+      const pi = Number(container.dataset.phase);
+      recalcPhase(pi);
+      triggerDetailAutoSave();
+    }
+  });
+  body.addEventListener("dragend", ()=>{
+    body.querySelectorAll(".step-row").forEach(r=> r.classList.remove("dragging-step","drag-over-top","drag-over-bottom"));
+    draggedStepRow = null;
+  });
+}
 function wireDetailModalStaticEvents(){
   const body = document.getElementById("detailModalBody");
+  wireStepDragReorder(body);
   body.addEventListener("input", e=>{
     if(e.target.classList.contains("step-duration")){
       const pi = Number(e.target.closest(".phase-steps").dataset.phase);
