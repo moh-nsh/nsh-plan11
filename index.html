@@ -666,6 +666,7 @@ input,select{font-family:inherit;}
   background:#EEF0F3;color:var(--navy);font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:14px;flex-shrink:0;
 }
 .request-resolve-btn.is-done{background:#1E7A3D;color:#fff;}
+.request-note-btn{background:#EEF3FB;color:#1E4E8C;font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:14px;flex-shrink:0;}
 .request-add-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
 .request-add-form select,.request-add-form textarea{
   padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;
@@ -4053,12 +4054,21 @@ function addRequest(managerName, programCode, projectId, text){
     return false;
   });
 }
-function resolveRequest(id, done){
+function resolveRequest(id, done, note){
   if(!firebaseReady) return;
   db.collection(REQUESTS_COLLECTION).doc(id).update({
     status: done ? "done" : "open",
-    resolvedAt: done ? firebase.firestore.FieldValue.serverTimestamp() : null
+    resolvedAt: done ? firebase.firestore.FieldValue.serverTimestamp() : null,
+    resolutionNote: done ? (note||"").trim() : "",
+    resolvedBy: done ? ADMIN_NAME : ""
   });
+  if(done) logActivity(ADMIN_NAME, "resolve_request", note ? `${id} — ${note.trim().slice(0,80)}` : id);
+}
+// يضيف أو يعدّل تعليق الإجراء المتخذ على طلب مُنفَّذ بالفعل، دون التأثير على حالته
+function updateRequestResolutionNote(id, note){
+  if(!firebaseReady) return;
+  db.collection(REQUESTS_COLLECTION).doc(id).update({ resolutionNote:(note||"").trim(), resolvedBy: ADMIN_NAME });
+  logActivity(ADMIN_NAME, "edit_request_note", `${id} — ${note.trim().slice(0,80)}`);
 }
 // حذف نهائي لطلب — يُزال فورًا من عرض قسم التخطيط والمدير التنفيذي ومدير المشروع معًا
 function deleteRequest(id){
@@ -4827,6 +4837,7 @@ function renderPMComms(){
               <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
             </div>
             <div class="rq-text">${escapeHtml(r.text)}</div>
+            ${r.resolutionNote ? `<div class="rq-meta" style="color:#1E7A3D;font-weight:700;">✎ ${escapeHtml(r.resolutionNote)}</div>` : ""}
             <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
           </div>`;
       }).join("");
@@ -5363,6 +5374,7 @@ function renderManagerComms(){
             <span class="locked-badge ${r.status==='done'?'':'admin-lock-badge'}" style="${r.status==='done'?'background:#1E7A3D;color:#fff;':''}">${r.status==='done' ? "✓ تم التنفيذ" : "⏳ قيد الانتظار"}</span>
           </div>
           <div class="rq-text">${escapeHtml(r.text)}</div>
+          ${r.resolutionNote ? `<div class="rq-meta" style="color:#1E7A3D;font-weight:700;">✎ ${escapeHtml(r.resolutionNote)}</div>` : ""}
           <div class="rq-meta">أُرسل بتاريخ ${dt}</div>
         </div>`;
     }).join("");
@@ -6788,15 +6800,34 @@ function renderRequestsScreen(){
           </div>
           <div style="display:flex;gap:6px;">
             <button class="request-resolve-btn ${r.status==='done'?'is-done':''}" data-id="${r.id}">${r.status==='done' ? "✓ تم التنفيذ" : "وضع علامة كمنفَّذ"}</button>
+            ${r.status==='done' ? `<button class="request-note-btn" data-id="${r.id}" title="إضافة/تعديل تعليق الإجراء المتخذ">✎ تعليق</button>` : ""}
             <button class="request-delete-btn" data-id="${r.id}" title="حذف نهائيًا">🗑️</button>
           </div>
         </div>
         <div class="rq-text">${escapeHtml(r.text)}</div>
+        ${r.resolutionNote ? `<div class="rq-meta" style="color:#1E7A3D;font-weight:700;">✎ ${escapeHtml(r.resolutionNote)} — ${escapeHtml(r.resolvedBy||"")}</div>` : ""}
         <div class="rq-meta">سُجّل بتاريخ ${dt}</div>
       </div>`;
   }).join("");
   list.querySelectorAll(".request-resolve-btn").forEach(btn=>{
-    btn.onclick = ()=> resolveRequest(btn.dataset.id, !btn.classList.contains("is-done"));
+    btn.onclick = ()=>{
+      const willBeDone = !btn.classList.contains("is-done");
+      if(willBeDone){
+        const note = prompt("تعليق على التنفيذ (اختياري) — الإجراء الذي تم، أو من قام به:", "");
+        if(note===null) return; // إلغاء المستخدم بالكامل
+        resolveRequest(btn.dataset.id, true, note);
+      }else{
+        resolveRequest(btn.dataset.id, false);
+      }
+    };
+  });
+  list.querySelectorAll(".request-note-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const req = ALL_REQUESTS.find(r=>r.id===btn.dataset.id);
+      const note = prompt("تعليق على التنفيذ — الإجراء الذي تم، أو من قام به:", req ? (req.resolutionNote||"") : "");
+      if(note===null) return;
+      updateRequestResolutionNote(btn.dataset.id, note);
+    };
   });
   list.querySelectorAll(".request-delete-btn").forEach(btn=>{
     btn.onclick = ()=>{
@@ -7201,7 +7232,7 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة", send_custom_message:"✉️ إرسال مراسلة مخصصة", delete_custom_message:"🗑️ حذف مراسلة من السجل", send_challenge_whatsapp_alert:"📤 تنبيه واتساب بتحدٍّ للمدير التنفيذي"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة", send_custom_message:"✉️ إرسال مراسلة مخصصة", delete_custom_message:"🗑️ حذف مراسلة من السجل", send_challenge_whatsapp_alert:"📤 تنبيه واتساب بتحدٍّ للمدير التنفيذي", resolve_request:"✅ تنفيذ طلب مع تعليق", edit_request_note:"✎ تعديل تعليق تنفيذ طلب"
 };
 function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
 // يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
