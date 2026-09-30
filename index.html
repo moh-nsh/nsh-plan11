@@ -2060,9 +2060,9 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title" style="font-size:20px;margin-top:0;">📝 إدارة الملاحظات والقرارات</div>
     <div class="section-desc" style="margin-bottom:16px;">كل قرارات وملاحظات البرامج، وملاحظات الخطط التفصيلية لكل المشاريع، وسجل التحديات، ورسائل التنبيه — في صفحة واحدة</div>
     <div class="mgr-tabs">
-      <button class="mgr-tab active" id="dlTabDecisions">📝 القرارات والملاحظات</button>
-      <button class="mgr-tab" id="dlTabNotes">📋 ملاحظات الخطط التفصيلية</button>
-      <button class="mgr-tab" id="dlTabChallenges">🚨 سجل التحديات</button>
+      <button class="mgr-tab active" id="dlTabDecisions" style="position:relative;">📝 القرارات والملاحظات <span id="dlTabBadgeDecisions" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="dlTabNotes" style="position:relative;">📋 ملاحظات الخطط التفصيلية <span id="dlTabBadgeNotes" class="req-badge hidden">0</span></button>
+      <button class="mgr-tab" id="dlTabChallenges" style="position:relative;">🚨 سجل التحديات <span id="dlTabBadgeChallenges" class="req-badge hidden">0</span></button>
       <button class="mgr-tab" id="dlTabAnnounce">📢 رسالة تنبيه منبثقة</button>
       <button class="mgr-tab" id="dlTabCorr">✉️ مراسلات مخصصة</button>
     </div>
@@ -3333,6 +3333,7 @@ function renderAllPlanningNotes(){
   const unmarkedCount = allEntries.filter(e=>e.note.status==="unmarked").length;
   const markedCount = allEntries.filter(e=>e.note.status==="marked").length;
   const confirmedCount = allEntries.filter(e=>e.note.status==="confirmed").length;
+  setNavSubBadge("dlTabBadgeNotes", markedCount); // بانتظار تأكيدك تحديدًا — الإجراء المطلوب منك أنت
   document.getElementById("planningNotesSummaryGrid").innerHTML = `
     <div class="summary-card"><div class="num">${allEntries.length}</div><div class="lbl">إجمالي النقاط</div></div>
     <div class="summary-card"><div class="num">${unmarkedCount}</div><div class="lbl">⚪ لم تُنفَّذ بعد</div></div>
@@ -3451,6 +3452,7 @@ function renderAllChallenges(){
   const { allEntries, filtered } = getFilteredChallengesEntries();
 
   const openCount = allEntries.filter(e=>e.challenge.status==="open").length;
+  setNavSubBadge("dlTabBadgeChallenges", openCount); // نفس تعريف شارة زر "إدارة الملاحظات والقرارات" في القائمة الرئيسية تمامًا
   const inProgressCount = allEntries.filter(e=>e.challenge.status==="in_progress").length;
   const escalatedCount = allEntries.filter(e=>e.challenge.status==="escalated").length;
   const dgPendingCount = allEntries.filter(e=>e.challenge.status==="dg_solution_pending").length;
@@ -5980,6 +5982,13 @@ document.getElementById("adminTabOverview").onclick = ()=> switchAdminTab("overv
 document.getElementById("adminTabLate").onclick = ()=> switchAdminTab("late");
 document.getElementById("adminTabIncomplete").onclick = ()=> switchAdminTab("incomplete");
 // عدّاد على زر "إدارة الملاحظات والقرارات" — عدد التحديات الجديدة (⚪) التي لم يُتَّخذ إجراء بشأنها بعد
+// دالة مشتركة لتحديث أي شارة عدد صغيرة على زر تبويب — تُخفى تلقائيًا عند الصفر
+function setNavSubBadge(id, count){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(count>0){ el.textContent = count; el.classList.remove("hidden"); }
+  else el.classList.add("hidden");
+}
 function updateAdminChallengesBadge(){
   const badge = document.getElementById("navChallengesBadge");
   if(!badge) return;
@@ -7190,6 +7199,7 @@ function renderDecisionLogScreen(){
   renderAllChallenges();
   const totalCount = ALL_DECISIONS.length;
   const resolvedCount = ALL_DECISIONS.filter(d=>d.resolved).length;
+  setNavSubBadge("dlTabBadgeDecisions", totalCount-resolvedCount);
   document.getElementById("decisionSummaryGrid").innerHTML = `
     <div class="summary-card"><div class="num">${totalCount}</div><div class="lbl">إجمالي القرارات والملاحظات</div></div>
     <div class="summary-card" style="border-right-color:#1E7A3D;"><div class="num">✓ ${resolvedCount}</div><div class="lbl">تم تنفيذها من قِبل المدراء</div></div>
