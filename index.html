@@ -2172,8 +2172,28 @@ tr.rejected-row td{background:#FDF6F6;}
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">البرنامج الاستراتيجي (اختياري)</label><select id="corrGoal" class="corr-inp"></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">البرنامج التنفيذي (اختياري)</label><select id="corrProgram" class="corr-inp"></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المشروع (اختياري)</label><select id="corrProject" class="corr-inp"></select></div>
-        <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">المستلم <span style="font-weight:400;color:var(--text-muted);">(تتحدد القائمة حسب اختياراتك)</span></label><select id="corrRecipient" class="corr-inp"></select></div>
         <div style="display:flex;flex-direction:column;gap:4px;"><label class="corr-lbl">اسم المُرسِل (للتوثيق)</label><input type="text" id="corrSender" class="corr-inp" maxlength="80"></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;">
+          <input type="radio" name="corrMode" id="corrModeSingle" value="single" checked style="width:16px;height:16px;"> مستلم واحد
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;">
+          <input type="radio" name="corrMode" id="corrModeGroup" value="group" style="width:16px;height:16px;"> مجموعة مستلمين
+        </label>
+      </div>
+      <div id="corrSingleWrap" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+        <label class="corr-lbl">المستلم <span style="font-weight:400;color:var(--text-muted);">(تتحدد القائمة حسب اختياراتك)</span></label>
+        <select id="corrRecipient" class="corr-inp"></select>
+      </div>
+      <div id="corrGroupWrap" class="hidden" style="margin-bottom:14px;">
+        <label class="corr-lbl" style="display:block;margin-bottom:8px;">المستلمون <span style="font-weight:400;color:var(--text-muted);">(حسب النطاق المختار أعلاه، أو الكل إن لم تُحدَّد فلاتر)</span></label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button type="button" class="export-btn" id="corrSelectAllExec" style="font-size:11.5px;">تحديد كل المدراء التنفيذيين</button>
+          <button type="button" class="export-btn" id="corrSelectAllPM" style="font-size:11.5px;">تحديد كل مدراء المشاريع</button>
+          <button type="button" class="export-btn" id="corrSelectNone" style="font-size:11.5px;">إلغاء تحديد الكل</button>
+        </div>
+        <div id="corrRecipientsChecklist" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
         <label class="corr-lbl">عنوان البريد <span style="font-weight:400;color:var(--text-muted);">(يُستخدم عند الإرسال بالبريد فقط، وله عنوان افتراضي إن تركته فارغًا)</span></label>
@@ -2190,6 +2210,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <label class="corr-lbl" style="display:block;margin-bottom:4px;">معاينة الرسالة</label>
         <div id="corrPreview" style="white-space:pre-wrap;background:#F7F8FA;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#333;min-height:44px;"></div>
       </div>
+      <div id="corrGroupNote" class="hidden" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">📌 في وضع "مجموعة مستلمين": البريد يُرسَل كرسالة واحدة للجميع دفعة واحدة، أمّا واتساب فسيفتح محادثة منفصلة جاهزة لكل مستلم (قيد واتساب نفسه لا يسمح بإرسال جماعي حقيقي عبر رابط واحد) — يبقى عليك فقط الضغط "إرسال" داخل كل محادثة.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="add-btn" id="corrSendWaBtn" style="background:#25D366;">💬 إرسال عبر واتساب</button>
         <button class="add-btn" id="corrSendEmailBtn" style="background:#1E4E8C;">📧 إرسال عبر البريد الإلكتروني</button>
@@ -6221,7 +6242,27 @@ function corrBuildRecipients(){
   const list = corrRecipientsList();
   sel.innerHTML = `<option value="">— اختر المستلم —</option>` + list.map(r=>`<option value="${escapeAttr(r.key)}">${escapeHtml(r.label)}</option>`).join("");
   sel.value = list.some(r=>r.key===prev) ? prev : "";
+  corrBuildRecipientsChecklist();
   corrUpdatePreview();
+}
+function corrIsGroupMode(){ return document.getElementById("corrModeGroup").checked; }
+// يبني قائمة اختيار متعددة (خانات اختيار) للمستلمين ضمن النطاق الحالي — لوضع "مجموعة مستلمين"، بنفس فكرة قائمة مستلمي رسالة التنبيه المنبثقة
+function corrBuildRecipientsChecklist(){
+  const box = document.getElementById("corrRecipientsChecklist");
+  const prevChecked = new Set([...box.querySelectorAll("input:checked")].map(el=>el.value));
+  const list = corrRecipientsList();
+  box.innerHTML = list.length===0
+    ? `<div class="empty-note" style="grid-column:1/-1;">لا يوجد مستلمون ضمن هذا النطاق.</div>`
+    : list.map(r=>`
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+        <input type="checkbox" class="corr-group-check" value="${escapeAttr(r.key)}" ${prevChecked.has(r.key)?"checked":""} style="width:15px;height:15px;">
+        ${escapeHtml(r.label)}
+      </label>`).join("");
+  box.querySelectorAll(".corr-group-check").forEach(cb=> cb.onchange = corrUpdatePreview);
+}
+function corrSelectedGroupRecipients(){
+  const checked = new Set([...document.querySelectorAll(".corr-group-check:checked")].map(el=>el.value));
+  return corrRecipientsList().filter(r=>checked.has(r.key));
 }
 function corrContext(){
   const sc = corrScope();
@@ -6254,15 +6295,37 @@ function corrCurrentRecipient(){
   const key = document.getElementById("corrRecipient").value;
   return corrRecipientsList().find(r=>r.key===key) || null;
 }
+// نسخة برسالة واحدة بتحية عامة (لا تخصّ اسمًا بعينه) — تُستخدَم عند إرسال بريد واحد لمجموعة كاملة دفعة واحدة
+function corrComposeGroupMessage(text, sender, includeCtx){
+  const ctx = corrContext();
+  const todayStr = new Date().toLocaleDateString("ar-OM", { year:"numeric", month:"2-digit", day:"2-digit" });
+  let msg = `السادة الأفاضل،\n`;
+  if(includeCtx && (ctx.goalName || ctx.programLabel || ctx.projectName)){
+    msg += "\n";
+    if(ctx.goalName) msg += `البرنامج الاستراتيجي: ${ctx.goalName}\n`;
+    if(ctx.programLabel) msg += `البرنامج التنفيذي: ${ctx.programLabel}\n`;
+    if(ctx.projectName) msg += `المشروع: ${ctx.projectName}\n`;
+  }
+  msg += `\n${text.trim()}\n\nالمُرسِل: ${sender.trim()}\nالتاريخ: ${todayStr}\n\nقسم التخطيط والدراسات\nمنصة رصد: ${PLATFORM_URL}`;
+  return msg;
+}
 function corrUpdatePreview(){
   const box = document.getElementById("corrPreview");
-  const rec = corrCurrentRecipient();
   const text = document.getElementById("corrText").value;
-  if(!rec){ box.textContent = "اختر المستلم لتظهر معاينة الرسالة."; return; }
   const sender = document.getElementById("corrSender").value || "…";
-  box.textContent = corrComposeMessage(rec, text || "(نص الرسالة)", sender, document.getElementById("corrIncludeCtx").checked);
+  const includeCtx = document.getElementById("corrIncludeCtx").checked;
+  if(corrIsGroupMode()){
+    const selected = corrSelectedGroupRecipients();
+    if(selected.length===0){ box.textContent = "حدّد مستلمًا واحدًا على الأقل لتظهر معاينة الرسالة."; return; }
+    box.textContent = `(معاينة — سيُرسَل ${selected.length} نسخة، كل واحدة بتحية المستلم عبر واتساب، أو رسالة واحدة عامة بالبريد)\n\n` + corrComposeMessage(selected[0], text || "(نص الرسالة)", sender, includeCtx);
+    return;
+  }
+  const rec = corrCurrentRecipient();
+  if(!rec){ box.textContent = "اختر المستلم لتظهر معاينة الرسالة."; return; }
+  box.textContent = corrComposeMessage(rec, text || "(نص الرسالة)", sender, includeCtx);
 }
 function corrSend(channel){
+  if(corrIsGroupMode()) return corrSendGroup(channel);
   const rec = corrCurrentRecipient();
   const text = document.getElementById("corrText").value.trim();
   const sender = document.getElementById("corrSender").value.trim();
@@ -6293,6 +6356,51 @@ function corrSend(channel){
   }).catch(err=>{
     console.error(err);
     alert("فُتحت الرسالة لكن تعذّر حفظها في سجل المراسلات: " + err.message + "\nتأكد من إضافة قاعدة Firestore للمجموعة nsh_plan11_correspondence.");
+  });
+}
+// إرسال جماعي لمجموعة مستلمين محدَّدة — بريد واحد للجميع دفعة واحدة، أو محادثة واتساب منفصلة جاهزة لكل مستلم (قيد تقني من واتساب نفسه)
+function corrSendGroup(channel){
+  const selected = corrSelectedGroupRecipients();
+  const text = document.getElementById("corrText").value.trim();
+  const sender = document.getElementById("corrSender").value.trim();
+  const includeCtx = document.getElementById("corrIncludeCtx").checked;
+  const subject = (document.getElementById("corrSubject").value.trim()) || "مراسلة من قسم التخطيط والدراسات — منصة رصد";
+  if(selected.length===0){ alert("حدّد مستلمًا واحدًا على الأقل."); return; }
+  if(!text){ alert("اكتب نص الرسالة."); return; }
+  if(!sender){ alert("اكتب اسم المُرسِل لتوثيق المراسلة."); return; }
+  const ctx = corrContext();
+  const withContact = selected.filter(r=> channel==="email" ? r.email : r.phone);
+  const missing = selected.filter(r=> channel==="email" ? !r.email : !r.phone);
+  if(withContact.length===0){ alert(`لا يوجد ${channel==="email"?"بريد إلكتروني":"رقم جوال"} مسجَّل لأي من المستلمين المُحدَّدين.`); return; }
+  if(missing.length>0 && !confirm(`لا يوجد ${channel==="email"?"بريد إلكتروني":"رقم جوال"} مسجَّل لـ ${missing.length} من المستلمين (${missing.map(m=>m.name).join("، ")})، وسيُتجاوَزون. متابعة الإرسال للباقين (${withContact.length})؟`)) return;
+
+  if(channel==="email"){
+    const message = corrComposeGroupMessage(text, sender, includeCtx);
+    window.location.href = `mailto:${withContact.map(r=>encodeURIComponent(r.email)).join(",")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  }else{
+    // فتح نافذة منفصلة لكل مستلم ضمن نفس نقرة المستخدم (لتفادي حجب المتصفح للنوافذ المنبثقة)
+    withContact.forEach(r=>{
+      const message = corrComposeMessage(r, text, sender, includeCtx);
+      window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(r.phone)}&text=${encodeURIComponent(message)}`, "_blank");
+    });
+  }
+  const batchId = "batch"+Date.now();
+  const writes = withContact.map(r=> db.collection(CORRESPONDENCE_COLLECTION).add({
+    recipientType: r.type, recipientId: r.id, recipientName: r.name, channel, subject: channel==="email" ? subject : "",
+    text, message: channel==="email" ? corrComposeGroupMessage(text, sender, includeCtx) : corrComposeMessage(r, text, sender, includeCtx),
+    goalName: ctx.goalName, programLabel: ctx.programLabel, projectName: ctx.projectName, projectId: ctx.projectId,
+    sentBy: sender, sentAt: new Date().toISOString(), batchId, batchSize: withContact.length,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }));
+  Promise.all(writes).then(()=>{
+    logActivity(sender, "send_custom_message", `مراسلة جماعية (${withContact.length} مستلمًا) — ${channel==="email"?"بريد":"واتساب"}`);
+    document.getElementById("corrText").value = "";
+    document.getElementById("corrSubject").value = "";
+    document.querySelectorAll(".corr-group-check").forEach(cb=> cb.checked = false);
+    corrUpdatePreview();
+  }).catch(err=>{
+    console.error(err);
+    alert("أُرسلت الرسالة لكن تعذّر حفظ بعض سجلات المراسلة: " + err.message);
   });
 }
 function renderCorrespondenceLog(){
@@ -6365,6 +6473,27 @@ document.getElementById("dlTabCorr").onclick = ()=> switchDLTab("corr");
 ["corrGoal","corrProgram","corrProject"].forEach(id=> document.getElementById(id).onchange = corrBuildSelects);
 document.getElementById("corrRecipient").onchange = corrUpdatePreview;
 document.getElementById("corrIncludeCtx").onchange = corrUpdatePreview;
+function corrToggleMode(){
+  const group = corrIsGroupMode();
+  document.getElementById("corrSingleWrap").classList.toggle("hidden", group);
+  document.getElementById("corrGroupWrap").classList.toggle("hidden", !group);
+  document.getElementById("corrGroupNote").classList.toggle("hidden", !group);
+  corrUpdatePreview();
+}
+document.getElementById("corrModeSingle").onchange = corrToggleMode;
+document.getElementById("corrModeGroup").onchange = corrToggleMode;
+document.getElementById("corrSelectAllExec").onclick = ()=>{
+  document.querySelectorAll(".corr-group-check").forEach(cb=>{ if(cb.value.startsWith("exec:")) cb.checked = true; });
+  corrUpdatePreview();
+};
+document.getElementById("corrSelectAllPM").onclick = ()=>{
+  document.querySelectorAll(".corr-group-check").forEach(cb=>{ if(cb.value.startsWith("pm:")) cb.checked = true; });
+  corrUpdatePreview();
+};
+document.getElementById("corrSelectNone").onclick = ()=>{
+  document.querySelectorAll(".corr-group-check").forEach(cb=> cb.checked = false);
+  corrUpdatePreview();
+};
 ["corrText","corrSender"].forEach(id=> document.getElementById(id).oninput = corrUpdatePreview);
 document.getElementById("corrSendWaBtn").onclick = ()=> corrSend("whatsapp");
 document.getElementById("corrSendEmailBtn").onclick = ()=> corrSend("email");
