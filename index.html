@@ -3257,16 +3257,16 @@ function getChallengeUpdatesForManager(projects){
 function getUnseenChallengeUpdatesForPopup(projects, viewerName){
   return getChallengeUpdatesForManager(projects).filter(({challenge})=> !Array.isArray(challenge.popupSeenBy) || !challenge.popupSeenBy.includes(viewerName));
 }
-// تحديات جديدة (⚪ لم يُعالَج بعد) رفعها مدير المشروع، تحتاج تحرّك المدير التنفيذي — لم يُشاهدها بعد
-function getNewOpenChallengesForExec(projects, viewerName){
+// تحديات تنتظر إجراءً فعليًا من المدير التنفيذي: ⚪ جديد لم يبدأ معالجته، و🟣 حل معتمَد من المدير العام ينتظر تنفيذه وإغلاقه.
+// هذه مهام معلّقة لا مجرد معلومات، فتبقى ظاهرة (شارة + نافذة منبثقة) حتى يتحرك فيها — ولا تختفي بمجرد مشاهدتها كما تختفي المستجدات
+function getChallengesAwaitingExec(projects){
   const results = [];
   projects.forEach(pr=>{
+    if(pr.closed) return;
     const detail = ALL_PROJECT_DETAILS.find(d=>d.id===pr.id);
     if(!detail || !Array.isArray(detail.challengesList)) return;
     detail.challengesList.forEach(c=>{
-      if(c.status!=="open") return;
-      if(Array.isArray(c.popupSeenBy) && c.popupSeenBy.includes(viewerName)) return;
-      results.push({ project:pr, challenge:c });
+      if(c.status==="open" || c.status==="dg_solution_pending") results.push({ project:pr, challenge:c });
     });
   });
   return results;
@@ -3314,7 +3314,7 @@ function myChallengesListHTML(projects){
         <div class="note-body">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">${escapeHtml(project.projectName)}</div>
           <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
-          ${challengeAlertLogHTML(challenge)}${progressInfo}${resolutionInfo}${dgSolutionInfo}
+          ${progressInfo}${resolutionInfo}${dgSolutionInfo}
         </div>
       </div>`;
   }).join("");
@@ -4946,12 +4946,14 @@ function checkAndShowLateStepsPopup(){
   const unresolvedDecisions = ALL_DECISIONS.filter(d=> myProgramCodes.has(d.programCode) && !d.resolved);
   const activeAnnouncements = getActiveAnnouncementsFor(currentManager);
   const pendingNotes = getPendingPlanningNotes(myProjects);
-  const challengeUpdates = getUnseenChallengeUpdatesForPopup(myProjects, currentManager);
-  const newChallenges = getNewOpenChallengesForExec(myProjects, currentManager);
+  const awaiting = getChallengesAwaitingExec(myProjects);
+  const awaitingIds = new Set(awaiting.map(a=>a.challenge.id));
+  // تذكير المتابعة الدوري (أسبوعين) لا يكرّر ما هو معروض أصلًا ضمن "تنتظر معالجتك"
+  const followUps = getChallengesNeedingFollowUp(myProjects, "exec").filter(f=> !awaitingIds.has(f.challenge.id));
 
-  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && challengeUpdates.length===0 && newChallenges.length===0) return;
+  if(lateEntries.length===0 && unresolvedDecisions.length===0 && activeAnnouncements.length===0 && pendingNotes.length===0 && awaiting.length===0 && followUps.length===0) return;
   const list = document.getElementById("lateStepsPopupList");
-  window.__pendingPopupChallengeUpdates = [...challengeUpdates, ...newChallenges];
+  window.__pendingPopupChallengeUpdates = []; // لا مستجدات تُعلَّم "مشاهَدة" للمدير التنفيذي — أفعاله هو لا تُنبَّه إليه
   let html = "";
   if(activeAnnouncements.length>0){
     html += `<div class="popup-section-label">📢 رسائل من قسم التخطيط والدراسات</div>`;
@@ -4960,29 +4962,19 @@ function checkAndShowLateStepsPopup(){
         <div>${escapeHtml(a.text)}</div>
       </div>`).join("");
   }
-  if(newChallenges.length>0){
-    html += `<div class="popup-section-label" style="margin-top:14px;">🚨 تحديات جديدة رفعها مدير المشروع تحتاج معالجتك (${newChallenges.length})</div>`;
-    html += newChallenges.map(({project, challenge})=>`
+  if(awaiting.length>0){
+    html += `<div class="popup-section-label" style="margin-top:14px;">🚨 تحديات تنتظر معالجتك (${awaiting.length})</div>`;
+    html += awaiting.map(({project, challenge})=>{
+      const isDG = challenge.status==="dg_solution_pending";
+      return `
       <div class="phase-alert-row late" data-project-id="${project.id}" data-scroll-challenges="1">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">سجّله ${escapeHtml(challenge.createdBy)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">سجّله ${escapeHtml(challenge.createdBy)} — ${fmtChallengeDate(challenge.createdAt)}</div>
+        ${isDG && challenge.dgSolution ? `<div style="font-size:11.5px;color:#5B3EAF;margin-top:3px;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : ""}
         </div>
-        <span class="phase-alert-badge late">⚪ جديد</span>
-      </div>`).join("");
-  }
-  if(challengeUpdates.length>0){
-    html += `<div class="popup-section-label" style="margin-top:14px;">🚨 مستجدات على تحدياتك (${challengeUpdates.length})</div>`;
-    html += challengeUpdates.map(({project, challenge})=>{
-      const statusLabel = { in_progress:"🟡 قيد المعالجة", resolved:"✅ حُلّت", escalated:"⬆️ صُعِّدت للمدير العام", dg_solution_pending:"🟣 حل معتمَد — نفِّذه", closed:"✅ أُغلقت" }[challenge.status] || "";
-      return `
-      <div class="phase-alert-row ${challenge.status==='dg_solution_pending'?'late':'upcoming'}" data-project-id="${project.id}">
-        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
-        ${challenge.dgSolution ? `<div style="font-size:11px;color:#5B3EAF;margin-top:2px;">🟣 ${escapeHtml(challenge.dgSolution)}</div>` : ""}
-        </div>
-        <span class="phase-alert-badge ${challenge.status==='dg_solution_pending'?'late':'upcoming'}">${statusLabel}</span>
+        <span class="phase-alert-badge late">${isDG ? "🟣 حل معتمَد — نفِّذه ثم أغلق التحدي" : "⚪ جديد — سجّل الإجراءات المتخذة"}</span>
       </div>`;}).join("");
   }
-  const followUps = getChallengesNeedingFollowUp(myProjects, "exec");
   window.__pendingFollowUpChallenges = followUps;
   if(followUps.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">🔔 تحديات تحتاج متابعتك (لم تُحدَّث منذ أسبوعين أو أكثر) — ${followUps.length}</div>`;
@@ -5349,7 +5341,7 @@ function updateMgrCommsBadge(){
   const myProjects = ALL_PROJECTS.filter(p=>p.govManager===currentManager);
   const myProjectIds = myProjects.map(p=>p.id);
   const openCount = ALL_REQUESTS.filter(r=> (r.managerName===currentManager || (r.projectId && myProjectIds.includes(r.projectId))) && r.status==="open").length;
-  const challengeUpdatesCount = getUnseenChallengeUpdatesForPopup(myProjects, currentManager).length;
+  const challengeUpdatesCount = getChallengesAwaitingExec(myProjects).length;
   const total = openCount + challengeUpdatesCount;
   if(total>0){
     badge.textContent = total;
@@ -5469,7 +5461,7 @@ function renderManagerComms(){
   };
   setSubBadge("mgrCommsSubBadgeNotes", pendingNotes.length);
   setSubBadge("mgrCommsSubBadgeDecisions", myDecisions.filter(d=>!d.resolved).length);
-  setSubBadge("mgrCommsSubBadgeChallenges", getUnseenChallengeUpdatesForPopup(myProjects, currentManager).length + getNewOpenChallengesForExec(myProjects, currentManager).length);
+  setSubBadge("mgrCommsSubBadgeChallenges", getChallengesAwaitingExec(myProjects).length);
   setSubBadge("mgrCommsSubBadgeRequests", myRequests.filter(r=>r.status==="open").length);
 }
 
@@ -7542,7 +7534,8 @@ function challengeRowHTML(challenge, role){
   let actionsHtml = "";
   if(role==="exec"){
     if(challenge.status==="open"){
-      actionsHtml = `<div class="note-actions"><button class="chal-start-progress-btn" data-id="${challenge.id}">📝 تسجيل الإجراءات المتخذة</button></div>`;
+      actionsHtml = `<div class="note-actions"><button class="chal-start-progress-btn" data-id="${challenge.id}">📝 تسجيل الإجراءات المتخذة</button>
+        <div style="font-size:10.5px;color:var(--text-muted);max-width:170px;line-height:1.5;text-align:center;">بعد تسجيل الإجراءات تظهر لك أزرار: ✅ حل المشكلة — ⬆️ تصعيد للمدير العام — ثم 🔒 الإغلاق</div></div>`;
     }else if(challenge.status==="in_progress"){
       actionsHtml = `<div class="note-actions">
         <button class="chal-add-action-btn" data-id="${challenge.id}">➕ إضافة إجراء جديد</button>
@@ -7563,7 +7556,7 @@ function challengeRowHTML(challenge, role){
       ${execActionsFirst ? actionsBlock : ""}
       <div class="note-body">
         <div class="note-text">${statusInfo.icon} ${escapeHtml(challenge.text)} <span style="font-size:11px;color:var(--text-muted);">(${statusInfo.label})</span></div>
-        ${createdInfo}${challengeAlertLogHTML(challenge)}${actionsLogInfo}${resolutionInfo}${dgSolutionInfo}${closedInfo}
+        ${createdInfo}${role==="admin" ? challengeAlertLogHTML(challenge) : ""}${actionsLogInfo}${resolutionInfo}${dgSolutionInfo}${closedInfo}
       </div>
       ${execActionsFirst ? "" : actionsBlock}
     </div>`;
