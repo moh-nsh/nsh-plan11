@@ -1221,7 +1221,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="gold-rule"></div>
     <div class="login-form">
       <label>اسم المستخدم</label>
-      <input type="text" id="loginUsernameInput" placeholder="الرقم الوظيفي (أو admin لحساب التخطيط)" autocomplete="username">
+      <input type="text" id="loginUsernameInput" placeholder="الرقم الوظيفي (أو admin لحساب التخطيط)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
       <label>كلمة المرور</label>
       <input type="password" id="loginPasswordInput" placeholder="كلمة المرور" maxlength="30" autocomplete="current-password">
       <div class="modal-error" id="loginError"></div>
@@ -1944,24 +1944,17 @@ tr.rejected-row td{background:#FDF6F6;}
   <div class="dash-wrap">
     <div class="section-title">من يستخدم المنصة بفعالية؟</div>
     <div class="section-desc">آخر نشاط لكل مدير، وسجل كامل لعمليات الدخول والخروج وإضافة المشاريع</div>
+    <div class="mgr-tabs" style="margin-bottom:18px;">
+      <button class="mgr-tab active" id="actTabGeneral">📜 سجل النشاط العام</button>
+      <button class="mgr-tab" id="actTabFollow">📨 متابعة قسم التخطيط للمدراء</button>
+    </div>
+    <div id="actGeneralView">
     <div id="activitySummaryGrid" class="summary-grid" style="margin-bottom:22px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
       <select id="activityProgramFilter"><option value="">كل البرامج التنفيذية</option></select>
       <select id="activityPMFilter"><option value="">كل مدراء المشاريع</option></select>
-      <select id="activityActionFilter">
-        <option value="">كل الإجراءات</option>
-        <option value="login">تسجيل دخول</option>
-        <option value="logout">تسجيل خروج</option>
-        <option value="add_project">إضافة مشروع</option>
-        <option value="edit_project">تعديل مشروع</option>
-        <option value="delete_project">حذف مشروع</option>
-        <option value="view_overview">متابعة (لوحة التقدم)</option>
-        <option value="fill_project_detail">تعبئة خطة تفصيلية</option>
-        <option value="fill_program_card">تعبئة بطاقة برنامج</option>
-        <option value="change_password">تغيير كلمة المرور</option>
-        <option value="send_reminder">إرسال تذكير تأخر</option>
-        <option value="backup_export">تصدير نسخة احتياطية</option>
-      </select>
+      <select id="activityActionFilter"><option value="">كل الإجراءات</option></select>
+      <input type="text" id="activitySearch" placeholder="🔍 بحث في المدير/الإجراء/التفاصيل..." style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:230px;">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">من
         <input type="date" id="activityDateFrom" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
       </label>
@@ -1969,6 +1962,7 @@ tr.rejected-row td{background:#FDF6F6;}
         <input type="date" id="activityDateTo" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
       </label>
       <button class="export-btn" id="activityFilterClearBtn">✕ إزالة الفلاتر</button>
+      <button class="export-btn" id="actGoFollowBtn" style="background:#1E4E8C;color:#fff;">📨 رسائل التخطيط للمدراء ←</button>
     </div>
     <div class="table-scroll-wrap">
     <table class="results">
@@ -1982,6 +1976,45 @@ tr.rejected-row td{background:#FDF6F6;}
       </thead>
       <tbody id="activityLogBody"></tbody>
     </table>
+    </div>
+    </div>
+
+    <div id="actFollowView" class="hidden">
+      <div class="section-desc" style="margin-bottom:14px;">كل ما أرسله قسم التخطيط للمدراء التنفيذيين ومدراء المشاريع (تذكيرات التأخر، تنبيهات التحديات، المراسلات المخصصة، الرسائل المنبثقة) — تُجمَّع تلقائيًا من مصادرها المنظَّمة <b>بما فيها الرسائل السابقة</b>، وتُحتسَب الإحصائيات ضمن الفلاتر المختارة. ينعكس أي نوع رسالة جديد يُضاف مستقبلًا تلقائيًا.</div>
+      <div id="followSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
+      <div class="filters-bar" style="margin-bottom:14px;">
+        <select id="followRole"><option value="">كل الأدوار</option><option value="exec">المدراء التنفيذيون</option><option value="pm">مدراء المشاريع</option></select>
+        <select id="followPerson"></select>
+        <select id="followChannel"></select>
+        <select id="followKind"></select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">من
+          <input type="date" id="followFrom" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;"></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">إلى
+          <input type="date" id="followTo" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;"></label>
+        <select id="followSort">
+          <option value="name">ترتيب: حسب الاسم (تنفيذي ثم مشروع)</option>
+          <option value="least">ترتيب: الأقل متابعة أولًا</option>
+          <option value="most">ترتيب: الأكثر متابعة أولًا</option>
+          <option value="oldest">ترتيب: الأقدم آخر متابعة أولًا</option>
+          <option value="late">ترتيب: الأكثر تأخرًا حاليًا أولًا</option>
+        </select>
+        <button class="export-btn" id="followClearBtn">✕ إزالة الفلاتر</button>
+        <button class="export-btn" id="followExportBtn" style="background:#1E7A3D;color:#fff;">⬇️ تصدير التفاصيل CSV</button>
+      </div>
+      <div class="section-title" style="font-size:16px;margin-top:6px;">📊 إحصائية المتابعة لكل مدير <span style="font-size:12px;font-weight:400;color:var(--text-muted);">— اضغط على أي صف لعرض رسائله فقط</span></div>
+      <div class="table-scroll-wrap">
+        <table class="results">
+          <thead><tr><th>المدير</th><th>الدور</th><th>إجمالي الرسائل</th><th>💬 واتساب</th><th>📧 بريد</th><th>🔔 منبثق</th><th>آخر متابعة</th><th>منذ (يوم)</th><th>مشاريع متأخرة حاليًا</th><th>الحالة</th></tr></thead>
+          <tbody id="followStatsBody"></tbody>
+        </table>
+      </div>
+      <div class="section-title" id="followDetailTitle" style="font-size:16px;margin-top:26px;">📜 تفاصيل الرسائل المُرسَلة</div>
+      <div class="table-scroll-wrap">
+        <table class="results">
+          <thead><tr><th>التاريخ والوقت</th><th>أرسلها</th><th>المستلم</th><th>القناة</th><th>نوع الرسالة</th><th>المشروع / الملخص</th></tr></thead>
+          <tbody id="followDetailBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -4478,7 +4511,8 @@ function submitLoginForm(){
   if(!username){ errEl.textContent = "الرجاء إدخال اسم المستخدم"; return; }
   if(!pw){ errEl.textContent = "الرجاء إدخال كلمة المرور"; return; }
 
-  if(username === "admin"){
+  const unameKey = username.toLowerCase(); // اسم المستخدم لا يتأثر بحالة الأحرف — أما كلمة المرور فتبقى حساسة لها
+  if(unameKey === "admin"){
     if(pw === (ADMIN_PASSWORD_CURRENT || ADMIN_PASSWORD)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterAdmin();
@@ -4487,7 +4521,7 @@ function submitLoginForm(){
     errEl.textContent = "بيانات الدخول غير صحيحة"; return;
   }
 
-  if(username.toLowerCase() === "dg"){
+  if(unameKey === "dg"){
     if(pw === (DG_PASSWORD_CURRENT || DG_PASSWORD)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
       enterDG();
@@ -4496,7 +4530,7 @@ function submitLoginForm(){
     errEl.textContent = "بيانات الدخول غير صحيحة"; return;
   }
 
-  const execRec = ALL_MANAGERS_FULL.find(m=>m.employeeId===username);
+  const execRec = ALL_MANAGERS_FULL.find(m=>String(m.employeeId||"").toLowerCase()===unameKey);
   if(execRec){
     if(pw === getManagerPassword(execRec.name)){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
@@ -4506,7 +4540,7 @@ function submitLoginForm(){
     errEl.textContent = "بيانات الدخول غير صحيحة"; return;
   }
 
-  const pmRec = ALL_PROJECT_MANAGERS.find(m=>m.employeeId===username);
+  const pmRec = ALL_PROJECT_MANAGERS.find(m=>String(m.employeeId||"").toLowerCase()===unameKey);
   if(pmRec){
     if(pw === pmRec.password){
       errEl.textContent = ""; document.getElementById("loginPasswordInput").value = "";
@@ -6197,7 +6231,7 @@ document.getElementById("saveAdminPasswordBtn").onclick = ()=>{
     }
   });
 };
-document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); renderActivityScreen(); };
+document.getElementById("navActivityBtn").onclick = ()=>{ showScreen("activityScreen"); buildActivityFilters(); switchActivityTab("general"); renderActivityScreen(); };
 document.getElementById("navBackupBtn").onclick = ()=>{ showScreen("backupScreen"); buildBulkExportFilters(); };
 document.getElementById("execBackBtn").onclick = ()=> showScreen("adminScreen");
 document.getElementById("navDecisionLogBtn").onclick = ()=>{ showScreen("decisionLogScreen"); buildDecisionLogScreen(); renderDecisionLogScreen(); switchDLTab("decisions"); };
@@ -7419,7 +7453,9 @@ function buildActivityFilters(){
   document.getElementById("activityActionFilter").onchange = renderActivityScreen;
   document.getElementById("activityDateFrom").onchange = renderActivityScreen;
   document.getElementById("activityDateTo").onchange = renderActivityScreen;
+  document.getElementById("activitySearch").oninput = renderActivityScreen;
   document.getElementById("activityFilterClearBtn").onclick = ()=>{
+    document.getElementById("activitySearch").value = "";
     document.getElementById("activityProgramFilter").value = "";
     document.getElementById("activityPMFilter").value = "";
     document.getElementById("activityActionFilter").value = "";
@@ -7433,7 +7469,14 @@ const ACTION_LABELS = {
   login:"🟢 تسجيل دخول", logout:"⚪ تسجيل خروج", add_project:"📥 إضافة مشروع",
   edit_project:"✎ تعديل مشروع", delete_project:"🗑️ حذف مشروع", view_overview:"📊 متابعة (لوحة التقدم)",
   fill_project_detail:"📋 تعبئة خطة تفصيلية", fill_program_card:"🪪 تعبئة بطاقة برنامج", change_password:"🔑 تغيير كلمة المرور",
-  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة", send_custom_message:"✉️ إرسال مراسلة مخصصة", delete_custom_message:"🗑️ حذف مراسلة من السجل", send_challenge_whatsapp_alert:"📤 تنبيه واتساب بتحدٍّ للمدير التنفيذي", resolve_request:"✅ تنفيذ طلب مع تعليق", edit_request_note:"✎ تعديل تعليق تنفيذ طلب"
+  send_reminder:"📧 إرسال تذكير تأخر", backup_export:"💾 تصدير نسخة احتياطية", add_decision:"📝 تسجيل قرار/ملاحظة", send_request:"📮 إرسال طلب لقسم التخطيط", weekly_report:"📊 إنشاء تقرير أسبوعي", confirm_reminder_sent:"✓ تأكيد إرسال تذكير", bulk_export_plans:"📑 تصدير مجمّع للخطط التفصيلية", change_admin_password:"🔑 تغيير كلمة مرور حساب التخطيط", delete_decision:"🗑️ حذف قرار/ملاحظة", delete_request:"🗑️ حذف طلب", delete_announcement:"🗑️ حذف رسالة تنبيه", view_competition_report:"🏆 عرض تقرير المنافسة", add_planning_note:"📝 إضافة نقطة ملاحظة", mark_planning_note_edited:"🟡 تعليم نقطة كمُعدَّلة", confirm_planning_note:"🟢 تأكيد تنفيذ نقطة", revert_planning_note:"↩️ إرجاع نقطة لغير مُنفَّذة", delete_planning_note:"🗑️ حذف نقطة ملاحظة", add_challenge:"🚨 تسجيل تحدٍّ جديد", resolve_challenge:"✅ حل تحدٍّ داخليًا", escalate_challenge:"⬆️ تصعيد تحدٍّ للمدير العام", dg_respond_challenge:"💬 رد المدير العام على تحدٍّ", delete_challenge:"🗑️ حذف تحدٍّ", change_dg_password:"🔑 تغيير كلمة مرور المدير العام", set_spi_baseline:"🎯 تحديد خط أساس SPI", request_spi_unlock:"🔓 طلب إعادة تحديد خط أساس SPI", approve_spi_unlock:"✅ سماح بإعادة تحديد خط أساس SPI", view_spi_screen:"📈 عرض صفحة مؤشر الأداء الزمني SPI", view_analytics_screen:"🔬 عرض صفحة التحليلات المتقدمة", send_custom_message:"✉️ إرسال مراسلة مخصصة", delete_custom_message:"🗑️ حذف مراسلة من السجل", send_challenge_whatsapp_alert:"📤 تنبيه واتساب بتحدٍّ للمدير التنفيذي", resolve_request:"✅ تنفيذ طلب مع تعليق", edit_request_note:"✎ تعديل تعليق تنفيذ طلب",
+  add_announcement:"📢 إضافة رسالة تنبيه منبثقة", add_challenge_action:"➕ إضافة إجراء على تحدٍّ", add_manager:"👤 إضافة مدير تنفيذي",
+  add_program:"📂 إضافة برنامج تنفيذي", add_project_manager:"🧑‍💼 إضافة مدير مشروع", close_challenge:"🔒 إغلاق تحدٍّ نهائيًا",
+  delete_manager:"🗑️ حذف مدير تنفيذي", delete_program:"🗑️ حذف برنامج تنفيذي", delete_project_manager:"🗑️ حذف مدير مشروع",
+  edit_manager:"✎ تحديث الرقم الوظيفي لمدير", edit_program:"✎ تعديل برنامج تنفيذي", edit_project_manager_assignments:"🔗 تعديل مشاريع مدير مشروع",
+  reassign_manager:"🔁 إعادة تعيين مدير برنامج", recalculate_step_durations:"🔄 إعادة حساب مدد الخطوات", rename_manager:"✎ إعادة تسمية مدير",
+  reset_project_manager_password:"🔑 إعادة تعيين كلمة مرور مدير مشروع", send_credentials_whatsapp:"📤 إرسال بيانات الدخول بواتساب",
+  start_challenge_progress:"📝 تسجيل الإجراءات الأولى على تحدٍّ", view_full_matrix:"📐 عرض المصفوفة الشاملة"
 };
 function getActorName(){ return currentManager || currentProjectManagerName || ADMIN_NAME; }
 // يبني صفًا واحدًا لنقطة ملاحظة ضمن دورة العمل (⚪ لم تُنفَّذ ← 🟡 تم التعديل ← 🟢 تم التأكيد)
@@ -7526,7 +7569,21 @@ function challengeRowHTML(challenge, role){
     </div>`;
 }
 
+// قائمة الإجراءات مرنة: تُبنى من الإجراءات الموجودة فعليًا في السجل، فأي إجراء جديد يُضاف مستقبلًا يظهر فيها تلقائيًا (بتسميته إن وُجدت، وإلا بمفتاحه)، مع عدد مرات تكراره
+function buildActivityActionFilter(){
+  const sel = document.getElementById("activityActionFilter");
+  const prev = sel.value;
+  const counts = {};
+  ALL_ACTIVITY_LOG.forEach(a=>{ if(a.action) counts[a.action] = (counts[a.action]||0)+1; });
+  const plain = t=> String(t).replace(/^[^\u0600-\u06FFA-Za-z]+/,"");
+  const opts = Object.keys(counts).map(k=>({ k, label: ACTION_LABELS[k]||k, n:counts[k] }))
+    .sort((a,b)=> plain(a.label).localeCompare(plain(b.label),"ar"));
+  sel.innerHTML = `<option value="">كل الإجراءات</option>` + opts.map(o=>`<option value="${escapeAttr(o.k)}">${escapeHtml(o.label)} (${o.n})</option>`).join("");
+  sel.value = counts[prev] ? prev : "";
+}
 function renderActivityScreen(){
+  buildActivityActionFilter();
+  const searchQ = (document.getElementById("activitySearch").value||"").trim().toLowerCase();
   const programFilter = document.getElementById("activityProgramFilter").value;
   const pmFilter = document.getElementById("activityPMFilter").value;
   const actionFilter = document.getElementById("activityActionFilter").value;
@@ -7538,6 +7595,10 @@ function renderActivityScreen(){
     if(programActors && !programActors.has(a.managerName)) return false;
     if(pmFilter && a.managerName!==pmFilter) return false;
     if(actionFilter && a.action!==actionFilter) return false;
+    if(searchQ){
+      const hay = `${a.managerName||""} ${ACTION_LABELS[a.action]||a.action||""} ${a.detail||""}`.toLowerCase();
+      if(!hay.includes(searchQ)) return false;
+    }
     if(dateFrom || dateTo){
       const d = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate() : null;
       if(!d) return false;
@@ -7558,7 +7619,7 @@ function renderActivityScreen(){
   const totalLogins = rows.filter(a=>a.action==="login").length;
   const totalAdds = rows.filter(a=>a.action==="add_project").length;
   const activeManagers = new Set(rows.map(a=>a.managerName)).size;
-  const hasFilters = programFilter || pmFilter || actionFilter || dateFrom || dateTo;
+  const hasFilters = programFilter || pmFilter || actionFilter || dateFrom || dateTo || searchQ;
   summary.innerHTML = `
     <div class="summary-card"><div class="num">${rows.length}</div><div class="lbl">${hasFilters?"إجمالي الأحداث (ضمن الفلاتر المختارة)":"إجمالي الأحداث المسجّلة"}</div></div>
     <div class="summary-card"><div class="num">${totalLogins}</div><div class="lbl">مرات الدخول</div></div>
@@ -7585,6 +7646,268 @@ function renderActivityScreen(){
     }).join("");
   }
 }
+/* ---------------- متابعة قسم التخطيط للمدراء: إحصائيات من مصادر منظَّمة (تشمل الأحداث السابقة) ---------------- */
+const FOLLOWUP_STALE_DAYS = 14; // بعد هذه المدة دون متابعة (مع بقاء تأخر حالي) تُعلَّم حالة المدير بتنبيه أصفر
+const FOLLOWUP_CHANNEL_LABELS = { whatsapp:"💬 واتساب", email:"📧 بريد", popup:"🔔 تنبيه منبثق" };
+function followShort(t, n){ const x = String(t||"").replace(/\s+/g," ").trim(); return x.length>n ? x.slice(0,n)+"…" : x; }
+// عدد الأيام التقويمية (منتصف الليل إلى منتصف الليل) — لا الأجزاء الكسرية — حتى لا يظهر حدث وقع قبل يومين كـ"منذ يوم واحد"
+function followCalendarDaysAgo(d){
+  const a = new Date(); a.setHours(0,0,0,0);
+  const b = new Date(d); b.setHours(0,0,0,0);
+  return Math.max(0, Math.round((a-b)/86400000));
+}
+function followLocalDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+// سجل مصادر الرسائل — لإضافة نوع رسالة جديد مستقبلًا يكفي إضافة عنصر هنا يُعيد قائمة أحداث بنفس الشكل، فيظهر تلقائيًا في الإحصائيات والفلاتر والتصدير
+const FOLLOWUP_SOURCES = [
+  { key:"late_reminder", label:"تذكير تأخر", build(){
+    const out = [];
+    ALL_PROJECTS.forEach(pr=>{
+      (Array.isArray(pr.reminderLog) ? pr.reminderLog : []).forEach(e=>{
+        const at = new Date(e.sentAt);
+        if(isNaN(at)) return;
+        const isPM = e.recipientType==="pm";
+        out.push({ at, by:e.sentBy||"", channel:e.channel||"", targetType:isPM?"pm":"exec",
+          targetName: e.recipientName || (isPM ? "" : pr.govManager), projectName:pr.projectName, programCode:pr.programCode,
+          summary:"تذكير ببنود/خطوات متأخرة" });
+      });
+    });
+    return out;
+  }},
+  { key:"challenge_alert", label:"تنبيه بتحدٍّ", build(){
+    const out = [];
+    ALL_PROJECT_DETAILS.forEach(d=>{
+      const pr = ALL_PROJECTS.find(p=>p.id===d.id);
+      if(!pr || !Array.isArray(d.challengesList)) return;
+      d.challengesList.forEach(c=>{
+        (Array.isArray(c.alertLog) ? c.alertLog : []).forEach(e=>{
+          const at = new Date(e.sentAt);
+          if(isNaN(at)) return;
+          out.push({ at, by:e.sentBy||"", channel:e.channel||"whatsapp", targetType:"exec", targetName:e.recipientName||pr.govManager,
+            projectName:pr.projectName, programCode:pr.programCode, summary:"تحدٍّ: "+followShort(c.text,70) });
+        });
+      });
+    });
+    return out;
+  }},
+  { key:"custom_message", label:"مراسلة مخصصة", build(){
+    return ALL_CORRESPONDENCE.map(c=>({ at:new Date(c.sentAt), by:c.sentBy||"", channel:c.channel||"", targetType:c.recipientType==="pm"?"pm":"exec",
+      targetName:c.recipientName, projectName:c.projectName||"", programCode:"", summary:followShort(c.text,90), corrId:c.id }));
+  }},
+  { key:"announcement", label:"رسالة تنبيه منبثقة", build(){
+    const out = [];
+    const execNames = ALL_MANAGERS_FULL.map(m=>m.name);
+    const pmNames = ALL_PROJECT_MANAGERS.map(m=>m.name);
+    ALL_ANNOUNCEMENTS.forEach(a=>{
+      const at = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : null;
+      if(!at) return;
+      const names = Array.isArray(a.recipientNames) && a.recipientNames.length>0 ? a.recipientNames : [...execNames, ...pmNames];
+      names.forEach(n=>{
+        const type = pmNames.includes(n) && !execNames.includes(n) ? "pm" : "exec";
+        const seen = Array.isArray(a.seenBy) && a.seenBy.includes(n);
+        out.push({ at, by:ADMIN_NAME, channel:"popup", targetType:type, targetName:n, projectName:"", programCode:"",
+          summary: followShort(a.text,80) + (seen ? " — ✓ شاهدها" : " — لم يشاهدها بعد") + (a.startDate ? ` — تبدأ ${a.startDate}` : "") });
+      });
+    });
+    return out;
+  }}
+];
+function followCollectEvents(){
+  const all = [];
+  FOLLOWUP_SOURCES.forEach(src=>{
+    let evs = [];
+    try{ evs = src.build(); }catch(err){ console.error("followup source failed:", src.key, err); }
+    evs.forEach(ev=> all.push({ ...ev, kind:src.key, kindLabel:src.label }));
+  });
+  return all.filter(e=> e.targetName && e.at instanceof Date && !isNaN(e.at));
+}
+// كل من يُفترض متابعته (المدراء التنفيذيون + مدراء المشاريع)، مع إبقاء من حُذف لاحقًا إن كانت له رسائل سابقة حتى لا يضيع الدليل
+function followPeople(events){
+  const map = new Map();
+  ALL_MANAGERS_FULL.forEach(m=> map.set("exec:"+m.name, { key:"exec:"+m.name, type:"exec", name:m.name }));
+  ALL_PROJECT_MANAGERS.forEach(pm=> map.set("pm:"+pm.name, { key:"pm:"+pm.name, type:"pm", name:pm.name }));
+  events.forEach(e=>{ const k = e.targetType+":"+e.targetName; if(!map.has(k)) map.set(k, { key:k, type:e.targetType, name:e.targetName, orphan:true }); });
+  return [...map.values()];
+}
+// عدد المشاريع المتأخرة حاليًا لكل مدير — لربط حجم المتابعة بالحاجة الفعلية إليها
+function followLateCounts(){
+  const exec = {}, pm = {};
+  ALL_PROJECTS.filter(p=>!p.closed).forEach(pr=>{
+    if(findLateSteps(pr).length===0) return;
+    exec[pr.govManager] = (exec[pr.govManager]||0)+1;
+    (Array.isArray(pr.assignedProjectManagerIds) ? pr.assignedProjectManagerIds : []).forEach(id=>{
+      const m = ALL_PROJECT_MANAGERS.find(x=>x.employeeId===id);
+      if(m) pm[m.name] = (pm[m.name]||0)+1;
+    });
+  });
+  return { exec, pm };
+}
+function followReadFilters(){
+  const v = id=> document.getElementById(id).value;
+  return { role:v("followRole"), person:v("followPerson"), channel:v("followChannel"), kind:v("followKind"), from:v("followFrom"), to:v("followTo"), sort:v("followSort")||"name" };
+}
+function followApplyFilters(events, f){
+  return events.filter(e=>{
+    if(f.role && e.targetType!==f.role) return false;
+    if(f.person && (e.targetType+":"+e.targetName)!==f.person) return false;
+    if(f.channel && e.channel!==f.channel) return false;
+    if(f.kind && e.kind!==f.kind) return false;
+    const ds = followLocalDateStr(e.at);
+    if(f.from && ds < f.from) return false;
+    if(f.to && ds > f.to) return false;
+    return true;
+  });
+}
+// قوائم الاختيار تُبنى من البيانات نفسها (مرنة): الأشخاص حسب الدور المختار، والقنوات الموجودة فعلًا، وأنواع الرسائل المسجَّلة في سجل المصادر
+function followBuildSelects(people, events){
+  const role = document.getElementById("followRole").value;
+  const ar = (a,b)=> a.name.localeCompare(b.name,"ar");
+  const personSel = document.getElementById("followPerson");
+  const prevP = personSel.value;
+  const visible = people.filter(p=> !role || p.type===role);
+  const execs = visible.filter(p=>p.type==="exec").sort(ar), pms = visible.filter(p=>p.type==="pm").sort(ar);
+  const optHtml = arr=> arr.map(p=>`<option value="${escapeAttr(p.key)}">${escapeHtml(p.name)}${p.orphan?" (غير مسجَّل حاليًا)":""}</option>`).join("");
+  personSel.innerHTML = `<option value="">كل المدراء</option>` +
+    (execs.length ? `<optgroup label="المدراء التنفيذيون">${optHtml(execs)}</optgroup>` : "") +
+    (pms.length ? `<optgroup label="مدراء المشاريع">${optHtml(pms)}</optgroup>` : "");
+  personSel.value = visible.some(p=>p.key===prevP) ? prevP : "";
+
+  const chanSel = document.getElementById("followChannel");
+  const prevC = chanSel.value;
+  const chans = new Set(Object.keys(FOLLOWUP_CHANNEL_LABELS));
+  events.forEach(e=>{ if(e.channel) chans.add(e.channel); });
+  chanSel.innerHTML = `<option value="">كل القنوات</option>` + [...chans].map(c=>`<option value="${escapeAttr(c)}">${FOLLOWUP_CHANNEL_LABELS[c]||escapeHtml(c)}</option>`).join("");
+  chanSel.value = chans.has(prevC) ? prevC : "";
+
+  const kindSel = document.getElementById("followKind");
+  const prevK = kindSel.value;
+  kindSel.innerHTML = `<option value="">كل أنواع الرسائل</option>` + FOLLOWUP_SOURCES.map(s=>`<option value="${escapeAttr(s.key)}">${escapeHtml(s.label)}</option>`).join("");
+  kindSel.value = FOLLOWUP_SOURCES.some(s=>s.key===prevK) ? prevK : "";
+}
+function renderFollowUpTab(){
+  const events = followCollectEvents();
+  const people = followPeople(events);
+  followBuildSelects(people, events);
+  const f = followReadFilters();
+  const filtered = followApplyFilters(events, f);
+  const late = followLateCounts();
+  const byPerson = new Map();
+  filtered.forEach(e=>{ const k = e.targetType+":"+e.targetName; if(!byPerson.has(k)) byPerson.set(k, []); byPerson.get(k).push(e); });
+  let rows = people.filter(p=> (!f.role || p.type===f.role) && (!f.person || p.key===f.person)).map(p=>{
+    const evs = byPerson.get(p.key) || [];
+    const last = evs.reduce((m,e)=> (!m || e.at>m) ? e.at : m, null);
+    return { ...p, total:evs.length,
+      wa:evs.filter(e=>e.channel==="whatsapp").length, em:evs.filter(e=>e.channel==="email").length, popup:evs.filter(e=>e.channel==="popup").length,
+      last, daysSince: last ? followCalendarDaysAgo(last) : null,
+      lateNow: (p.type==="exec" ? late.exec : late.pm)[p.name] || 0 };
+  }).filter(r=> !(r.orphan && r.total===0));
+
+  const nameCmp = (a,b)=> (a.type===b.type ? 0 : (a.type==="exec" ? -1 : 1)) || a.name.localeCompare(b.name,"ar");
+  const sorters = {
+    name: nameCmp,
+    least: (a,b)=> a.total-b.total || nameCmp(a,b),
+    most: (a,b)=> b.total-a.total || nameCmp(a,b),
+    oldest: (a,b)=> (a.last ? a.last.getTime() : 0) - (b.last ? b.last.getTime() : 0) || nameCmp(a,b),
+    late: (a,b)=> b.lateNow-a.lateNow || a.total-b.total || nameCmp(a,b)
+  };
+  rows.sort(sorters[f.sort] || nameCmp);
+
+  const followed = rows.filter(r=>r.total>0).length;
+  const notFollowed = rows.filter(r=>r.total===0);
+  const gap = notFollowed.filter(r=>r.lateNow>0).length;
+  document.getElementById("followSummaryGrid").innerHTML = `
+    <div class="summary-card"><div class="num">${filtered.length}</div><div class="lbl">إجمالي الرسائل المُرسَلة (ضمن الفلاتر)</div></div>
+    <div class="summary-card" style="border-right-color:#1E7A3D;"><div class="num">${followed} <span style="font-size:14px;font-weight:400;color:var(--text-muted);">من ${rows.length}</span></div><div class="lbl">مدراء تمت مراسلتهم</div></div>
+    <div class="summary-card"><div class="num">${notFollowed.length}</div><div class="lbl">مدراء لم تتم مراسلتهم ضمن هذا الاختيار</div></div>
+    <div class="summary-card" style="border-right-color:var(--red);"><div class="num">${gap}</div><div class="lbl">منهم لديهم مشاريع متأخرة حاليًا ⚠️</div></div>`;
+
+  const status = r=>{
+    if(r.total===0) return r.lateNow>0
+      ? `<span style="color:#B3202E;font-weight:700;">⚠️ لم يُتابَع رغم تأخر ${r.lateNow} من مشاريعه</span>`
+      : `<span style="color:var(--text-muted);">— لم تتم مراسلته</span>`;
+    if(r.lateNow>0 && r.daysSince!==null && r.daysSince>FOLLOWUP_STALE_DAYS)
+      return `<span style="color:#8a6d1f;font-weight:700;">🟡 آخر متابعة قبل ${r.daysSince} يومًا ومشاريعه ما زالت متأخرة</span>`;
+    return `<span style="color:#1E7A3D;font-weight:700;">✓ تمت المتابعة</span>`;
+  };
+  const statsBody = document.getElementById("followStatsBody");
+  statsBody.innerHTML = rows.length===0
+    ? `<tr><td colspan="10" style="text-align:center;color:#6B7688;padding:20px;">لا يوجد مدراء ضمن هذا الاختيار</td></tr>`
+    : rows.map(r=>`
+      <tr class="follow-person-row" data-key="${escapeAttr(r.key)}" style="cursor:pointer;${r.total===0 && r.lateNow>0 ? "background:#FDEAEA;" : ""}">
+        <td><b>${escapeHtml(r.name)}</b></td>
+        <td>${r.type==="pm" ? "🧑‍💼 مدير مشروع" : "👤 مدير تنفيذي"}</td>
+        <td><b>${r.total}</b></td><td>${r.wa}</td><td>${r.em}</td><td>${r.popup}</td>
+        <td>${r.last ? r.last.toLocaleDateString("ar-OM",{dateStyle:"medium"}) : "—"}</td>
+        <td>${r.daysSince===null ? "—" : r.daysSince}</td>
+        <td>${r.lateNow>0 ? `<b style="color:#B3202E;">${r.lateNow}</b>` : "0"}</td>
+        <td>${status(r)}</td>
+      </tr>`).join("");
+  statsBody.querySelectorAll(".follow-person-row").forEach(tr=>{
+    tr.onclick = ()=>{
+      document.getElementById("followPerson").value = tr.dataset.key;
+      renderFollowUpTab();
+      document.getElementById("followDetailTitle").scrollIntoView({ behavior:"smooth", block:"start" });
+    };
+  });
+
+  const detail = filtered.slice().sort((a,b)=> b.at-a.at);
+  const shown = detail.slice(0, 400);
+  document.getElementById("followDetailTitle").textContent = `📜 تفاصيل الرسائل المُرسَلة (${detail.length})` + (detail.length>shown.length ? ` — يُعرَض أحدث ${shown.length}، والتصدير يشمل الكل` : "");
+  const detailBody = document.getElementById("followDetailBody");
+  detailBody.innerHTML = shown.length===0
+    ? `<tr><td colspan="6" style="text-align:center;color:#6B7688;padding:20px;">لا توجد رسائل ضمن هذا الاختيار</td></tr>`
+    : shown.map(e=>`
+      <tr ${e.corrId ? `class="follow-corr-row" data-id="${escapeAttr(e.corrId)}" style="cursor:pointer;"` : ""}>
+        <td>${e.at.toLocaleString("ar-OM",{dateStyle:"medium",timeStyle:"short"})}</td>
+        <td>${escapeHtml(e.by||"—")}</td>
+        <td>${e.targetType==="pm" ? "🧑‍💼" : "👤"} ${escapeHtml(e.targetName)}</td>
+        <td>${FOLLOWUP_CHANNEL_LABELS[e.channel] || escapeHtml(e.channel||"—")}</td>
+        <td>${escapeHtml(e.kindLabel)}</td>
+        <td>${e.projectName ? `<b>${escapeHtml(e.projectName)}</b><br>` : ""}<span style="color:var(--text-muted);font-size:12px;">${escapeHtml(e.summary||"")}</span></td>
+      </tr>`).join("");
+  detailBody.querySelectorAll(".follow-corr-row").forEach(tr=>{ tr.onclick = ()=> openCorrDetail(tr.dataset.id); });
+}
+// تصدير تفاصيل الرسائل المفلترة كملف CSV (بترميز يفتح بالعربية في Excel) — يصلح كدليل موثّق على المتابعة
+function followExportCSV(){
+  const f = followReadFilters();
+  const evs = followApplyFilters(followCollectEvents(), f).sort((a,b)=> b.at-a.at);
+  if(evs.length===0){ alert("لا توجد رسائل ضمن الفلاتر الحالية لتصديرها."); return; }
+  const q = v=> `"${String(v==null ? "" : v).replace(/"/g,'""')}"`;
+  const pad = n=> String(n).padStart(2,"0");
+  const head = ["التاريخ","الوقت","أرسلها","المستلم","الدور","القناة","نوع الرسالة","المشروع","الملخص"];
+  const lines = [head.map(q).join(",")].concat(evs.map(e=> [
+    followLocalDateStr(e.at), `${pad(e.at.getHours())}:${pad(e.at.getMinutes())}`, e.by, e.targetName,
+    e.targetType==="pm" ? "مدير مشروع" : "مدير تنفيذي",
+    String(FOLLOWUP_CHANNEL_LABELS[e.channel]||e.channel||"").replace(/^[^\u0600-\u06FFA-Za-z]+/,""),
+    e.kindLabel, e.projectName||"", e.summary||""
+  ].map(q).join(",")));
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type:"text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `متابعة_قسم_التخطيط_${followLocalDateStr(new Date())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 500);
+}
+function switchActivityTab(tab){
+  document.getElementById("actTabGeneral").classList.toggle("active", tab==="general");
+  document.getElementById("actTabFollow").classList.toggle("active", tab==="follow");
+  document.getElementById("actGeneralView").classList.toggle("hidden", tab!=="general");
+  document.getElementById("actFollowView").classList.toggle("hidden", tab!=="follow");
+  if(tab==="follow") renderFollowUpTab();
+}
+function refreshFollowUpIfVisible(){
+  if(document.getElementById("activityScreen").classList.contains("hidden")) return;
+  if(!document.getElementById("actFollowView").classList.contains("hidden")) renderFollowUpTab();
+}
+["followRole","followPerson","followChannel","followKind","followFrom","followTo","followSort"].forEach(id=>{ document.getElementById(id).onchange = renderFollowUpTab; });
+document.getElementById("followClearBtn").onclick = ()=>{
+  ["followRole","followPerson","followChannel","followKind","followFrom","followTo"].forEach(id=>{ document.getElementById(id).value = ""; });
+  document.getElementById("followSort").value = "name";
+  renderFollowUpTab();
+};
+document.getElementById("followExportBtn").onclick = followExportCSV;
+document.getElementById("actTabGeneral").onclick = ()=> switchActivityTab("general");
+document.getElementById("actTabFollow").onclick = ()=> switchActivityTab("follow");
+document.getElementById("actGoFollowBtn").onclick = ()=> switchActivityTab("follow");
 document.getElementById("resetPwCancel").onclick = ()=> document.getElementById("resetPwModal").classList.add("hidden");
 document.getElementById("resetPwSubmit").onclick = ()=>{
   const nw = document.getElementById("resetPwNew").value;
@@ -10947,6 +11270,7 @@ listenToPrograms(()=>{
   }
 });
 listenToProjects(()=>{
+  refreshFollowUpIfVisible();
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
@@ -10956,6 +11280,7 @@ listenToMonthlySnapshots(()=>{
   if(!document.getElementById("analyticsScreen").classList.contains("hidden")) renderAnalyticsScreen();
 });
 listenToProjectDetails(()=>{
+  refreshFollowUpIfVisible();
   if(!document.getElementById("managerScreen").classList.contains("hidden")) renderManagerPrograms();
   if(!document.getElementById("adminScreen").classList.contains("hidden")) renderAdmin();
   if(!document.getElementById("meetingScreen").classList.contains("hidden")) renderMeetingView();
@@ -11007,9 +11332,11 @@ listenToRequests(()=>{
   }
 });
 listenToAnnouncements(()=>{
+  refreshFollowUpIfVisible();
   if(!document.getElementById("decisionLogScreen").classList.contains("hidden")) renderAnnouncementsList();
 });
 listenToCorrespondence(()=>{
+  refreshFollowUpIfVisible();
   if(!document.getElementById("dlCorrView").classList.contains("hidden")) renderCorrespondenceLog();
 });
 listenToSettings(()=>{
