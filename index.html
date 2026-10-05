@@ -152,6 +152,28 @@ input,select{font-family:inherit;}
   box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;
 }
 .modal-box h3{font-family:'Cairo',sans-serif;margin-bottom:16px;color:var(--navy);}
+/* ===== نافذة تفاصيل المراسلة (مراسلات مخصصة) ===== */
+.cd-box{background:#fff;border-radius:16px;width:min(680px,94vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:right;overflow:hidden;}
+.cd-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 22px;border-bottom:1px solid var(--border);}
+.cd-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:17px;color:var(--navy);}
+.cd-x{width:32px;height:32px;border-radius:50%;background:#EEF0F3;font-size:15px;line-height:1;color:var(--navy);flex-shrink:0;}
+.cd-x:hover{background:#e2e5ea;}
+.cd-body{padding:18px 22px;overflow-y:auto;flex:1;}
+.cd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.cd-chip{font-size:12px;font-weight:700;padding:5px 13px;border-radius:14px;background:#EEF0F3;color:var(--navy);}
+.cd-chip.wa{background:#DDF5E4;color:#1E7A3D;} .cd-chip.em{background:#E3EEFB;color:#1E4E8C;} .cd-chip.batch{background:#F1EEFB;color:#5B3EAF;}
+.cd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;background:#F7F8FA;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.cd-field .l{font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:2px;}
+.cd-field .v{font-size:13.5px;color:var(--navy);font-weight:700;line-height:1.55;}
+.cd-field.wide{grid-column:1/-1;}
+.cd-sec{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:7px;}
+.cd-bubble{white-space:pre-wrap;line-height:1.95;font-size:14px;padding:14px 16px;border-radius:12px;border:1px solid;color:#222;}
+.cd-bubble.wa{background:#F0FAF3;border-color:#CDE9D6;} .cd-bubble.em{background:#F2F7FD;border-color:#CFE0F5;}
+details.cd-full{margin-top:14px;}
+details.cd-full summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--navy);padding:4px 0;}
+.cd-full-text{white-space:pre-wrap;font-size:12.5px;line-height:1.85;background:#F7F8FA;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:6px;color:#444;}
+.cd-foot{display:flex;gap:10px;padding:13px 22px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap;}
+.cd-foot button{flex:1;min-width:110px;padding:11px;border-radius:8px;font-weight:700;font-size:13.5px;}
 .modal-box input{
   width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;
   font-size:15px;text-align:center;letter-spacing:2px;margin-bottom:14px;
@@ -174,6 +196,11 @@ input,select{font-family:inherit;}
 }
 .mgr-tab:hover{color:var(--navy);}
 .mgr-tab.active{color:var(--navy);border-bottom-color:var(--gold);}
+/* الجوال: شريط التبويبات يلتف على أكثر من سطر بدل أن يخرج بعض التبويبات خارج الشاشة ويُوسّع الصفحة أفقيًا (كان تبويبا "رسالة تنبيه منبثقة" و"مراسلات مخصصة" يختفيان) */
+@media (max-width:700px){
+  .mgr-tabs{flex-wrap:wrap;gap:2px 4px;}
+  .mgr-tab{padding:9px 12px;font-size:12.5px;}
+}
 
 .ov-progress-bar{height:8px;background:#E2E5EA;border-radius:5px;overflow:hidden;margin-bottom:10px;}
 .ov-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#1E7A3D);border-radius:5px;}
@@ -275,6 +302,10 @@ input,select{font-family:inherit;}
 .phase-alert-badge.late{background:var(--red);color:#fff;}
 
 .late-popup-box{background:#fff;border-radius:16px;padding:26px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;}
+/* صف تنبيه بتخطيط عمودي: النص أولًا بعرض كامل، ثم الوسم (من سجّله/الحالة) تحته — لتقليص الارتفاع بدل حشر النص في عمود ضيق بجانب الوسم */
+.phase-alert-row.stacked{flex-direction:column;align-items:stretch;gap:7px;}
+.phase-alert-row.stacked .phase-alert-badge{align-self:flex-start;white-space:normal;}
+.phase-alert-row .par-date{font-size:11px;color:var(--text-muted);margin-inline-start:8px;}
 .late-popup-box h3{font-family:'Cairo',sans-serif;font-size:16px;color:var(--red);margin-bottom:6px;}
 .late-popup-box .lp-desc{font-size:12.5px;color:var(--text-muted);margin-bottom:16px;}
 .popup-section-label{font-family:'Cairo',sans-serif;font-weight:800;font-size:12.5px;color:var(--navy);margin-bottom:6px;}
@@ -1289,13 +1320,16 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <!-- ===================== CORRESPONDENCE DETAIL MODAL (تفاصيل مراسلة مُرسَلة) ===================== -->
 <div id="corrDetailModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;text-align:right;">
-    <h3>✉️ تفاصيل المراسلة</h3>
-    <div id="corrDetailBody"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="corrDetailDelete" style="color:#B3202E;">🗑️ حذف من السجل</button>
-      <button class="btn-secondary" id="corrDetailCopy">📋 نسخ النص</button>
+  <div class="cd-box">
+    <div class="cd-head">
+      <div class="cd-title">✉️ تفاصيل المراسلة</div>
+      <button class="cd-x" id="corrDetailX" title="إغلاق">✕</button>
+    </div>
+    <div class="cd-body" id="corrDetailBody"></div>
+    <div class="cd-foot">
       <button class="btn-primary" id="corrDetailClose">إغلاق</button>
+      <button class="btn-secondary" id="corrDetailCopy">📋 نسخ النص الكامل</button>
+      <button class="btn-secondary" id="corrDetailDelete" style="color:#B3202E;">🗑️ حذف من السجل</button>
     </div>
   </div>
 </div>
@@ -1508,8 +1542,8 @@ tr.rejected-row td{background:#FDF6F6;}
 
 <div id="adminChallengesPopupOverlay" class="modal-overlay hidden">
   <div class="late-popup-box">
-    <h3>🚨 تحديات جديدة تحتاج قرارك</h3>
-    <div class="lp-desc">سجّلها مدراء المشاريع/البرامج ولم يُتَّخذ إجراء بعد (حل أو تصعيد). اضغط على أي بند لفتح المشروع مباشرة.</div>
+    <h3>🚨 تحديات جديدة بانتظار المدير التنفيذي</h3>
+    <div class="lp-desc">سجّلها مدراء المشاريع/البرامج ولم يُسجَّل عليها أي إجراء بعد. اضغط على أي بند لفتح المشروع ومتابعته، ويمكنك تنبيه المدير التنفيذي بالواتساب من «سجل التحديات» في إدارة الملاحظات والقرارات.</div>
     <div id="adminChallengesPopupList"></div>
     <button class="late-popup-close" id="adminChallengesPopupClose">إغلاق</button>
   </div>
@@ -1527,7 +1561,7 @@ tr.rejected-row td{background:#FDF6F6;}
 <div id="dgChallengesPopupOverlay" class="modal-overlay hidden">
   <div class="late-popup-box">
     <h3>🚨 تحديات مُصعَّدة تحتاج ردّك</h3>
-    <div class="lp-desc">لم يستطع قسم التخطيط حلّها داخليًا. اضغط على أي بند لفتح المشروع أو الرد مباشرة.</div>
+    <div class="lp-desc">صعّدها المدير التنفيذي بعد أن سجّل ما اتخذه من إجراءات ولم يتمكن من حلّها. اضغط على أي بند لفتح المشروع أو الرد مباشرة.</div>
     <div id="dgChallengesPopupList"></div>
     <button class="late-popup-close" id="dgChallengesPopupClose">إغلاق</button>
   </div>
@@ -4967,7 +5001,7 @@ function checkAndShowLateStepsPopup(){
     html += awaiting.map(({project, challenge})=>{
       const isDG = challenge.status==="dg_solution_pending";
       return `
-      <div class="phase-alert-row late" data-project-id="${project.id}" data-scroll-challenges="1">
+      <div class="phase-alert-row late stacked" data-project-id="${project.id}" data-scroll-challenges="1">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">سجّله ${escapeHtml(challenge.createdBy)} — ${fmtChallengeDate(challenge.createdAt)}</div>
         ${isDG && challenge.dgSolution ? `<div style="font-size:11.5px;color:#5B3EAF;margin-top:3px;">🟣 حل المدير العام: ${escapeHtml(challenge.dgSolution)}</div>` : ""}
@@ -4979,7 +5013,7 @@ function checkAndShowLateStepsPopup(){
   if(followUps.length>0){
     html += `<div class="popup-section-label" style="margin-top:14px;">🔔 تحديات تحتاج متابعتك (لم تُحدَّث منذ أسبوعين أو أكثر) — ${followUps.length}</div>`;
     html += followUps.map(({project, challenge})=>`
-      <div class="phase-alert-row upcoming" data-project-id="${project.id}">
+      <div class="phase-alert-row upcoming stacked" data-project-id="${project.id}">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
         <span class="phase-alert-badge upcoming">🔔 يحتاج متابعة</span>
       </div>`).join("");
@@ -5083,7 +5117,7 @@ function checkAndShowPMPopup(){
     html += challengeUpdates.map(({project, challenge})=>{
       const statusLabel = { in_progress:"🟡 قيد المعالجة", resolved:"✅ حُلّت", escalated:"⬆️ صُعِّدت للمدير العام", dg_solution_pending:"🟣 حل معتمَد — قيد التنفيذ", closed:"✅ أُغلقت" }[challenge.status] || "";
       return `
-      <div class="phase-alert-row ${challenge.status==='dg_solution_pending'?'late':'upcoming'}" data-project-id="${project.id}">
+      <div class="phase-alert-row ${challenge.status==='dg_solution_pending'?'late':'upcoming'} stacked" data-project-id="${project.id}">
         <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
         ${challenge.dgSolution ? `<div style="font-size:11px;color:#5B3EAF;margin-top:2px;">🟣 ${escapeHtml(challenge.dgSolution)}</div>` : ""}
         </div>
@@ -6045,9 +6079,9 @@ function checkAndShowAdminChallengesPopup(){
   if(openEntries.length===0) return;
   const list = document.getElementById("adminChallengesPopupList");
   list.innerHTML = openEntries.map(({project, challenge})=>`
-    <div class="phase-alert-row late" data-project-id="${project.id}">
+    <div class="phase-alert-row late stacked" data-project-id="${project.id}">
       <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
-      <span class="phase-alert-badge late">سجّله ${escapeHtml(challenge.createdBy)}</span>
+      <div><span class="phase-alert-badge late">سجّله ${escapeHtml(challenge.createdBy)}</span><span class="par-date">${fmtChallengeDate(challenge.createdAt)}</span></div>
     </div>`).join("");
   list.querySelectorAll(".phase-alert-row").forEach(row=>{
     row.onclick = ()=>{
@@ -6079,7 +6113,7 @@ function checkAndShowAdminSPIUnlockPopup(){
   if(pending.length===0) return;
   const list = document.getElementById("spiUnlockPopupList");
   list.innerHTML = pending.map(({project, detail})=>`
-    <div class="phase-alert-row late" data-project-id="${project.id}">
+    <div class="phase-alert-row late stacked" data-project-id="${project.id}">
       <div><b>${escapeHtml(project.projectName)}</b> — طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)}
       ${detail.spiUnlockRequested.reason ? `<div style="font-size:12px;color:#8B1420;margin-top:2px;">السبب: ${escapeHtml(detail.spiUnlockRequested.reason)}</div>` : ""}
       </div>
@@ -6147,11 +6181,11 @@ function checkAndShowDGChallengesPopup(){
   if(followUps.length===0) return;
   const list = document.getElementById("dgChallengesPopupList");
   list.innerHTML = followUps.map(({project, challenge})=>`
-    <div class="phase-alert-row late" data-project-id="${project.id}">
+    <div class="phase-alert-row late stacked" data-project-id="${project.id}">
       <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}
       ${(Array.isArray(challenge.actionsLog) ? challenge.actionsLog : []).map(a=> `<div style="font-size:11px;color:#8a6d1f;margin-top:2px;">🟡 ${escapeHtml(a.by)} (${fmtChallengeDate(a.at)}): ${escapeHtml(a.text)}</div>`).join("")}
       </div>
-      <span class="phase-alert-badge late">صعّدها ${escapeHtml(challenge.escalatedBy||"")}</span>
+      <div><span class="phase-alert-badge late">صعّدها ${escapeHtml(challenge.escalatedBy||"")}</span>${challenge.escalatedAt ? `<span class="par-date">${fmtChallengeDate(challenge.escalatedAt)}</span>` : ""}</div>
     </div>`).join("");
   list.querySelectorAll(".phase-alert-row").forEach(row=>{
     row.onclick = ()=>{
@@ -6469,15 +6503,30 @@ function openCorrDetail(id){
   const c = ALL_CORRESPONDENCE.find(x=>x.id===id);
   if(!c) return;
   corrOpenId = id;
-  const line = (label, val)=> val ? `<div style="margin-bottom:8px;"><span style="font-size:11.5px;font-weight:700;color:var(--navy);">${label}:</span> <span style="font-size:13px;">${escapeHtml(val)}</span></div>` : "";
-  document.getElementById("corrDetailBody").innerHTML =
-    line("تاريخ ووقت الإرسال", fmtChallengeDate(c.sentAt)) + line("المُرسِل", c.sentBy) +
-    line("القناة", c.channel==="email" ? "📧 بريد إلكتروني" : "💬 واتساب") +
-    line("المستلم", `${c.recipientType==="pm"?"مدير مشروع":"مدير تنفيذي"} — ${c.recipientName}`) +
-    line("البرنامج الاستراتيجي", c.goalName) + line("البرنامج التنفيذي", c.programLabel) + line("المشروع", c.projectName) +
-    line("عنوان البريد", c.subject) +
-    `<div style="margin-top:10px;font-size:11.5px;font-weight:700;color:var(--navy);">النص المُرسَل:</div>
-     <div style="white-space:pre-wrap;background:#F7F8FA;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;margin-top:4px;">${escapeHtml(c.message||c.text||"")}</div>`;
+  const isEmail = c.channel==="email";
+  const when = c.sentAt ? new Date(c.sentAt).toLocaleString("ar-OM", { dateStyle:"long", timeStyle:"short" }) : "—";
+  const field = (label, val, wide)=> val ? `<div class="cd-field${wide?" wide":""}"><div class="l">${label}</div><div class="v">${escapeHtml(val)}</div></div>` : "";
+  const typed = (c.text||"").trim();
+  const full = (c.message||"").trim();
+  const main = typed || full;
+  document.getElementById("corrDetailBody").innerHTML = `
+    <div class="cd-chips">
+      <span class="cd-chip ${isEmail?"em":"wa"}">${isEmail ? "📧 بريد إلكتروني" : "💬 واتساب"}</span>
+      <span class="cd-chip">${c.recipientType==="pm" ? "🧑‍💼 مدير مشروع" : "👤 مدير تنفيذي"}</span>
+      ${c.batchSize>1 ? `<span class="cd-chip batch">👥 ضمن إرسال جماعي (${c.batchSize} مستلمين)</span>` : ""}
+    </div>
+    <div class="cd-grid">
+      ${field("المستلم", c.recipientName)}
+      ${field("المُرسِل", c.sentBy)}
+      ${field("تاريخ ووقت الإرسال", when, true)}
+      ${field("البرنامج الاستراتيجي", c.goalName, true)}
+      ${field("البرنامج التنفيذي", c.programLabel, true)}
+      ${field("المشروع", c.projectName, true)}
+      ${isEmail ? field("عنوان البريد", c.subject, true) : ""}
+    </div>
+    <div class="cd-sec">مضمون المراسلة</div>
+    <div class="cd-bubble ${isEmail?"em":"wa"}">${escapeHtml(main)}</div>
+    ${full && full!==main ? `<details class="cd-full"><summary>عرض النص الكامل كما أُرسل (التحية والتفاصيل والتوقيع)</summary><div class="cd-full-text">${escapeHtml(full)}</div></details>` : ""}`;
   document.getElementById("corrDetailModal").classList.remove("hidden");
 }
 function renderCorrespondenceTab(){
@@ -6535,10 +6584,17 @@ document.getElementById("corrSendWaBtn").onclick = ()=> corrSend("whatsapp");
 document.getElementById("corrSendEmailBtn").onclick = ()=> corrSend("email");
 document.getElementById("corrLogSearch").oninput = renderCorrespondenceLog;
 document.getElementById("corrLogChannel").onchange = renderCorrespondenceLog;
-document.getElementById("corrDetailClose").onclick = ()=> document.getElementById("corrDetailModal").classList.add("hidden");
+function closeCorrDetail(){ document.getElementById("corrDetailModal").classList.add("hidden"); }
+document.getElementById("corrDetailClose").onclick = closeCorrDetail;
+document.getElementById("corrDetailX").onclick = closeCorrDetail;
+document.getElementById("corrDetailModal").onclick = e=>{ if(e.target.id==="corrDetailModal") closeCorrDetail(); };
 document.getElementById("corrDetailCopy").onclick = ()=>{
   const c = ALL_CORRESPONDENCE.find(x=>x.id===corrOpenId);
-  if(c && navigator.clipboard) navigator.clipboard.writeText(c.message||c.text||"").then(()=> alert("تم نسخ النص."));
+  const btn = document.getElementById("corrDetailCopy");
+  if(c && navigator.clipboard) navigator.clipboard.writeText(c.message||c.text||"").then(()=>{
+    btn.textContent = "✓ تم النسخ";
+    setTimeout(()=>{ btn.textContent = "📋 نسخ النص الكامل"; }, 1600);
+  });
 };
 document.getElementById("corrDetailDelete").onclick = ()=>{
   if(!corrOpenId || !confirm("حذف هذه المراسلة من السجل نهائيًا؟ (لا يؤثر على ما أُرسل فعليًا)")) return;
