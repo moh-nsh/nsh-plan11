@@ -606,6 +606,20 @@ details.cd-full summary{cursor:pointer;font-size:12.5px;font-weight:700;color:va
 .comp-gauge-card{width:160px;text-align:center;background:#FAFAFB;border-radius:14px;padding:14px 8px;}
 .cg-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:12px;color:var(--navy);margin-top:6px;min-height:32px;}
 .cg-meta{font-size:10.5px;color:var(--text-muted);margin-top:2px;}
+/* ===== بطاقات مؤشر الأداء الزمني SPI: 3 في الصف، بنفس روح بطاقات لوحة أداء الخطة (مقياسان دائريان + المؤشر + الحالة) ===== */
+.spi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:26px;}
+@media (max-width:1000px){ .spi-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:640px){ .spi-grid{grid-template-columns:1fr;} }
+.spi-card{display:flex;flex-direction:column;align-items:center;gap:10px;background:#fff;border:1px solid #D8CCEF;border-radius:18px;padding:18px 16px 16px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.spi-card:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.09);}
+.spi-card-title{flex:1 1 auto;align-self:stretch;font-family:'Cairo',sans-serif;font-weight:700;font-size:13.5px;line-height:1.7;color:var(--navy);text-align:right;}
+.spi-card-title .code{color:var(--text-muted);font-weight:600;white-space:nowrap;}
+.spi-gauges{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:4px;}
+.spi-gauge-col .cap{font-size:13.5px;font-weight:600;color:#7B8494;margin-top:2px;}
+.spi-value{font-family:'Cairo',sans-serif;font-weight:800;font-size:30px;line-height:1.1;margin-top:6px;}
+.spi-status{font-size:13.5px;font-weight:600;}
+.spi-card .spi-open-btn{background:#EEF0F3;color:var(--navy);font-size:12px;font-weight:700;padding:7px 18px;border-radius:10px;margin-top:4px;}
+.spi-card .spi-open-btn:hover{background:#e2e5ea;}
 .comp-matrix{width:100%;border-collapse:separate;border-spacing:0;margin-top:8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .comp-matrix th{background:var(--navy);color:#fff;padding:12px 8px;font-size:12.5px;text-align:center;border-left:1px solid var(--navy-light);font-family:'Cairo',sans-serif;font-weight:700;}
 .comp-matrix td{padding:11px 8px;text-align:center;font-size:12.5px;border-bottom:1px solid var(--border);border-left:1px solid var(--border);background:#fff;}
@@ -3115,30 +3129,29 @@ function spiScreenContentHTML(projects, canApprove){
       </div>`).join("") + `</div>`;
   }
   html += `<div class="section-title" style="margin-top:0;">📈 مؤشرات الأداء الزمني (SPI) الحالية</div>`;
-  html += withBaseline.length===0 ? `<div class="empty-note">لا توجد مشاريع بخط أساس محدَّد حاليًا.</div>` : withBaseline.map(({project, spi})=>{
+  html += withBaseline.length===0 ? `<div class="empty-note">لا توجد مشاريع بخط أساس محدَّد حاليًا.</div>` : `<div class="spi-grid">` + withBaseline.map(({project, spi})=>{
+    const title = `<div class="spi-card-title">${escapeHtml(project.projectName)} <span class="code">— ${project.programCode}</span></div>`;
+    const openBtn = `<button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button>`;
     if(!spi) return `
-      <div class="planning-note-row">
-        <div class="note-body"><div class="note-text"><b>${escapeHtml(project.projectName)}</b> — تعذّر حساب SPI (تواريخ خط الأساس غير مكتملة)</div></div>
-        <div class="note-actions"><button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button></div>
+      <div class="spi-card" data-project-id="${project.id}">
+        ${title}
+        <div class="spi-status" style="color:var(--text-muted);margin:14px 0;">تعذّر حساب SPI (تواريخ خط الأساس غير مكتملة)</div>
+        ${openBtn}
       </div>`;
     const color = spi.spi>=0.95 ? "#1E7A3D" : (spi.spi>=0.8 ? "#C9962E" : "#B3202E");
     const label = spi.spi>=0.95 ? "على المسار الصحيح" : (spi.spi>=0.8 ? "تأخر طفيف" : "متأخر بشكل ملحوظ");
     return `
-      <div class="planning-note-row">
-        <div class="note-body">
-          <div class="note-text"><b>${escapeHtml(project.projectName)}</b> — ${project.programCode}</div>
-          <div style="display:flex;gap:14px;margin-top:6px;align-items:center;">
-            <div style="text-align:center;">${gaugeSVG(spi.actualPct, 56)}<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">فعلي</div></div>
-            <div style="text-align:center;">${gaugeSVG(spi.expectedPct, 56)}<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">متوقَّع</div></div>
-          </div>
+      <div class="spi-card" data-project-id="${project.id}">
+        ${title}
+        <div class="spi-gauges">
+          <div class="spi-gauge-col">${gaugeSVG(spi.actualPct, 120)}<div class="cap">فعلي</div></div>
+          <div class="spi-gauge-col">${gaugeSVG(spi.expectedPct, 120)}<div class="cap">متوقَّع</div></div>
         </div>
-        <div style="text-align:center;">
-          <div style="font-size:18px;font-weight:800;color:${color};">${spi.spi.toFixed(2)}</div>
-          <div style="font-size:10.5px;color:${color};">${label}</div>
-        </div>
-        <div class="note-actions"><button class="spi-open-btn" data-project-id="${project.id}">📋 فتح الخطة</button></div>
+        <div class="spi-value" style="color:${color};">${spi.spi.toFixed(2)}</div>
+        <div class="spi-status" style="color:${color};">${label}</div>
+        ${openBtn}
       </div>`;
-  }).join("");
+  }).join("") + `</div>`;
   return html;
 }
 /* ==================== تصدير مواعيد الخطوات كملف تقويم (.ics) — يعمل بالكامل من طرف المتصفح، دون أي خادم خلفي ==================== */
@@ -3198,8 +3211,8 @@ function exportProjectsToICS(projects, filename){
   downloadICSFile(buildICSContent(events), filename);
 }
 function wireSPIScreenButtons(container){
-  container.querySelectorAll(".spi-open-btn, .phase-alert-row[data-project-id]").forEach(el=>{
-    el.onclick = ()=> openProjectDetailForm(el.dataset.projectId);
+  container.querySelectorAll(".spi-open-btn, .phase-alert-row[data-project-id], .spi-card[data-project-id]").forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); openProjectDetailForm(el.dataset.projectId); };
   });
   container.querySelectorAll(".spi-approve-unlock-btn").forEach(btn=>{
     btn.onclick = ()=>{
