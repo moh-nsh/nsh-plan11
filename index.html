@@ -933,11 +933,13 @@ tr.rejected-row td{background:#FDF6F6;}
 .chpt-table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed;}
 .chpt-table th{background:var(--navy);color:#fff;padding:7px 5px;border:1px solid #999;font-weight:700;}
 .chpt-table td{border:1px solid #999;padding:6px 5px;text-align:right;overflow-wrap:break-word;word-break:break-word;vertical-align:top;}
-.chpt-table th:nth-child(1),.chpt-table td:nth-child(1){width:20%;}
-.chpt-table th:nth-child(2),.chpt-table td:nth-child(2){width:12%;}
-.chpt-table th:nth-child(3),.chpt-table td:nth-child(3){width:28%;}
-.chpt-table th:nth-child(4),.chpt-table td:nth-child(4){width:12%;}
-.chpt-table th:nth-child(5),.chpt-table td:nth-child(5){width:28%;}
+.chpt-table th:nth-child(1),.chpt-table td:nth-child(1){width:16%;}
+.chpt-table th:nth-child(2),.chpt-table td:nth-child(2){width:10%;}
+.chpt-table th:nth-child(3),.chpt-table td:nth-child(3){width:20%;}
+.chpt-table th:nth-child(4),.chpt-table td:nth-child(4){width:9%;}
+.chpt-table th:nth-child(5),.chpt-table td:nth-child(5){width:45%;}
+.chpt-table tr{page-break-inside:avoid;}
+.chpt-table thead{display:table-header-group;}
 .detail-modal-footer{
   padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#F8F9FB;
 }
@@ -1540,21 +1542,12 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
-<div id="adminChallengesPopupOverlay" class="modal-overlay hidden">
+<div id="adminInboxPopupOverlay" class="modal-overlay hidden">
   <div class="late-popup-box">
-    <h3>🚨 تحديات جديدة بانتظار المدير التنفيذي</h3>
-    <div class="lp-desc">سجّلها مدراء المشاريع/البرامج ولم يُسجَّل عليها أي إجراء بعد. اضغط على أي بند لفتح المشروع ومتابعته، ويمكنك تنبيه المدير التنفيذي بالواتساب من «سجل التحديات» في إدارة الملاحظات والقرارات.</div>
-    <div id="adminChallengesPopupList"></div>
-    <button class="late-popup-close" id="adminChallengesPopupClose">إغلاق</button>
-  </div>
-</div>
-
-<div id="spiUnlockPopupOverlay" class="modal-overlay hidden">
-  <div class="late-popup-box">
-    <h3>🔓 طلبات إعادة تحديد خط أساس SPI</h3>
-    <div class="lp-desc">طلبها مدير مشروع أو مدير تنفيذي وتنتظر سماحك. اضغط على أي بند لفتح المشروع مباشرة.</div>
-    <div id="spiUnlockPopupList"></div>
-    <button class="late-popup-close" id="spiUnlockPopupClose">إغلاق</button>
+    <h3 style="color:var(--navy);">📬 مستجدات تحتاج انتباهك</h3>
+    <div class="lp-desc">ما استجدّ منذ زيارتك الأخيرة، وما ينتظر إجراءً من قسم التخطيط. اضغط على أي بند للانتقال إليه مباشرة.</div>
+    <div id="adminInboxPopupList"></div>
+    <button class="late-popup-close" id="adminInboxPopupClose">إغلاق</button>
   </div>
 </div>
 
@@ -3513,14 +3506,22 @@ function printChallengesReport(){
       </table>
     </div>`;
   document.body.classList.add("printing-challenges-table");
+  // اتجاه أفقي لهذه الطباعة فقط (يُحقَن مؤقتًا ثم يُزال) — ليتسع عمود سجل المعالجة الكامل لتتبّع الإجراءات
+  const landscapeTag = document.createElement("style");
+  landscapeTag.id = "tempLandscapePageStyle";
+  landscapeTag.textContent = "@media print{ @page{ size:A4 landscape; margin:10mm; } }";
+  document.head.appendChild(landscapeTag);
   window.print();
-  setTimeout(()=> document.body.classList.remove("printing-challenges-table"), 500);
+  setTimeout(()=>{
+    document.body.classList.remove("printing-challenges-table");
+    const t = document.getElementById("tempLandscapePageStyle"); if(t) t.remove();
+  }, 500);
 }
 function renderAllChallenges(){
   const { allEntries, filtered } = getFilteredChallengesEntries();
 
   const openCount = allEntries.filter(e=>e.challenge.status==="open").length;
-  setNavSubBadge("dlTabBadgeChallenges", openCount); // نفس تعريف شارة زر "إدارة الملاحظات والقرارات" في القائمة الرئيسية تمامًا
+  setNavSubBadge("dlTabBadgeChallenges", adminChallengeAttentionCount()); // نفس تعريف شارة زر "إدارة الملاحظات والقرارات" في القائمة الرئيسية تمامًا
   const inProgressCount = allEntries.filter(e=>e.challenge.status==="in_progress").length;
   const escalatedCount = allEntries.filter(e=>e.challenge.status==="escalated").length;
   const dgPendingCount = allEntries.filter(e=>e.challenge.status==="dg_solution_pending").length;
@@ -6027,8 +6028,7 @@ function enterAdmin(){
   updateAdminChallengesBadge();
   updateAdminSPIUnlockBadge();
   renderCountdownBar("adminCountdownBar", true);
-  setTimeout(checkAndShowAdminChallengesPopup, 500);
-  setTimeout(checkAndShowAdminSPIUnlockPopup, 700);
+  setTimeout(checkAndShowAdminInboxPopup, 500);
   setTimeout(captureMonthlySnapshotIfNeeded, 800);
 }
 function switchAdminTab(tab){
@@ -6043,6 +6043,174 @@ document.getElementById("adminTabOverview").onclick = ()=> switchAdminTab("overv
 document.getElementById("adminTabLate").onclick = ()=> switchAdminTab("late");
 document.getElementById("adminTabIncomplete").onclick = ()=> switchAdminTab("incomplete");
 // عدّاد على زر "إدارة الملاحظات والقرارات" — عدد التحديات الجديدة (⚪) التي لم يُتَّخذ إجراء بشأنها بعد
+/* ---------------- نافذة مستجدات قسم التخطيط (تجمع كل ما يحتاج انتباهه في نافذة واحدة بأقسام) ---------------- */
+// "منذ آخر زيارة": يُحفَظ لكل متصفح على حدة (كما هو الحال مع بطاقة المشاريع الجديدة)، فيطّلع كل من يستخدم حساب التخطيط على المستجدات بنفسه
+const ADMIN_SEEN_KEY = "rasd_admin_seen_v1";
+const ADMIN_INBOX_DEFAULT_LOOKBACK_MS = 3*86400000; // عند أول استخدام: مستجدات آخر 3 أيام
+function adminSeenGet(){ try{ return JSON.parse(localStorage.getItem(ADMIN_SEEN_KEY)||"{}") || {}; }catch(e){ return {}; } }
+function adminSeenSet(patch){ try{ localStorage.setItem(ADMIN_SEEN_KEY, JSON.stringify({ ...adminSeenGet(), ...patch })); }catch(e){} }
+function adminSeenSince(kind){ return Number(adminSeenGet()[kind]) || (Date.now() - ADMIN_INBOX_DEFAULT_LOOKBACK_MS); }
+function tsToMs(v){ if(!v) return NaN; if(typeof v.toMillis==="function") return v.toMillis(); return new Date(v).getTime(); }
+function shortText(t, n){ const x = String(t||"").replace(/\s+/g," ").trim(); return x.length>n ? x.slice(0,n)+"…" : x; }
+
+// أحداث تحدٍّ واحد مرتبة زمنيًا: إجراءات المدير التنفيذي، الحل، التصعيد (بسببه)، رد المدير العام، الإغلاق
+function challengeEvents(c){
+  const ev = [];
+  const push = (type, iso, by, text)=>{ const t = new Date(iso).getTime(); if(!isNaN(t)) ev.push({ type, at:t, iso, by:by||"", text:text||"" }); };
+  (Array.isArray(c.actionsLog) ? c.actionsLog : []).forEach(a=>{
+    if(String(a.text||"").startsWith("(سبب التصعيد)")) return; // يظهر ضمن حدث التصعيد نفسه
+    push("action", a.at, a.by, a.text);
+  });
+  if(c.resolvedAt) push("resolved", c.resolvedAt, c.resolvedBy, c.resolutionNote);
+  if(c.escalatedAt) push("escalated", c.escalatedAt, c.escalatedBy, c.escalationReason);
+  if(c.dgSolutionAt) push("dg", c.dgSolutionAt, "المدير العام", c.dgSolution);
+  if(c.closedAt) push("closed", c.closedAt, c.closedBy, "");
+  return ev.sort((a,b)=>a.at-b.at);
+}
+// تحديات طرأ عليها جديد بعد التاريخ المُعطى (تُستثنى الجديدة المفتوحة فهي قسم مستقل)
+function adminChallengeUpdates(sinceMs){
+  const out = [];
+  ALL_PROJECT_DETAILS.forEach(d=>{
+    const pr = ALL_PROJECTS.find(p=>p.id===d.id);
+    if(!pr || !Array.isArray(d.challengesList)) return;
+    d.challengesList.forEach(c=>{
+      if(c.status==="open") return;
+      const fresh = challengeEvents(c).filter(e=> e.at > sinceMs);
+      if(fresh.length>0) out.push({ project:pr, challenge:c, events:fresh, lastAt: fresh[fresh.length-1].at });
+    });
+  });
+  return out.sort((a,b)=> b.lastAt - a.lastAt);
+}
+function adminOpenChallenges(){
+  const out = [];
+  ALL_PROJECT_DETAILS.forEach(d=>{
+    const pr = ALL_PROJECTS.find(p=>p.id===d.id);
+    if(!pr || !Array.isArray(d.challengesList)) return;
+    d.challengesList.forEach(c=>{ if(c.status==="open") out.push({ project:pr, challenge:c }); });
+  });
+  return out;
+}
+// ملاحظات الخطط التفصيلية التي أنهاها المدير وتنتظر تأكيد التخطيط
+function adminMarkedNotes(){
+  const out = [];
+  ALL_PROJECT_DETAILS.forEach(d=>{
+    const pr = ALL_PROJECTS.find(p=>p.id===d.id);
+    if(!pr || !Array.isArray(d.planningNotesList)) return;
+    d.planningNotesList.forEach(n=>{ if(n.status==="marked") out.push({ project:pr, note:n }); });
+  });
+  return out;
+}
+// قرارات/ملاحظات اجتماعات علّمها مدير (لا التخطيط) كمنفَّذة بعد التاريخ المُعطى
+function adminDecisionUpdates(sinceMs){
+  return ALL_DECISIONS.filter(d=> d.resolved && d.resolvedBy && d.resolvedBy!==ADMIN_NAME && tsToMs(d.resolvedAt) > sinceMs)
+    .sort((a,b)=> tsToMs(b.resolvedAt) - tsToMs(a.resolvedAt));
+}
+// ما يحتاج انتباه التخطيط في سجل التحديات: الجديدة المفتوحة + التي طرأ عليها جديد لم يطّلع عليه
+function adminChallengeAttentionCount(){
+  const ids = new Set();
+  adminOpenChallenges().forEach(({challenge})=> ids.add(challenge.id));
+  adminChallengeUpdates(adminSeenSince("challenges")).forEach(({challenge})=> ids.add(challenge.id));
+  return ids.size;
+}
+function adminMarkChallengesSeen(){
+  adminSeenSet({ challenges: Date.now() });
+  updateAdminChallengesBadge();
+  setNavSubBadge("dlTabBadgeChallenges", adminChallengeAttentionCount());
+}
+
+function checkAndShowAdminInboxPopup(){
+  const sinceCh = adminSeenSince("challenges"), sinceDec = adminSeenSince("decisions");
+  const openCh = adminOpenChallenges();
+  const chUpdates = adminChallengeUpdates(sinceCh);
+  const marked = adminMarkedNotes();
+  const requests = ALL_REQUESTS.filter(r=>r.status==="open").sort((a,b)=> tsToMs(b.createdAt) - tsToMs(a.createdAt));
+  const decUpdates = adminDecisionUpdates(sinceDec);
+  const spi = ALL_PROJECT_DETAILS.filter(d=>d.spiUnlockRequested).map(d=>({ project: ALL_PROJECTS.find(p=>p.id===d.id), detail:d })).filter(x=>x.project);
+  if(openCh.length+chUpdates.length+marked.length+requests.length+decUpdates.length+spi.length===0) return;
+
+  const stamp = new Date().toISOString();
+  window.__adminInboxRenderedAt = Date.now();
+  const sec = (title, n)=> `<div class="popup-section-label" style="margin-top:14px;">${title} (${n})</div>`;
+  const when = v=>{ const t = tsToMs(v); return isNaN(t) ? "" : fmtChallengeDate(new Date(t).toISOString()); };
+  let html = "";
+
+  if(openCh.length>0){
+    html += sec("🆕 تحديات جديدة بانتظار المدير التنفيذي", openCh.length);
+    html += openCh.map(({project, challenge})=>`
+      <div class="phase-alert-row late stacked" data-go="challenge" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
+        <div><span class="phase-alert-badge late">سجّله ${escapeHtml(challenge.createdBy)}</span><span class="par-date">${fmtChallengeDate(challenge.createdAt)}</span></div>
+      </div>`).join("");
+  }
+  if(chUpdates.length>0){
+    const label = { action:"📝 سجّل إجراءً", resolved:"✅ حلّها", escalated:"⬆️ صعّدها للمدير العام", dg:"🟣 ردّ المدير العام", closed:"🔒 أغلقها" };
+    html += sec("🔄 مستجدات على التحديات", chUpdates.length);
+    html += chUpdates.slice(0,12).map(({project, challenge, events})=>`
+      <div class="phase-alert-row upcoming stacked" data-go="challenge" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(shortText(challenge.text,110))}</div>
+        <div>${events.slice(-3).map(e=>`<div style="font-size:11.5px;color:#7a5d12;margin-top:3px;line-height:1.6;">${label[e.type]||"•"}${e.by ? " " + escapeHtml(e.by) : ""}${e.text ? ": " + escapeHtml(shortText(e.text,150)) : ""} <span class="par-date">${fmtChallengeDate(e.iso)}</span></div>`).join("")}
+        ${events.length>3 ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">+ ${events.length-3} إجراءات أخرى — التفاصيل في سجل التحديات</div>` : ""}</div>
+      </div>`).join("");
+    if(chUpdates.length>12) html += `<div style="font-size:11.5px;color:var(--text-muted);margin:2px 4px 6px;">+ ${chUpdates.length-12} تحديات أخرى طرأ عليها جديد — تجدها في سجل التحديات.</div>`;
+  }
+  if(marked.length>0){
+    html += sec("📝 ملاحظات الخطط التفصيلية بانتظار تأكيدك", marked.length);
+    html += marked.map(({project, note})=>`
+      <div class="phase-alert-row upcoming stacked" data-go="note" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(shortText(note.text,150))}</div>
+        <div><span class="phase-alert-badge upcoming">✓ أنهاها ${escapeHtml(note.markedBy||"المدير")}</span><span class="par-date">${fmtChallengeDate(note.markedAt)}</span></div>
+      </div>`).join("");
+  }
+  if(requests.length>0){
+    html += sec("📮 طلبات المدراء المعلّقة", requests.length);
+    html += requests.map(r=>`
+      <div class="phase-alert-row late stacked" data-go="requests">
+        <div><b>${escapeHtml(r.managerName)}</b>${r.projectName ? " — " + escapeHtml(r.projectName) : (r.programName ? " — " + escapeHtml(r.programName) : "")}: ${escapeHtml(shortText(r.text,170))}</div>
+        <div><span class="phase-alert-badge late">⏳ قيد الانتظار</span><span class="par-date">${when(r.createdAt)}</span></div>
+      </div>`).join("");
+  }
+  if(decUpdates.length>0){
+    html += sec("📋 قرارات/ملاحظات نفّذها المدراء", decUpdates.length);
+    html += decUpdates.map(d=>`
+      <div class="phase-alert-row upcoming stacked" data-go="decisions">
+        <div><b>${escapeHtml(d.programName||d.programCode||"")}</b>${d.projectName ? " — " + escapeHtml(d.projectName) : ""}: ${escapeHtml(shortText(d.text,150))}</div>
+        <div><span class="phase-alert-badge upcoming">✓ نفّذها ${escapeHtml(d.resolvedBy)}</span><span class="par-date">${when(d.resolvedAt)}</span></div>
+      </div>`).join("");
+  }
+  if(spi.length>0){
+    html += sec("🔓 طلبات إعادة تحديد خط أساس SPI", spi.length);
+    html += spi.map(({project, detail})=>`
+      <div class="phase-alert-row late stacked" data-go="project" data-project-id="${project.id}">
+        <div><b>${escapeHtml(project.projectName)}</b> — طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)}
+        ${detail.spiUnlockRequested.reason ? `<div style="font-size:12px;color:#8B1420;margin-top:2px;">السبب: ${escapeHtml(detail.spiUnlockRequested.reason)}</div>` : ""}</div>
+        <div><span class="phase-alert-badge late">${escapeHtml((detail.spiUnlockRequested.requestedAt||"").slice(0,10))}</span></div>
+      </div>`).join("");
+  }
+
+  const list = document.getElementById("adminInboxPopupList");
+  list.innerHTML = html;
+  list.querySelectorAll(".phase-alert-row[data-go]").forEach(row=>{
+    row.onclick = ()=>{
+      const go = row.dataset.go, pid = row.dataset.projectId;
+      closeAdminInboxPopup();
+      if(go==="challenge") openProjectDetailForm(pid, null, null, false, true);
+      else if(go==="note") openProjectDetailForm(pid, null, null, true);
+      else if(go==="project") openProjectDetailForm(pid);
+      else if(go==="requests") document.getElementById("navRequestsBtn").click();
+      else if(go==="decisions"){ document.getElementById("navDecisionLogBtn").click(); switchDLTab("decisions"); }
+    };
+  });
+  document.getElementById("adminInboxPopupOverlay").classList.remove("hidden");
+}
+// الإغلاق يُعلِّم المستجدات الزمنية (التحديات/القرارات) كمشاهَدة حتى لحظة بناء النافذة؛ أمّا المعلَّقات (طلبات، ملاحظات بانتظار التأكيد...) فتبقى حتى يُنجَز فيها إجراء
+function closeAdminInboxPopup(){
+  const t = window.__adminInboxRenderedAt || Date.now();
+  adminSeenSet({ challenges: t, decisions: t });
+  document.getElementById("adminInboxPopupOverlay").classList.add("hidden");
+  updateAdminChallengesBadge();
+  setNavSubBadge("dlTabBadgeChallenges", adminChallengeAttentionCount());
+}
+document.getElementById("adminInboxPopupClose").onclick = closeAdminInboxPopup;
 // دالة مشتركة لتحديث أي شارة عدد صغيرة على زر تبويب — تُخفى تلقائيًا عند الصفر
 function setNavSubBadge(id, count){
   const el = document.getElementById(id);
@@ -6053,11 +6221,7 @@ function setNavSubBadge(id, count){
 function updateAdminChallengesBadge(){
   const badge = document.getElementById("navChallengesBadge");
   if(!badge) return;
-  let count = 0;
-  ALL_PROJECT_DETAILS.forEach(detail=>{
-    if(!Array.isArray(detail.challengesList)) return;
-    count += detail.challengesList.filter(c=>c.status==="open").length;
-  });
+  const count = adminChallengeAttentionCount();
   if(count>0){
     badge.textContent = count;
     badge.classList.remove("hidden");
@@ -6065,33 +6229,6 @@ function updateAdminChallengesBadge(){
     badge.classList.add("hidden");
   }
 }
-// يجمع كل التحديات "المُسجَّلة" (⚪ لم يُتَّخذ إجراء بعد) عبر كل المشاريع — لعرضها كتنبيه فوري لقسم التخطيط
-function checkAndShowAdminChallengesPopup(){
-  const openEntries = [];
-  ALL_PROJECT_DETAILS.forEach(detail=>{
-    if(!Array.isArray(detail.challengesList)) return;
-    const project = ALL_PROJECTS.find(p=>p.id===detail.id);
-    if(!project) return;
-    detail.challengesList.forEach(c=>{
-      if(c.status==="open") openEntries.push({ project, challenge:c });
-    });
-  });
-  if(openEntries.length===0) return;
-  const list = document.getElementById("adminChallengesPopupList");
-  list.innerHTML = openEntries.map(({project, challenge})=>`
-    <div class="phase-alert-row late stacked" data-project-id="${project.id}">
-      <div><b>${escapeHtml(project.projectName)}</b> — ${escapeHtml(challenge.text)}</div>
-      <div><span class="phase-alert-badge late">سجّله ${escapeHtml(challenge.createdBy)}</span><span class="par-date">${fmtChallengeDate(challenge.createdAt)}</span></div>
-    </div>`).join("");
-  list.querySelectorAll(".phase-alert-row").forEach(row=>{
-    row.onclick = ()=>{
-      document.getElementById("adminChallengesPopupOverlay").classList.add("hidden");
-      openProjectDetailForm(row.dataset.projectId);
-    };
-  });
-  document.getElementById("adminChallengesPopupOverlay").classList.remove("hidden");
-}
-document.getElementById("adminChallengesPopupClose").onclick = ()=> document.getElementById("adminChallengesPopupOverlay").classList.add("hidden");
 
 // شارة عدد طلبات إعادة تحديد خط الأساس المعلَّقة — تظهر على زر SPI في القائمة الرئيسية
 function updateAdminSPIUnlockBadge(){
@@ -6105,29 +6242,6 @@ function updateAdminSPIUnlockBadge(){
     badge.classList.add("hidden");
   }
 }
-// يجمع كل طلبات إعادة تحديد خط الأساس المعلَّقة عبر كل المشاريع — لعرضها كتنبيه فوري لقسم التخطيط، بفتح مباشر للمشروع
-function checkAndShowAdminSPIUnlockPopup(){
-  const pending = ALL_PROJECT_DETAILS.filter(d=>d.spiUnlockRequested).map(d=>({
-    project: ALL_PROJECTS.find(p=>p.id===d.id), detail:d
-  })).filter(x=>x.project);
-  if(pending.length===0) return;
-  const list = document.getElementById("spiUnlockPopupList");
-  list.innerHTML = pending.map(({project, detail})=>`
-    <div class="phase-alert-row late stacked" data-project-id="${project.id}">
-      <div><b>${escapeHtml(project.projectName)}</b> — طلبها ${escapeHtml(detail.spiUnlockRequested.requestedBy)}
-      ${detail.spiUnlockRequested.reason ? `<div style="font-size:12px;color:#8B1420;margin-top:2px;">السبب: ${escapeHtml(detail.spiUnlockRequested.reason)}</div>` : ""}
-      </div>
-      <span class="phase-alert-badge late">${escapeHtml((detail.spiUnlockRequested.requestedAt||"").slice(0,10))}</span>
-    </div>`).join("");
-  list.querySelectorAll(".phase-alert-row").forEach(row=>{
-    row.onclick = ()=>{
-      document.getElementById("spiUnlockPopupOverlay").classList.add("hidden");
-      openProjectDetailForm(row.dataset.projectId);
-    };
-  });
-  document.getElementById("spiUnlockPopupOverlay").classList.remove("hidden");
-}
-document.getElementById("spiUnlockPopupClose").onclick = ()=> document.getElementById("spiUnlockPopupOverlay").classList.add("hidden");
 
 document.getElementById("navLogoutBtn").onclick = ()=>{ resetLoginForm(); showScreen("loginScreen"); };
 function enterDG(){
@@ -6548,6 +6662,7 @@ function switchDLTab(tab){
   document.getElementById("dlAnnounceView").classList.toggle("hidden", tab!=="announce");
   document.getElementById("dlCorrView").classList.toggle("hidden", tab!=="corr");
   if(tab==="corr") renderCorrespondenceTab();
+  if(tab==="challenges") adminMarkChallengesSeen(); // فتح سجل التحديات = اطّلاع على مستجداته
 }
 document.getElementById("dlTabDecisions").onclick = ()=> switchDLTab("decisions");
 document.getElementById("dlTabNotes").onclick = ()=> switchDLTab("notes");
