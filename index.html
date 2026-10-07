@@ -912,6 +912,8 @@ tr.rejected-row td{background:#FDF6F6;}
 .autosave-status{font-size:11px;color:#1E7A3D;margin-top:6px;text-align:left;transition:opacity .3s;min-height:14px;}
 .detail-modal-body{padding:20px 22px;max-height:60vh;overflow-y:auto;}
 @media print{
+  body.printing-directory > *:not(#directoryPrintContainer){display:none !important;}
+  body.printing-directory #directoryPrintContainer{display:block !important;}
   body.printing-detail-table > *:not(#detailPrintTableContainer){display:none !important;}
   body.printing-detail-table #detailPrintTableContainer{display:block !important;}
   body.printing-challenges-table > *:not(#challengesPrintTableContainer){display:none !important;}
@@ -954,6 +956,27 @@ tr.rejected-row td{background:#FDF6F6;}
 .chpt-table th:nth-child(5),.chpt-table td:nth-child(5){width:45%;}
 .chpt-table tr{page-break-inside:avoid;}
 .chpt-table thead{display:table-header-group;}
+/* ===== دليل المدراء (شاشة + طباعة بنفس الشكل) ===== */
+.dir-opts{display:flex;flex-wrap:wrap;gap:14px;}
+.dir-opt-group{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:7px;min-width:190px;}
+.dir-opt-title{font-size:12px;font-weight:800;color:var(--navy);}
+.dir-opt-group label{font-size:13px;color:#333;display:flex;align-items:center;gap:7px;}
+.dir-opt-group input[type=text],.dir-opt-group select{padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;}
+.dir-preview{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;overflow-x:auto;}
+.dirp-container{font-family:'Cairo',sans-serif;direction:rtl;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.dirp-head{text-align:center;margin-bottom:10px;line-height:1.7;}
+.dirp-head .org{font-size:12px;color:#333;font-weight:600;}
+.dirp-title{background:var(--navy);color:#fff;font-weight:800;font-size:16px;padding:10px 14px;text-align:center;margin:8px 0 6px;}
+.dirp-sub{text-align:center;font-size:11px;color:#555;margin-bottom:14px;}
+.dirp-sec{font-weight:800;font-size:13px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--gold);}
+.dirp-table{width:100%;border-collapse:collapse;font-size:11px;}
+.dirp-table th{background:var(--navy);color:#fff;padding:7px 6px;border:1px solid #999;font-weight:700;}
+.dirp-table td{border:1px solid #999;padding:6px;text-align:right;vertical-align:top;overflow-wrap:break-word;word-break:break-word;}
+.dirp-table td.c,.dirp-table th.c{text-align:center;}
+.dirp-table td .sm{display:block;font-size:10px;color:#444;line-height:1.55;}
+.dirp-table td .ltr{direction:ltr;unicode-bidi:embed;display:inline-block;}
+.dirp-table tr{page-break-inside:avoid;}
+.dirp-table thead{display:table-header-group;}
 .detail-modal-footer{
   padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#F8F9FB;
 }
@@ -2329,6 +2352,7 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="mgr-tab active" id="pgaTabExec">👤 مدراء البرامج التنفيذية</button>
       <button class="mgr-tab" id="pgaTabPrograms">📂 البرامج التنفيذية</button>
       <button class="mgr-tab" id="pgaTabPM">👤 مدراء المشاريع</button>
+      <button class="mgr-tab" id="pgaTabDir">🖨️ دليل المدراء للطباعة</button>
     </div>
   </div>
   <div class="dash-wrap" id="pgaExecView">
@@ -2352,6 +2376,27 @@ tr.rejected-row td{background:#FDF6F6;}
       <button class="add-btn" id="addProjectManagerBtn" style="margin-bottom:16px;">➕ إضافة مدير مشروع جديد</button>
       <div id="projectManagersAdminList"></div>
     </div>
+  </div>
+  <div class="dash-wrap hidden" id="pgaDirView">
+    <div class="section-title">🖨️ دليل المدراء للطباعة</div>
+    <div class="section-desc">قائمة بالمدراء التنفيذيين ومدراء المشاريع وبياناتهم ومسمياتهم الوظيفية، جاهزة للطباعة أو الحفظ PDF لاستخدامها في المراسلات الرسمية. اختر ما تريد إظهاره، وتتبع القائمة فلتر «الهدف الاستراتيجي» أعلى الصفحة.</div>
+    <div class="dir-opts">
+      <div class="dir-opt-group"><div class="dir-opt-title">الفئات</div>
+        <label><input type="checkbox" id="dirRoleExec" checked> المدراء التنفيذيون</label>
+        <label><input type="checkbox" id="dirRolePM" checked> مدراء المشاريع</label></div>
+      <div class="dir-opt-group"><div class="dir-opt-title">الأعمدة</div>
+        <label><input type="checkbox" id="dirColJob" checked> المسمى الوظيفي</label>
+        <label><input type="checkbox" id="dirColId" checked> الرقم الوظيفي</label>
+        <label><input type="checkbox" id="dirColProg" checked> البرامج / المشاريع</label>
+        <label><input type="checkbox" id="dirColPhone" checked> الهاتف</label>
+        <label><input type="checkbox" id="dirColEmail" checked> البريد الإلكتروني</label></div>
+      <div class="dir-opt-group"><div class="dir-opt-title">الطباعة</div>
+        <label>العنوان <input type="text" id="dirTitle" value="دليل المدراء المسؤولين عن البرامج والمشاريع" maxlength="120" style="min-width:260px;"></label>
+        <label>الترتيب <select id="dirSort"><option value="code">حسب رمز البرنامج</option><option value="name">حسب الاسم</option></select></label>
+        <label>الاتجاه <select id="dirOrient"><option value="landscape">أفقي</option><option value="portrait">عمودي</option></select></label></div>
+    </div>
+    <div style="margin:14px 0;"><button class="add-btn" id="dirPrintBtn">🖨️ طباعة / حفظ PDF</button></div>
+    <div id="dirPreview" class="dir-preview"></div>
   </div>
 </div>
 
@@ -2415,6 +2460,7 @@ tr.rejected-row td{background:#FDF6F6;}
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailPrintTableContainer" class="hidden"></div>
 <div id="challengesPrintTableContainer" class="hidden"></div>
+<div id="directoryPrintContainer" class="hidden"></div>
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
     <div class="detail-modal-header">
@@ -6766,11 +6812,105 @@ function renderProgramsAdminScreen(){
   renderManagersAdminList();
   renderProgramsAdminList();
   renderProjectManagersAdminList();
+  renderManagerDirectory();
 }
+/* ---------------- دليل المدراء للطباعة (المراسلات الرسمية) ---------------- */
+function dirCodeCmp(a, b){
+  const pa = String(a||"").split(".").map(Number), pb = String(b||"").split(".").map(Number);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const d = (pa[i]||0) - (pb[i]||0);
+    if(d) return d;
+  }
+  return 0;
+}
+function dirReadOptions(){
+  const v = id=> document.getElementById(id);
+  return { exec:v("dirRoleExec").checked, pm:v("dirRolePM").checked,
+    job:v("dirColJob").checked, id:v("dirColId").checked, prog:v("dirColProg").checked, phone:v("dirColPhone").checked, email:v("dirColEmail").checked,
+    title:(v("dirTitle").value||"").trim(), sort:v("dirSort").value, orient:v("dirOrient").value,
+    goal:document.getElementById("pgaGoalFilter").value };
+}
+// يجمع بيانات المدراء من مصادرها الحالية (لا نسخة مخزَّنة) — فيعكس أي تعديل فور إجرائه
+function dirCollect(o){
+  const goal = o.goal ? Number(o.goal) : null;
+  const execs = !o.exec ? [] : GOV_MANAGERS.filter(name=> !goal || getExecManagerGoalIds(name).has(goal)).map(name=>{
+    const full = ALL_MANAGERS_FULL.find(m=>m.name===name) || {}, auth = ALL_MANAGER_AUTH.find(a=>a.id===name) || {};
+    const progs = PROGRAMS.filter(p=>p.govManager===name && (!goal || p.goalId===goal)).sort((a,b)=> dirCodeCmp(a.code,b.code));
+    return { name, job:full.jobTitle||"", id:full.employeeId||"", phone:auth.phone||"", email:auth.email||"",
+      items: progs.map(p=>`${p.code} — ${p.name}`), firstCode: progs.length ? progs[0].code : "999" };
+  });
+  const pms = !o.pm ? [] : ALL_PROJECT_MANAGERS.filter(pm=> !goal || getPMGoalIds(pm.employeeId).has(goal)).map(pm=>{
+    const projs = ALL_PROJECTS.filter(p=> Array.isArray(p.assignedProjectManagerIds) && p.assignedProjectManagerIds.includes(pm.employeeId) && (!goal || p.goalId===goal));
+    projs.sort((a,b)=> dirCodeCmp(a.programCode,b.programCode) || String(a.projectName).localeCompare(b.projectName,"ar"));
+    return { name:pm.name, job:pm.jobTitle||"", id:pm.employeeId||"", phone:pm.phone||"", email:pm.email||"",
+      items: projs.map(p=>`${p.projectName} (${p.programCode})`), firstCode: projs.length ? projs[0].programCode : "999" };
+  });
+  const cmp = o.sort==="name" ? (a,b)=> a.name.localeCompare(b.name,"ar") : (a,b)=> dirCodeCmp(a.firstCode,b.firstCode) || a.name.localeCompare(b.name,"ar");
+  return { execs: execs.sort(cmp), pms: pms.sort(cmp) };
+}
+function dirHTML(o){
+  const { execs, pms } = dirCollect(o);
+  const dash = v=> v ? escapeHtml(v) : "—";
+  const cols = (progLabel)=> [
+    { show:true, th:"م", cls:"c", w:"4%", td:(r,i)=>String(i+1) },
+    { show:true, th:"الاسم", w:"22%", td:r=>`<b>${escapeHtml(r.name)}</b>` },
+    { show:o.job, th:"المسمى الوظيفي", w:"20%", td:r=>dash(r.job) },
+    { show:o.id, th:"الرقم الوظيفي", cls:"c", w:"9%", td:r=>dash(r.id) },
+    { show:o.prog, th:progLabel, w:"25%", td:r=> r.items.length ? r.items.map(t=>`<span class="sm">${escapeHtml(t)}</span>`).join("") : "—" },
+    { show:o.phone, th:"الهاتف", cls:"c", w:"10%", td:r=> r.phone ? `<span class="ltr">${escapeHtml(r.phone)}</span>` : "—" },
+    { show:o.email, th:"البريد الإلكتروني", w:"16%", td:r=> r.email ? `<span class="ltr">${escapeHtml(r.email)}</span>` : "—" }
+  ].filter(c=>c.show);
+  const table = (rows, progLabel)=>{
+    const cs = cols(progLabel);
+    return `<table class="dirp-table"><thead><tr>${cs.map(c=>`<th class="${c.cls||""}" style="width:${c.w};">${c.th}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr>${cs.map(c=>`<td class="${c.cls||""}">${c.td(r,i)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  };
+  const goalName = o.goal ? (STRATEGIC_GOALS.find(g=>String(g.id)===String(o.goal)) || {}).name : "";
+  const today = new Date().toLocaleDateString("ar-OM", { dateStyle:"long" });
+  if(execs.length+pms.length===0) return `<div class="empty-note">لا يوجد مدراء مطابقون للاختيار الحالي.</div>`;
+  return `
+    <div class="dirp-container">
+      <div class="dirp-head"><div class="org">المديرية العامة للخدمات الصحية — محافظة شمال الشرقية</div><div class="org">دائرة التخطيط والتنظيم الصحي — قسم التخطيط والدراسات</div></div>
+      <div class="dirp-title">${escapeHtml(o.title || "دليل المدراء")}</div>
+      <div class="dirp-sub">${goalName ? `الهدف الاستراتيجي: ${escapeHtml(o.goal+". "+goalName)} — ` : ""}التاريخ: ${today} — ${o.exec ? `المدراء التنفيذيون: ${execs.length}` : ""}${o.exec && o.pm ? " — " : ""}${o.pm ? `مدراء المشاريع: ${pms.length}` : ""}</div>
+      ${execs.length ? `<div class="dirp-sec">المدراء التنفيذيون للبرامج (${execs.length})</div>${table(execs, "البرامج التنفيذية المسؤول عنها")}` : ""}
+      ${pms.length ? `<div class="dirp-sec">مدراء المشاريع (${pms.length})</div>${table(pms, "المشاريع المُسنَدة إليه")}` : ""}
+    </div>`;
+}
+function renderManagerDirectory(){
+  const box = document.getElementById("dirPreview");
+  if(!box) return;
+  box.innerHTML = dirHTML(dirReadOptions());
+}
+function printManagerDirectory(){
+  const o = dirReadOptions();
+  const html = dirHTML(o);
+  if(html.includes("empty-note")){ alert("لا يوجد مدراء مطابقون للاختيار الحالي لطباعتهم."); return; }
+  document.getElementById("directoryPrintContainer").innerHTML = html;
+  document.body.classList.add("printing-directory");
+  // اتجاه الصفحة يُحقَن لهذه الطباعة فقط ثم يُزال، حتى لا يؤثر على أي تقرير آخر
+  const tag = document.createElement("style");
+  tag.id = "tempLandscapePageStyle";
+  tag.textContent = `@media print{ @page{ size:A4 ${o.orient==="portrait" ? "portrait" : "landscape"}; margin:10mm; } }`;
+  document.head.appendChild(tag);
+  window.print();
+  setTimeout(()=>{
+    document.body.classList.remove("printing-directory");
+    const t = document.getElementById("tempLandscapePageStyle"); if(t) t.remove();
+    document.getElementById("directoryPrintContainer").innerHTML = "";
+  }, 500);
+}
+["dirRoleExec","dirRolePM","dirColJob","dirColId","dirColProg","dirColPhone","dirColEmail","dirSort","dirOrient"].forEach(id=>{ document.getElementById(id).onchange = renderManagerDirectory; });
+document.getElementById("dirTitle").oninput = renderManagerDirectory;
+document.getElementById("dirPrintBtn").onclick = printManagerDirectory;
+
 function switchPGATab(tab){
   document.getElementById("pgaTabExec").classList.toggle("active", tab==="exec");
   document.getElementById("pgaTabPrograms").classList.toggle("active", tab==="programs");
   document.getElementById("pgaTabPM").classList.toggle("active", tab==="pm");
+  document.getElementById("pgaTabDir").classList.toggle("active", tab==="dir");
+  document.getElementById("pgaDirView").classList.toggle("hidden", tab!=="dir");
+  if(tab==="dir") renderManagerDirectory();
   document.getElementById("pgaExecView").classList.toggle("hidden", tab!=="exec");
   document.getElementById("pgaProgramsView").classList.toggle("hidden", tab!=="programs");
   document.getElementById("pgaPMView").classList.toggle("hidden", tab!=="pm");
@@ -6778,6 +6918,7 @@ function switchPGATab(tab){
 document.getElementById("pgaTabExec").onclick = ()=> switchPGATab("exec");
 document.getElementById("pgaTabPrograms").onclick = ()=> switchPGATab("programs");
 document.getElementById("pgaTabPM").onclick = ()=> switchPGATab("pm");
+document.getElementById("pgaTabDir").onclick = ()=> switchPGATab("dir");
 
 function renderManagersAdminList(){
   const goalFilter = document.getElementById("pgaGoalFilter").value;
