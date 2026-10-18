@@ -2181,6 +2181,8 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-title" style="margin-top:28px;">السجل الكامل</div>
     <div id="decisionSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="decisionFilterYear"><option value="">كل السنوات</option></select>
+      <select id="decisionFilterGoal"><option value="">كل الأهداف (البرامج الاستراتيجية)</option></select>
       <select id="decisionFilterProgram"><option value="">كل البرامج</option></select>
       <select id="decisionFilterStatus">
         <option value="">كل الحالات</option>
@@ -2196,6 +2198,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-desc">كل نقاط الملاحظات المُدخَلة على الخطط التفصيلية للمشاريع، مجمَّعة في مكان واحد — يمكنك التأكيد أو الإرجاع أو الحذف، وفتح الخطة التفصيلية مباشرة</div>
     <div id="planningNotesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="pnFilterYear"><option value="">كل السنوات</option></select>
       <select id="pnFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
       <select id="pnFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
       <select id="pnFilterStatus">
@@ -2213,6 +2216,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <div class="section-desc">كل التحديات المُسجَّلة من مدراء المشاريع/البرامج، مجمَّعة في مكان واحد — حل داخلي، تصعيد للمدير العام، أو حذف</div>
     <div id="challengesSummaryGrid" class="summary-grid" style="margin-bottom:18px;"></div>
     <div class="filters-bar" style="margin-bottom:18px;">
+      <select id="chFilterYear"><option value="">كل السنوات</option></select>
       <select id="chFilterGoal"><option value="">كل الأهداف الاستراتيجية</option></select>
       <select id="chFilterProgram"><option value="">كل البرامج التنفيذية</option></select>
       <select id="chFilterStatus">
@@ -3434,6 +3438,7 @@ function renderAllPlanningNotes(){
   const goalFilter = document.getElementById("pnFilterGoal").value;
   const programFilter = document.getElementById("pnFilterProgram").value;
   const statusFilter = document.getElementById("pnFilterStatus").value;
+  const yearFilter = dlRefreshYearOptions("pnFilterYear");
 
   const allEntries = [];
   ALL_PROJECT_DETAILS.forEach(detail=>{
@@ -3444,6 +3449,7 @@ function renderAllPlanningNotes(){
   });
 
   const filtered = allEntries.filter(({project, note})=>{
+    if(yearFilter && String(project.year)!==yearFilter) return false;
     if(goalFilter && String(project.goalId)!==goalFilter) return false;
     if(programFilter && project.programCode!==programFilter) return false;
     if(statusFilter && note.status!==statusFilter) return false;
@@ -3517,6 +3523,7 @@ function getFilteredChallengesEntries(){
   const goalFilter = document.getElementById("chFilterGoal").value;
   const programFilter = document.getElementById("chFilterProgram").value;
   const statusFilter = document.getElementById("chFilterStatus").value;
+  const yearFilter = dlRefreshYearOptions("chFilterYear");
   const allEntries = [];
   ALL_PROJECT_DETAILS.forEach(detail=>{
     if(!Array.isArray(detail.challengesList)) return;
@@ -3525,6 +3532,7 @@ function getFilteredChallengesEntries(){
     detail.challengesList.forEach(challenge=> allEntries.push({ project, challenge }));
   });
   const filtered = allEntries.filter(({project, challenge})=>{
+    if(yearFilter && String(project.year)!==yearFilter) return false;
     if(goalFilter && String(project.goalId)!==goalFilter) return false;
     if(programFilter && project.programCode!==programFilter) return false;
     if(statusFilter && challenge.status!==statusFilter) return false;
@@ -3854,9 +3862,12 @@ function findIncompleteSteps(project){
 
 // يبني ويرسل رسالة واتساب ببيانات الدخول وكل المشاريع المُسنَدة حاليًا لشخص معيّن (مدير تنفيذي أو مدير مشروع) — قابلة للإرسال أكثر من مرة
 function sendCredentialsWhatsApp(recipientType, identifier){
-  let name, phone, password, gender, myProjects;
+  let name, phone, password, gender, myProjects, execLoginId;
   if(recipientType==="exec"){
     name = identifier;
+    const execFull = ALL_MANAGERS_FULL.find(m=>m.name===identifier);
+    if(!execFull || !execFull.employeeId){ alert("لا يوجد رقم وظيفي مسجَّل لهذا المدير، وهو اسم المستخدم لتسجيل الدخول. أضفه أولًا من «🔢 الرقم الوظيفي» في تبويب المدراء التنفيذيين."); return; }
+    execLoginId = execFull.employeeId;
     const authRec = ALL_MANAGER_AUTH.find(a=>a.id===identifier);
     phone = authRec && authRec.phone;
     password = (authRec && authRec.password) || DEFAULT_MANAGER_PASSWORD;
@@ -3879,7 +3890,7 @@ function sendCredentialsWhatsApp(recipientType, identifier){
     const goalName = (STRATEGIC_GOALS.find(g=>g.id===p.goalId)||{}).name || "";
     msg += `• ${p.projectName} — ${p.programCode} ${p.programName} — الهدف: ${goalName}\n`;
   });
-  msg += `\nبيانات الدخول للمنصة:\nاسم المستخدم: ${identifier}\nكلمة المرور: ${password}\n${PLATFORM_URL}\n\nيمكنك تغيير كلمة المرور لاحقًا من داخل حسابك.\n\nقسم التخطيط والدراسات`;
+  msg += `\nبيانات الدخول للمنصة:\nاسم المستخدم (الرقم الوظيفي): ${recipientType==="exec" ? execLoginId : identifier}\nكلمة المرور: ${password}\n${PLATFORM_URL}\n\nيمكنك تغيير كلمة المرور لاحقًا من داخل حسابك.\n\nقسم التخطيط والدراسات`;
   window.open(`https://api.whatsapp.com/send?phone=${cleanPhoneNumber(phone)}&text=${encodeURIComponent(msg)}`, "_blank");
   const sentInfo = { sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentBy: ADMIN_NAME };
   if(recipientType==="exec"){
@@ -4334,7 +4345,7 @@ function listenToManagersList(cb){
       snap.forEach(doc=>{ arr.push(doc.id); full.push({ name: doc.id, ...doc.data() }); });
       if(arr.length===0 && PROGRAMS.length>0){
         // تعبئة أولية من أسماء المدراء الفريدة في بذرة البرامج
-        const uniqueNames = [...new Set(DEFAULT_PROGRAMS_SEED.map(p=>p.govManager))];
+        const uniqueNames = [...new Set(PROGRAMS.map(p=>p.govManager).filter(Boolean))]; // من البرامج الحالية فقط — لا من البذرة الأولية القديمة
         uniqueNames.forEach(name=> db.collection(MANAGERS_COLLECTION).doc(name).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }));
         return;
       }
@@ -4376,7 +4387,7 @@ function deleteManager(name){
     alert(`لا يمكن حذف "${name}" لأنه لا يزال مسؤولًا عن برنامج تنفيذي واحد على الأقل. أعد تعيين برامجه لمدير آخر أولاً.`);
     return Promise.resolve(false);
   }
-  return db.collection(MANAGERS_COLLECTION).doc(name).delete().then(()=>{
+  return db.collection(MANAGERS_COLLECTION).doc(name).delete().then(()=> db.collection(MANAGER_AUTH_COLLECTION).doc(name).delete().catch(()=>{})).then(()=>{
     logActivity(ADMIN_NAME, "delete_manager", name);
     return true;
   }).catch(err=>{ console.error(err); alert("تعذّر حذف المدير: " + err.message); return false; });
@@ -4394,7 +4405,7 @@ async function renameManager(oldName, newName){
     await db.collection(MANAGER_AUTH_COLLECTION).doc(newName).set(authData);
     await db.collection(MANAGER_AUTH_COLLECTION).doc(oldName).delete();
     const existingRec = ALL_MANAGERS_FULL.find(m=>m.name===oldName) || {};
-    await db.collection(MANAGERS_COLLECTION).doc(newName).set({ employeeId: existingRec.employeeId||"", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection(MANAGERS_COLLECTION).doc(newName).set({ employeeId: existingRec.employeeId||"", jobTitle: existingRec.jobTitle||"", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
     await db.collection(MANAGERS_COLLECTION).doc(oldName).delete();
     const affectedPrograms = PROGRAMS.filter(p=>p.govManager===oldName);
     for(const prog of affectedPrograms){
@@ -6937,7 +6948,7 @@ function renderManagersAdminList(){
     return `
       <div class="program-admin-row">
         <div>
-          <div class="pa-name">👤 ${escapeHtml(name)} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}${fullRec && fullRec.jobTitle ? " — " + escapeHtml(fullRec.jobTitle) : ""}</span></div>
+          <div class="pa-name">👤 ${escapeHtml(name)}${(programCount===0 && !(fullRec&&fullRec.employeeId)) ? ' <span style="background:#FDECEA;color:#B3261E;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;">⚠️ بلا برنامج ولا رقم وظيفي — غالبًا سجل مكرر، يمكن حذفه</span>' : ''} <span style="font-weight:400;color:var(--text-muted);">— رقم وظيفي: ${fullRec && fullRec.employeeId ? escapeHtml(fullRec.employeeId) : "غير مُحدَّد"}${fullRec && fullRec.jobTitle ? " — " + escapeHtml(fullRec.jobTitle) : ""}</span></div>
           <div class="pa-meta">${authRec && authRec.email ? escapeHtml(authRec.email) : "بدون بريد مسجَّل"} | مسؤول عن ${programCount} برنامج${programNames?` (${programNames})`:""}</div>
         </div>
         <div class="pa-actions">
@@ -6968,7 +6979,7 @@ function renderManagersAdminList(){
       if(ALL_MANAGERS_FULL.some(m=>m.employeeId===trimmedId && m.name!==name) || ALL_PROJECT_MANAGERS.some(m=>m.employeeId===trimmedId) || trimmedId==="admin"){
         alert("هذا الرقم الوظيفي مستخدم بالفعل لحساب آخر."); return;
       }
-      await db.collection(MANAGERS_COLLECTION).doc(name).set({ employeeId: trimmedId }, { merge:true });
+      await db.collection(MANAGERS_COLLECTION).doc(name).update({ employeeId: trimmedId }).catch(()=>alert("هذا المدير لم يعد موجودًا (ربما أُعيدت تسميته أو حُذف). حدّث الصفحة."));
       logActivity(ADMIN_NAME, "edit_manager", `${name} — تحديث الرقم الوظيفي إلى ${trimmedId}`);
       renderProgramsAdminScreen();
     };
@@ -6979,7 +6990,7 @@ function renderManagersAdminList(){
       const fullRec = ALL_MANAGERS_FULL.find(m=>m.name===name);
       const newTitle = prompt(`المسمى الوظيفي لـ "${name}":`, (fullRec&&fullRec.jobTitle)||"");
       if(newTitle===null) return;
-      await db.collection(MANAGERS_COLLECTION).doc(name).set({ jobTitle: newTitle.trim() }, { merge:true });
+      await db.collection(MANAGERS_COLLECTION).doc(name).update({ jobTitle: newTitle.trim() }).catch(()=>alert("هذا المدير لم يعد موجودًا (ربما أُعيدت تسميته أو حُذف). حدّث الصفحة."));
       logActivity(ADMIN_NAME, "edit_manager", `${name} — تحديث المسمى الوظيفي`);
       renderProgramsAdminScreen();
     };
@@ -7401,6 +7412,16 @@ function buildDecisionLogScreen(){
   document.getElementById("decisionFilterProgram").innerHTML = "<option value=''>كل البرامج</option>" + PROGRAMS.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
   document.getElementById("decisionFilterProgram").onchange = renderDecisionLogScreen;
   document.getElementById("decisionFilterStatus").onchange = renderDecisionLogScreen;
+  document.getElementById("decisionFilterYear").onchange = renderDecisionLogScreen;
+  document.getElementById("pnFilterYear").onchange = renderDecisionLogScreen;
+  document.getElementById("chFilterYear").onchange = renderDecisionLogScreen;
+  document.getElementById("decisionFilterGoal").innerHTML = "<option value=''>كل الأهداف (البرامج الاستراتيجية)</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
+  document.getElementById("decisionFilterGoal").onchange = ()=>{
+    const goalId = document.getElementById("decisionFilterGoal").value;
+    const progs = goalId ? PROGRAMS.filter(p=>String(p.goalId)===goalId) : PROGRAMS;
+    document.getElementById("decisionFilterProgram").innerHTML = "<option value=''>كل البرامج</option>" + progs.map(p=>`<option value="${p.code}">${p.code} ${p.name}</option>`).join("");
+    renderDecisionLogScreen();
+  };
 
   document.getElementById("pnFilterGoal").innerHTML = "<option value=''>كل الأهداف الاستراتيجية</option>" + STRATEGIC_GOALS.map(g=>`<option value="${g.id}">${g.id}. ${g.name}</option>`).join("");
   document.getElementById("pnFilterGoal").onchange = ()=>{
@@ -7545,6 +7566,24 @@ function renderAnnouncementsList(){
   });
 }
 
+// سنة القرار: سنة المشروع المرتبط به إن وُجد، وإلا سنة تسجيله
+function dlDecisionYear(d){
+  const proj = d.projectId ? ALL_PROJECTS.find(p=>p.id===d.projectId) : null;
+  if(proj && proj.year) return String(proj.year);
+  const ms = d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : 0;
+  return ms ? String(new Date(ms).getFullYear()) : "";
+}
+// يملأ قائمة السنوات (من سنوات المشاريع وسنوات القرارات) مع الحفاظ على الاختيار الحالي، ويُعيد القيمة المختارة
+function dlRefreshYearOptions(selId){
+  const sel = document.getElementById(selId);
+  const prev = sel.value;
+  const years = new Set(ALL_PROJECTS.map(p=>String(p.year)).filter(Boolean));
+  ALL_DECISIONS.forEach(d=>{ const y = dlDecisionYear(d); if(y) years.add(y); });
+  const arr = [...years].sort();
+  const html = "<option value=''>كل السنوات</option>" + arr.map(y=>`<option value="${y}">${y}</option>`).join("");
+  if(sel.dataset.built!==html){ sel.innerHTML = html; sel.dataset.built = html; sel.value = arr.includes(prev) ? prev : ""; }
+  return sel.value;
+}
 function renderDecisionLogScreen(){
   renderAnnouncementsList();
   renderAllPlanningNotes();
@@ -7559,7 +7598,11 @@ function renderDecisionLogScreen(){
   `;
   const progFilter = document.getElementById("decisionFilterProgram").value;
   const statusFilter = document.getElementById("decisionFilterStatus").value;
+  const yearFilter = dlRefreshYearOptions("decisionFilterYear");
+  const goalFilter = document.getElementById("decisionFilterGoal").value;
   let rows = ALL_DECISIONS.filter(d=>{
+    if(yearFilter && dlDecisionYear(d)!==yearFilter) return false;
+    if(goalFilter){ const pr = PROGRAMS.find(x=>x.code===d.programCode); if(!pr || String(pr.goalId)!==goalFilter) return false; }
     if(progFilter && d.programCode!==progFilter) return false;
     if(statusFilter==="open" && d.resolved) return false;
     if(statusFilter==="resolved" && !d.resolved) return false;
