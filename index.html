@@ -3909,7 +3909,7 @@ function sendCredentialsWhatsApp(recipientType, identifier){
   logActivity(ADMIN_NAME, "send_credentials_whatsapp", `${name} (${recipientType})`);
 }
 // يبني نص الرسالة (طويل للبريد، مختصر لواتساب) حسب المستلم (المدير التنفيذي أو مدير مشروع محدد)
-const PLATFORM_URL = "https://moh-nsh.github.io/nsh-plan11/?v=2"; // رابط المنصة الحيّة — يُضمَّن في رسائل التذكير
+const PLATFORM_URL = "https://moh-nsh.github.io/nsh-plan11/go.html"; // صفحة خفيفة بوسوم المعاينة تحوّل تلقائيًا للمنصة (واتساب لا يقرأ معاينة الصفحة الكبيرة) // رابط المنصة الحيّة — يُضمَّن في رسائل التذكير
 function buildReminderMessage(project, lateSteps, recipientLabel, recipientName, isWhatsapp, gender){
   const greeting = gender==="male" ? "الفاضل" : (gender==="female" ? "الفاضلة" : "الفاضل/الفاضلة");
   if(isWhatsapp){
