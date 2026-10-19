@@ -1330,6 +1330,13 @@ tr.rejected-row td{background:#FDF6F6;}
 /* ختام التقرير المختصر */
 /* —— التقرير المختصر —— */
 .pb-doc .pb-body{padding:0;}
+.pb-sankey-note{font-size:calc(8.5px*var(--k));color:#6B7688;text-align:center;margin-top:4px;}
+.pb-row2{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;align-items:start;}
+.pb-row2>:only-child{grid-column:1/-1;}
+.pb-row2 .pb-bar-l{width:48%;}
+.pb-row2 .pb-ov-table{margin-top:0;}
+.pb-overview{break-after:page;display:flex;flex-direction:column;}
+#pdPreview .pb-overview{break-after:auto;margin-bottom:26px;border-bottom:2px dashed #C9962E;padding-bottom:18px;}
 #pdPreview .pb-body{background:#fff;padding:22px 26px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.12);}
 .pb-charts{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:16px;}
 .pb-chart{border:1px solid #D3D8E0;border-radius:10px;padding:10px 12px;background:#FAFBFC;break-inside:avoid;}
@@ -11891,6 +11898,7 @@ const PD_BRIEF_GROUPS = [
     { k:"bf_cover", l:"صفحة الغلاف", d:1 },
     { k:"bf_stats", l:"الأرقام الرئيسية", d:1 },
     { k:"bf_charts", l:"الرسوم البيانية (بلا نسب إنجاز)", d:1 },
+    { k:"bf_sankey", l:"مخطط التدفق: الأهداف الاستراتيجية ← المدراء التنفيذيون", d:1 },
     { k:"bf_exec", l:"المدير التنفيذي بجانب كل برنامج", d:1 },
     { k:"bf_noproj", l:"إدراج البرامج التي لا مشاريع لها (سطر واحد)", d:1 },
     { k:"bf_projects", l:"أسماء المشاريع تحت كل برنامج", d:1 },
@@ -12064,7 +12072,7 @@ function buildPlanDocHTML(o, idp){
     h += `<section class="pd-cover">
       <div class="pd-cover-top"><img src="moh-logo.png" alt=""><div class="pd-cover-org">سلطنة عُمان<br>وزارة الصحة<br>${orgName}</div></div>
       <div class="pd-cover-mid">
-        <div class="pd-cover-kicker">منصة رصد لمتابعة الخطة</div>
+        <div class="pd-cover-kicker">رصد .. نرصد لنُنجز</div>
         <div class="pd-cover-title">${escapeHtml(title)}</div>
         <div class="pd-cover-rule"></div>
         <div class="pd-cover-sub">${escapeHtml(subtitle)}</div>
@@ -12305,7 +12313,7 @@ function buildBriefHTML(o, idp){
     h += `<section class="pd-cover">
       <div class="pd-cover-top"><img src="moh-logo.png" alt=""><div class="pd-cover-org">سلطنة عُمان<br>وزارة الصحة<br>${orgName}</div></div>
       <div class="pd-cover-mid">
-        <div class="pd-cover-kicker">منصة رصد لمتابعة الخطة</div>
+        <div class="pd-cover-kicker">رصد .. نرصد لنُنجز</div>
         <div class="pd-cover-title">${escapeHtml(title)}</div>
         <div class="pd-cover-rule"></div>
         <div class="pd-cover-sub">${escapeHtml(subtitle)}</div>
@@ -12316,27 +12324,35 @@ function buildBriefHTML(o, idp){
         ${dateTxt?`<div><span>تاريخ الإصدار</span><b>${dateTxt}</b></div>`:""}</div></div>
     </section>`;
   }
+  const periodTxt = years.length>1 && years.every((n,i)=> i===0 || Number(n)===Number(years[i-1])+1) ? `${years[0]} – ${years[years.length-1]}` : years.join("، ");
+  const hasOverview = f.bf_stats || f.bf_charts || f.bf_table || f.bf_mgrchart;
   h += `<div class="pb-body">`;
-  if(f.bf_stats || f.bf_charts){
-    h += `<h2 class="pd-h2">الخطة بلمحة</h2><div class="pd-rule"></div>`;
-  }
-  if(f.bf_stats){
-    h += `<div class="pd-stats">
-      <div class="pd-stat"><b>${goalsUsed.length}</b><span>هدف استراتيجي</span></div>
-      <div class="pd-stat"><b>${rows.length}</b><span>برنامج تنفيذي</span></div>
-      <div class="pd-stat"><b>${withProj}</b><span>برنامج لديه مشاريع</span></div>
-      <div class="pd-stat gold"><b>${totalProjects}</b><span>مشروع ${years.length===1?"للعام "+years[0]:"في الفترة المحددة"}</span></div></div>`;
-  }
-  if(f.bf_charts){
-    const goalItems = goalsUsed.map(g=> ({ l: g.name, v: rows.filter(r=>r.prog.goalId===g.id).reduce((s,r)=>s+r.projects.length,0) }));
-    let second;
-    if(years.length>1){
-      const yi = years.map(y=> ({ l:y, v: rows.reduce((s,r)=> s+r.projects.filter(p=>String(p.year)===y).length,0) }));
-      second = `<div class="pb-chart"><div class="pb-chart-t">عدد المشاريع حسب السنة</div>${pdBarsHTML(yi,"#C9962E")}</div>`;
-    }else{
-      second = `<div class="pb-chart"><div class="pb-chart-t">البرامج التنفيذية ووجود مشاريع للعام ${years[0]||""}</div>${pdDonutHTML(withProj, rows.length-withProj, "برامج لديها مشاريع", "برامج بلا مشاريع حاليًا")}</div>`;
+  if(hasOverview){
+    h += `<div class="pb-overview"><h2 class="pd-h2">لمحة عامة عن الخطة خلال الفترة ${periodTxt}</h2><div class="pd-rule"></div>`;
+    const execs = [...new Set(rows.map(r=>r.prog.govManager).filter(Boolean))];
+    if(f.bf_stats){
+      h += `<div class="pd-stats">
+        <div class="pd-stat"><b>${goalsUsed.length}</b><span>هدف استراتيجي</span></div>
+        <div class="pd-stat"><b>${rows.length}</b><span>برنامج تنفيذي</span></div>
+        <div class="pd-stat"><b>${execs.length}</b><span>مدير تنفيذي</span></div>
+        <div class="pd-stat gold"><b>${totalProjects}</b><span>مشروع ${years.length===1?"للعام "+years[0]:"في الفترة المحددة"}</span></div></div>`;
     }
-    h += `<div class="pb-charts"><div class="pb-chart pb-wide"><div class="pb-chart-t">عدد المشاريع لكل هدف استراتيجي</div>${pdBarsHTML(goalItems,"#1B2A3A")}</div>${second}</div>`;
+    if(f.bf_charts){
+      const goalItems = goalsUsed.map(g=> ({ l: g.name, v: rows.filter(r=>r.prog.goalId===g.id).reduce((s,r)=>s+r.projects.length,0) }));
+      let second;
+      if(years.length>1){
+        const yi = years.map(y=> ({ l:y, v: rows.reduce((s,r)=> s+r.projects.filter(p=>String(p.year)===y).length,0) }));
+        second = `<div class="pb-chart"><div class="pb-chart-t">عدد المشاريع حسب السنة</div>${pdBarsHTML(yi,"#C9962E")}</div>`;
+      }else{
+        second = `<div class="pb-chart"><div class="pb-chart-t">البرامج ووجود مشاريع للعام ${years[0]||""}</div>${pdDonutHTML(withProj, rows.length-withProj, "برامج لديها مشاريع", "برامج بلا مشاريع حاليًا")}</div>`;
+      }
+      h += `<div class="pb-charts"><div class="pb-chart pb-wide"><div class="pb-chart-t">عدد المشاريع لكل هدف استراتيجي</div>${pdBarsHTML(goalItems,"#1B2A3A")}</div>${second}</div>`;
+    }
+    if(f.bf_sankey){
+      const sk = pdSankeyHTML(rows, goalsUsed);
+      if(sk) h += `<div class="pb-chart pb-sankey"><div class="pb-chart-t">تدفّق المشاريع: من الأهداف الاستراتيجية إلى المدراء التنفيذيين</div>${sk}</div>`;
+    }
+    h += `</div>`;
   }
   goalsUsed.forEach(g=>{
     const gr = rows.filter(r=>r.prog.goalId===g.id);
@@ -12376,16 +12392,74 @@ function buildBriefHTML(o, idp){
   h += `</div></div>`;
   return h;
 }
+const PD_GOAL_COLORS = ["#1B2A3A","#C9962E","#0D6E6E","#1E4E8C","#1E7A3D","#8E2F4A","#C46A1A","#5B3EAF"];
+function pdWrapAr(txt, max){
+  const words = String(txt).split(/\s+/); const lines = []; let cur = "";
+  words.forEach(w=>{ if(cur && (cur+" "+w).length>max){ lines.push(cur); cur = w; } else cur = cur ? cur+" "+w : w; });
+  if(cur) lines.push(cur);
+  return lines.slice(0,3);
+}
+function pdSankeyHTML(rows, goalsUsed){
+  const flows = {}; const mgrTot = {}; const goalTot = {};
+  rows.forEach(r=>{
+    const v = r.projects.length; if(!v) return;
+    const m = r.prog.govManager || "غير محدد", g = r.prog.goalId;
+    flows[g+"|"+m] = (flows[g+"|"+m]||0) + v;
+    mgrTot[m] = (mgrTot[m]||0) + v; goalTot[g] = (goalTot[g]||0) + v;
+  });
+  const T = Object.values(goalTot).reduce((a,b)=>a+b,0);
+  if(!T) return "";
+  const goals = goalsUsed.filter(g=> goalTot[g.id]);
+  const gIndex = {}; goals.forEach((g,i)=> gIndex[g.id]=i);
+  // ترتيب المدراء بمتوسط موقع أهدافهم لتقليل تقاطع الأشرطة
+  const mgrs = Object.keys(mgrTot).sort((a,b)=>{
+    const bc = m => goals.reduce((s,g)=> s + (flows[g.id+"|"+m]||0)*gIndex[g.id], 0)/mgrTot[m];
+    return bc(a)-bc(b);
+  });
+  const W=700, H=430, pad=8, gapG=26, gapM=8, xG=546, wN=11, xM=150;
+  const kG = (H-2*pad-gapG*(goals.length-1))/T, kM = (H-2*pad-gapM*(mgrs.length-1))/T;
+  const k = Math.min(kG,kM);
+  const hG = T*k+gapG*(goals.length-1), hM = T*k+gapM*(mgrs.length-1);
+  let y = (H-hG)/2; const gy = {}; goals.forEach(g=>{ gy[g.id] = y; y += goalTot[g.id]*k + gapG; });
+  y = (H-hM)/2; const my = {}; mgrs.forEach(m=>{ my[m] = y; y += mgrTot[m]*k + gapM; });
+  const gc = {}; const mc = {}; mgrs.forEach(m=> mc[m]=my[m]); goals.forEach(g=> gc[g.id]=gy[g.id]);
+  let ribbons = "", nodes = "", labels = "";
+  goals.forEach(g=>{
+    const col = PD_GOAL_COLORS[(g.id-1)%PD_GOAL_COLORS.length];
+    mgrs.forEach(m=>{
+      const v = flows[g.id+"|"+m]; if(!v) return;
+      const hh = v*k, ya = gc[g.id], yb = mc[m];
+      gc[g.id] += hh; mc[m] += hh;
+      const x1 = xM+wN, x2 = xG, mx = (x1+x2)/2;
+      ribbons += `<path d="M${x1},${yb} C${mx},${yb} ${mx},${ya} ${x2},${ya} L${x2},${ya+hh} C${mx},${ya+hh} ${mx},${yb+hh} ${x1},${yb+hh} Z" fill="${col}" fill-opacity=".42"/>`;
+    });
+    const gh = goalTot[g.id]*k;
+    nodes += `<rect x="${xG}" y="${gy[g.id]}" width="${wN}" height="${gh}" rx="2" fill="${col}"/>`;
+    const lines = pdWrapAr(g.name, 24);
+    const cy = gy[g.id]+gh/2, ly0 = cy-(lines.length*11)/2+8;
+    labels += `<circle cx="${xG+wN+13}" cy="${cy}" r="9" fill="${col}"/><text x="${xG+wN+13}" y="${cy+3.5}" text-anchor="middle" font-size="10" font-weight="800" fill="#fff">${g.id}</text>`;
+    labels += lines.map((ln,i)=>`<text x="${W-2}" y="${ly0+i*11}" text-anchor="end" font-size="9.5" font-weight="700" fill="#1B2A3A">${escapeHtml(ln)}${i===lines.length-1?`<tspan fill="#6B7688" font-weight="400"> (${goalTot[g.id]})</tspan>`:""}</text>`).join("");
+  });
+  mgrs.forEach(m=>{
+    const mh = mgrTot[m]*k;
+    nodes += `<rect x="${xM}" y="${my[m]}" width="${wN}" height="${mh}" rx="2" fill="#4A5565"/>`;
+    labels += `<text x="${xM-6}" y="${my[m]+mh/2+3.5}" text-anchor="end" font-size="9.5" font-weight="700" fill="#1B2A3A">${escapeHtml(m)}<tspan fill="#6B7688" font-weight="400"> (${mgrTot[m]})</tspan></text>`;
+  });
+  return `<svg class="pb-sankey-svg" viewBox="0 0 ${W} ${H}" width="100%" style="direction:ltr;font-family:'Cairo','Tajawal',sans-serif;display:block;">${ribbons}${nodes}${labels}</svg>
+    <div class="pb-sankey-note">سُمك كل شريط يمثّل عدد المشاريع؛ الأرقام بين الأقواس عدد مشاريع كل هدف ومدير تنفيذي.</div>`;
+}
 function pdEstimatePages(o){
   const probe = document.createElement("div");
   probe.style.cssText = "position:absolute;left:-9999px;top:0;width:182mm;visibility:hidden;";
   probe.innerHTML = buildBriefHTML({ ...o, flags:{ ...o.flags, bf_cover:false } }, "es");
   document.body.appendChild(probe);
+  const pageH = 263/25.4*96;
+  const ov = probe.querySelector(".pb-overview");
+  const ovH = ov ? ov.getBoundingClientRect().height : 0;
   const body = probe.querySelector(".pb-body");
-  const hpx = body ? body.getBoundingClientRect().height : 0;
+  const restH = Math.max(0, (body ? body.getBoundingClientRect().height : 0) - ovH);
   probe.remove();
-  const pageH = 263/25.4*96; // ارتفاع المحتوى في صفحة A4 بالبكسل تقريبًا
-  return (o.flags.bf_cover?1:0) + Math.max(1, Math.ceil(hpx/pageH*1.04));
+  return (o.flags.bf_cover?1:0) + (ovH>0 ? Math.max(1, Math.ceil(ovH/pageH)) : 0) + (restH>0 ? Math.max(1, Math.ceil(restH/pageH*1.12)) : 0);
 }
 
 /* ---------- العرض والطباعة ---------- */
