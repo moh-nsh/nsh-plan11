@@ -1199,6 +1199,136 @@ tr.rejected-row td{background:#FDF6F6;}
   .meeting-goal-block{page-break-inside:avoid;page-break-after:always;}
   .meeting-goal-block:last-child{page-break-after:auto;}
 }
+
+/* ==================== إصدار الخطة المعمَّمة ==================== */
+.pd-layout{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+@media(max-width:1000px){.pd-layout{grid-template-columns:1fr;}}
+.pd-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;max-height:84vh;overflow-y:auto;position:sticky;top:70px;}
+.pd-opt-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#FAFBFC;}
+.pd-opt-title{font-weight:800;color:var(--navy);font-size:13px;margin-bottom:6px;font-family:'Cairo',sans-serif;}
+.pd-opt{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;cursor:pointer;line-height:1.5;}
+.pd-opt input{width:16px;height:16px;flex-shrink:0;}
+.pd-year{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin:0 0 6px 6px;cursor:pointer;background:#fff;}
+.pd-year-n{font-weight:400;color:var(--text-muted);font-size:11px;}
+.pd-goal{border-top:1px solid var(--border);padding:4px 0;}
+.pd-goal summary{cursor:pointer;list-style:none;}
+.pd-goal-progs{padding:2px 22px 6px 0;}
+.pd-field{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.pd-field label{font-size:11.5px;font-weight:700;color:var(--navy);}
+.pd-field input,.pd-field textarea{padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;}
+.pd-warn{background:#FFF6E0;border:1px solid #E8C97A;color:#7A5B00;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:6px;}
+.pd-ok{background:#EAF6EE;border:1px solid #9AD2AE;color:#1E6B3A;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:6px;}
+.pd-preview-wrap{background:#E6E9EE;border-radius:12px;padding:16px;max-height:84vh;overflow:auto;}
+.pd-preview-note{font-size:12px;color:var(--text-muted);margin-bottom:8px;}
+#pdPreview .pd-doc{max-width:794px;margin:0 auto;}
+#pdPreview .pd-cover,#pdPreview .pd-goal-page{width:100%;height:auto;min-height:520px;margin-bottom:14px;}
+#pdPreview .pd-page,#pdPreview .pd-prog{background:#fff;padding:22px 26px;margin-bottom:14px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+
+/* —— الوثيقة (تُستخدم في المعاينة والطباعة) —— */
+.pd-doc{font-family:'Cairo','Tajawal',sans-serif;direction:rtl;color:#1B2A3A;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;}
+.pd-doc *{box-sizing:border-box;}
+.pd-doc a{color:inherit;text-decoration:none;}
+.pd-h2{font-weight:800;font-size:24px;color:#1B2A3A;margin:0 0 6px;}
+.pd-rule{height:3px;width:70px;background:#C9962E;border-radius:2px;margin-bottom:18px;}
+.pd-page{break-before:page;}
+.pd-cover{page:cover;background:#15222D;color:#fff;width:210mm;height:297mm;padding:22mm 20mm;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;break-after:page;}
+.pd-cover::before{content:"";position:absolute;inset:0 0 auto 0;height:9mm;background:#C9962E;}
+.pd-cover::after{content:"";position:absolute;left:-40mm;bottom:-40mm;width:140mm;height:140mm;border-radius:50%;border:2mm solid rgba(201,150,46,.25);}
+.pd-cover-top{display:flex;align-items:center;gap:16px;margin-top:6mm;}
+.pd-cover-top img{height:26mm;background:#fff;border-radius:8px;padding:3mm;}
+.pd-cover-org{font-size:13px;font-weight:700;line-height:1.8;color:#E9EDF3;}
+.pd-cover-kicker{color:#C9962E;font-weight:700;font-size:15px;letter-spacing:.5px;margin-bottom:10px;}
+.pd-cover-title{font-size:40px;font-weight:800;line-height:1.35;max-width:150mm;}
+.pd-cover-rule{height:3px;width:50mm;background:#C9962E;margin:12mm 0 8mm;}
+.pd-cover-sub{font-size:22px;font-weight:600;color:#E9EDF3;}
+.pd-cover-years{display:flex;gap:8px;margin-top:10mm;flex-wrap:wrap;}
+.pd-cover-years span{border:1px solid #C9962E;color:#C9962E;border-radius:20px;padding:2px 16px;font-weight:700;font-size:14px;}
+.pd-cover-meta{display:flex;gap:10mm;border-top:1px solid rgba(255,255,255,.2);padding-top:8mm;position:relative;z-index:2;}
+.pd-cover-meta div{display:flex;flex-direction:column;gap:2px;}
+.pd-cover-meta span{font-size:10.5px;color:#9FB0C3;}
+.pd-cover-meta b{font-size:14px;}
+.pd-intro-text{font-size:14px;line-height:2.1;text-align:justify;}
+.pd-intro-sign{margin-top:14mm;font-weight:700;font-size:13px;line-height:1.9;}
+.pd-toc{font-size:12px;}
+.pd-toc-goal{margin-top:12px;font-weight:800;font-size:14px;color:#1B2A3A;border-bottom:2px solid #C9962E;padding-bottom:3px;}
+.pd-toc-num{display:inline-block;background:#1B2A3A;color:#fff;border-radius:6px;min-width:22px;text-align:center;margin-left:8px;font-size:12px;padding:0 5px;}
+.pd-toc-prog{padding:3px 4px 3px 0;border-bottom:1px dotted #CBD1DA;}
+.pd-toc-prog a{display:flex;gap:10px;align-items:baseline;}
+.pd-toc-code{font-weight:700;color:#C9962E;min-width:30px;}
+.pd-toc-n{margin-right:auto;color:#6B7688;font-size:10.5px;}
+.pd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.pd-stat{background:#F3F5F8;border-radius:10px;border-top:4px solid #1B2A3A;padding:12px 8px;text-align:center;}
+.pd-stat.gold{border-top-color:#C9962E;}
+.pd-stat b{display:block;font-size:28px;font-weight:800;color:#1B2A3A;line-height:1.2;}
+.pd-stat span{font-size:11px;color:#4A5565;}
+.pd-table{width:100%;border-collapse:collapse;margin:6px 0 10px;font-size:10.5px;}
+.pd-table th{background:#1B2A3A;color:#fff;font-weight:700;padding:6px 6px;text-align:center;border:1px solid #1B2A3A;}
+.pd-table td{border:1px solid #D3D8E0;padding:5px 7px;vertical-align:middle;}
+.pd-table tbody tr:nth-child(even) td{background:#F7F8FA;}
+.pd-table td.c{text-align:center;}
+.pd-table tr.tot td{background:#EFE4C8 !important;font-weight:800;}
+.pd-table thead{display:table-header-group;}
+.pd-table tr{break-inside:avoid;}
+.pd-goal-page{page:goalpage;break-before:page;break-after:page;width:210mm;height:297mm;background:#F6F1E4;padding:40mm 24mm;position:relative;display:flex;flex-direction:column;justify-content:center;}
+.pd-goal-num{position:absolute;top:18mm;left:18mm;font-size:150px;font-weight:800;color:#C9962E;opacity:.35;line-height:1;}
+.pd-goal-label{color:#C9962E;font-weight:700;font-size:16px;}
+.pd-goal-name{font-size:34px;font-weight:800;color:#1B2A3A;line-height:1.4;margin:6px 0 14mm;border-right:6px solid #C9962E;padding-right:12px;}
+.pd-goal-list div{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid #D9CFB3;font-size:14px;}
+.pd-goal-list span{font-weight:800;color:#C9962E;min-width:34px;}
+.pd-goal-list em{margin-right:auto;font-style:normal;color:#6B7688;font-size:12px;}
+.pd-prog{break-before:page;}
+.pd-prog.pd-prog-empty{break-before:auto;break-inside:avoid;margin-top:14px;}
+.pd-prog-head{break-after:avoid;display:flex;gap:14px;align-items:center;background:#1B2A3A;color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:10px;}
+.pd-prog-code{background:#C9962E;color:#15222D;font-weight:800;font-size:22px;border-radius:8px;padding:2px 12px;min-width:56px;text-align:center;}
+.pd-prog-goal{font-size:10.5px;color:#C9B27A;}
+.pd-prog-name{font-size:18px;font-weight:800;line-height:1.5;}
+.pd-meta{display:flex;flex-wrap:wrap;gap:0;border:1px solid #D3D8E0;border-radius:8px;margin-bottom:10px;overflow:hidden;}
+.pd-meta div{flex:1 1 30%;padding:6px 10px;border-left:1px solid #D3D8E0;background:#FAFBFC;}
+.pd-meta div:last-child{border-left:0;}
+.pd-meta span{display:block;font-size:9.5px;color:#6B7688;}
+.pd-meta b{font-size:11.5px;}
+.pd-meta small{font-weight:400;color:#6B7688;}
+.pd-block{margin-bottom:9px;break-inside:avoid;}
+.pd-block-t{font-weight:800;color:#1B2A3A;font-size:12px;border-right:4px solid #C9962E;padding-right:8px;margin-bottom:3px;}
+.pd-block-b{font-size:11px;text-align:justify;line-height:1.9;}
+.pd-list{margin:2px 18px 0 0;padding:0;font-size:11px;line-height:1.8;}
+.pd-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pd-cols .pd-block:only-child{grid-column:1/-1;}
+.pd-sub{font-weight:800;font-size:13px;color:#1B2A3A;background:#EEF1F5;border-radius:6px;padding:5px 10px;margin:12px 0 6px;break-after:avoid;}
+.pd-noproj{border:1.5px dashed #B9C1CE;border-radius:8px;padding:12px 14px;color:#4A5565;font-size:11.5px;background:#FAFBFC;}
+.pd-chip{display:inline-block;border-radius:10px;padding:0 9px;font-size:9.5px;font-weight:700;line-height:1.7;}
+.pd-chip.run{background:#E3EEFB;color:#1E4E8C;}
+.pd-chip.done{background:#E1F3E7;color:#1E7A3D;}
+.pd-chip.closed{background:#E8EAEE;color:#4A5565;}
+.pd-chip.todo{background:#FBEFD9;color:#8A5A00;}
+.pd-pcard{border:1px solid #CBD1DA;border-radius:9px;margin:9px 0;overflow:hidden;break-inside:avoid;}
+.pd-pcard.has-steps{break-inside:auto;}
+.pd-pc-head{display:flex;align-items:center;gap:8px;background:#EEF1F5;padding:7px 10px;border-bottom:2px solid #C9962E;break-after:avoid;}
+.pd-pc-n{background:#1B2A3A;color:#fff;border-radius:6px;min-width:22px;text-align:center;font-weight:700;font-size:11px;}
+.pd-pc-name{font-weight:800;font-size:12.5px;flex:1;}
+.pd-pc-tags{display:flex;gap:6px;align-items:center;}
+.pd-yr{font-weight:700;color:#C9962E;font-size:11px;}
+.pd-pct{font-weight:800;font-size:11px;color:#1B2A3A;}
+.pd-bar{height:4px;background:#E2E5EA;}
+.pd-bar i{display:block;height:100%;background:linear-gradient(90deg,#C9962E,#1E7A3D);}
+.pd-pc-note{padding:8px 12px;color:#6B7688;font-size:11px;}
+.pd-kv{width:100%;border-collapse:collapse;}
+.pd-kv th{background:#F3F5F8;width:14%;font-size:9.8px;color:#4A5565;text-align:right;padding:4px 8px;border-bottom:1px solid #E3E7EC;font-weight:700;}
+.pd-kv td{width:36%;font-size:10.5px;padding:4px 8px;border-bottom:1px solid #E3E7EC;}
+.pd-long{padding:5px 10px;border-top:1px solid #E3E7EC;}
+.pd-long-t{font-size:9.8px;color:#6B7688;font-weight:700;}
+.pd-long-b{font-size:10.8px;line-height:1.8;text-align:justify;}
+.pd-steps{padding:6px 10px 8px;border-top:1px solid #E3E7EC;}
+.pd-phase{font-weight:800;font-size:11px;color:#1B2A3A;border-right:4px solid #1E7A3D;padding-right:8px;margin:8px 0 3px;break-after:avoid;}
+.pd-steps-table{font-size:9.6px;}
+.pd-steps-table th{background:#E4E9F0;color:#1B2A3A;border-color:#CBD1DA;font-size:9.4px;}
+.pd-na{color:#9AA3B2;}
+.pd-empty{padding:40px;text-align:center;color:#6B7688;font-size:14px;}
+@media print{
+  body.printing-plandoc > *:not(#planDocPrintContainer){display:none !important;}
+  body.printing-plandoc #planDocPrintContainer{display:block !important;}
+  #planDocPrintContainer .pd-doc{max-width:none;}
+}
 </style>
 </head>
 <body>
@@ -1225,6 +1355,7 @@ tr.rejected-row td{background:#FDF6F6;}
     <button class="meeting-btn" id="navCompetitionReportBtn" style="background:#0D6E6E;color:#fff;">📊 لوحة أداء الخطة</button>
     <button class="meeting-btn" id="navFullMatrixBtn" style="background:#0D6E6E;color:#fff;">📐 المصفوفة الشاملة</button>
     <button class="meeting-btn" id="navSPIBtn" style="background:#0D6E6E;color:#fff;position:relative;">📈 مؤشر الأداء الزمني SPI <span id="navSPIUnlockBadge" class="req-badge hidden">0</span></button>
+    <button class="meeting-btn" id="navPlanDocBtn" style="background:#8A6A1F;color:#fff;">📘 إصدار الخطة المعمَّمة</button>
     <button class="meeting-btn" id="navAnalyticsBtn" style="background:#0D6E6E;color:#fff;">🔬 تحليلات متقدمة</button>
     <button class="meeting-btn" id="navProgramsAdminBtn" style="background:#1E4E8C;color:#fff;">⚙️ إدارة البرامج والمدراء</button>
     <button class="meeting-btn" id="navRequestsBtn" style="background:#1E4E8C;color:#fff;position:relative;">📮 طلبات المدراء <span id="requestsBadge" class="req-badge hidden">0</span></button>
@@ -2469,10 +2600,48 @@ tr.rejected-row td{background:#FDF6F6;}
   </div>
 </div>
 
+<div id="planDocScreen" class="hidden">
+  <div class="dash-wrap">
+    <div class="section-title">📘 إصدار الخطة المعمَّمة</div>
+    <div class="section-desc">وثيقة رسمية (PDF) تُولَّد من بيانات المنصة الحيّة للتعميم على الدوائر والأقسام: الأهداف الاستراتيجية، فالبرامج التنفيذية وبطاقاتها، فمشاريعها. حدّد السنوات والبرامج والمتغيرات، وراجع المعاينة، ثم اضغط «طباعة / حفظ PDF» واختر «حفظ كـ PDF».</div>
+    <div class="pd-layout">
+      <div class="pd-panel">
+        <button class="print-btn" id="pdPrintBtn" style="width:100%;margin-bottom:10px;">🖨️ طباعة / حفظ PDF</button>
+        <div id="pdWarnings"></div>
+        <div class="pd-opt-card">
+          <div class="pd-opt-title">السنوات المشمولة <button type="button" class="export-btn" id="pdAllYears" style="font-size:11px;padding:2px 8px;margin-right:6px;">كل السنوات</button></div>
+          <div id="pdYears"></div>
+        </div>
+        <div class="pd-opt-card">
+          <div class="pd-opt-title">البرامج المشمولة
+            <button type="button" class="export-btn" id="pdSelAllProgs" style="font-size:11px;padding:2px 8px;margin-right:6px;">الكل</button>
+            <button type="button" class="export-btn" id="pdSelNoProgs" style="font-size:11px;padding:2px 8px;">لا شيء</button></div>
+          <div id="pdProgramsTree"></div>
+        </div>
+        <div id="pdOptionsGroups"></div>
+        <div class="pd-opt-card">
+          <div class="pd-opt-title">بيانات الإصدار</div>
+          <div class="pd-field"><label>عنوان الوثيقة</label><input id="pdTitle" placeholder="الخطة الخمسية الحادية عشرة 2026–2030"></div>
+          <div class="pd-field"><label>العنوان الفرعي (اتركه فارغًا ليُولَّد تلقائيًا من السنوات)</label><input id="pdSubtitle"></div>
+          <div class="pd-field"><label>رقم الإصدار</label><input id="pdVersion" placeholder="مثال: 1.0"></div>
+          <div class="pd-field"><label>تاريخ الإصدار</label><input type="date" id="pdDate"></div>
+          <div class="pd-field"><label>الجهة المُصدِرة</label><input id="pdIssuer" placeholder="قسم التخطيط والدراسات"></div>
+          <div class="pd-field"><label>نص التقديم (يظهر عند تفعيل «صفحة التقديم»)</label><textarea id="pdIntro" rows="5"></textarea></div>
+        </div>
+      </div>
+      <div class="pd-preview-wrap">
+        <div class="pd-preview-note">معاينة تقريبية — ترتيب الصفحات النهائي وأرقامها تظهر في ملف PDF.</div>
+        <div id="pdPreview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== PROJECT DETAIL PLAN MODAL ===================== -->
 <div id="detailPrintTableContainer" class="hidden"></div>
 <div id="challengesPrintTableContainer" class="hidden"></div>
 <div id="directoryPrintContainer" class="hidden"></div>
+<div id="planDocPrintContainer" class="hidden"></div>
 <div id="detailModalOverlay" class="modal-overlay hidden" style="align-items:flex-start;overflow-y:auto;padding:26px 12px;z-index:300;">
   <div class="detail-modal-box">
     <div class="detail-modal-header">
@@ -4603,7 +4772,7 @@ function toggleCountdownCustomFields(){
 }
 
 /* ---------------- Screens ---------------- */
-const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen","spiScreen","analyticsScreen"];
+const ADMIN_CLUSTER_SCREENS = ["adminScreen","meetingScreen","passwordsScreen","activityScreen","backupScreen","execSummaryScreen","decisionLogScreen","requestsScreen","weeklyReportScreen","programsAdminScreen","competitionReportScreen","fullMatrixScreen","spiScreen","analyticsScreen","planDocScreen"];
 function showScreen(id){
   ["loginScreen","managerScreen","projectManagerScreen","dgScreen",...ADMIN_CLUSTER_SCREENS].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
@@ -11611,6 +11780,463 @@ async function exportProgramCardToExcel(){
   const safeName = program.name.replace(/[\\/:*?"<>|]/g,"_").slice(0,40);
   await downloadWorkbook(wb, `بطاقة_تعريف_${safeName}.xlsx`);
 }
+
+/* ==================== إصدار الخطة المعمَّمة (وثيقة رسمية للنشر) ==================== */
+const PD_STORE_KEY = "rasd_plandoc_opts_v1";
+const PD_OPT_GROUPS = [
+  { title:"أقسام الوثيقة", items:[
+    { k:"cover", l:"صفحة الغلاف", d:1 },
+    { k:"intro", l:"صفحة التقديم (النص في الأسفل)", d:0 },
+    { k:"toc", l:"الفهرس", d:1 },
+    { k:"overview", l:"نظرة عامة بالأرقام", d:1 },
+    { k:"goalDividers", l:"صفحة فاصلة لكل هدف استراتيجي", d:1 }
+  ]},
+  { title:"بطاقة البرنامج التنفيذي", items:[
+    { k:"pg_exec", l:"المدير التنفيذي (بالمحافظة)", d:1 },
+    { k:"pg_central", l:"المدير المركزي", d:1 },
+    { k:"pc_desc", l:"وصف البرنامج", d:1 },
+    { k:"pc_mgr", l:"مدير البرنامج (من البطاقة)", d:0 },
+    { k:"pc_cost", l:"التكلفة الإجمالية للبرنامج", d:0 },
+    { k:"pc_dates", l:"تاريخا البدء والانتهاء", d:1 },
+    { k:"pc_targets", l:"مستهدفات البرنامج", d:1 },
+    { k:"pc_related", l:"المشاريع المرتبطة (كما في البطاقة)", d:0 },
+    { k:"pc_entities", l:"الجهات المنفذة", d:1 }
+  ]},
+  { title:"مشاريع البرنامج", items:[
+    { k:"pr_table", l:"جدول موجز بمشاريع كل برنامج", d:1 },
+    { k:"pr_cards", l:"بطاقة تفصيلية لكل مشروع (الجزء العلوي من الخطة التفصيلية)", d:1 },
+    { k:"pr_progress", l:"نسبة الإنجاز", d:1 },
+    { k:"pr_status", l:"حالة المشروع (جارٍ / مكتمل / مغلق)", d:1 }
+  ]},
+  { title:"حقول بطاقة المشروع", items:[
+    { k:"f_goalIndicator", l:"الهدف / المؤشر", d:1 },
+    { k:"f_description", l:"وصف المشروع", d:1 },
+    { k:"f_desiredOutcome", l:"الهدف المنشود", d:1 },
+    { k:"f_dates", l:"تاريخا البدء والانتهاء", d:1 },
+    { k:"f_projectManager", l:"مدير المشروع", d:1 },
+    { k:"f_owningEntity", l:"الجهة المالكة", d:1 },
+    { k:"f_supportingEntities", l:"الجهات المساندة", d:1 },
+    { k:"f_sector", l:"القطاع", d:1 },
+    { k:"f_location", l:"موقع المشروع", d:1 },
+    { k:"f_priority", l:"الأولوية", d:1 },
+    { k:"f_totalCost", l:"التكلفة الإجمالية", d:0 },
+    { k:"f_currentSpending", l:"مستوى الصرف الحالي", d:0 },
+    { k:"f_budgetType", l:"نوع الميزانية", d:0 },
+    { k:"f_teamMembers", l:"أعضاء فريق المشروع", d:0 }
+  ]},
+  { title:"خطوات العمل (مراحل التنفيذ)", items:[
+    { k:"st_on", l:"إدراج جدول خطوات العمل لكل مشروع", d:0 },
+    { k:"st_docs", l:"عمود المستندات / المخرجات", d:1 },
+    { k:"st_dates", l:"عمودا تاريخ البدء والانتهاء", d:1 },
+    { k:"st_dur", l:"عمود المدة (أسابيع)", d:1 },
+    { k:"st_status", l:"عمود حالة الخطوة", d:1 }
+  ]},
+  { title:"خيارات عامة", items:[
+    { k:"includeClosed", l:"تضمين المشاريع المغلقة", d:1 },
+    { k:"emptyPrograms", l:"إدراج البرامج التي لا مشاريع لها في السنوات المحددة (للاطلاع)", d:1 },
+    { k:"showEmpty", l:"عرض الحقول الفارغة بعلامة (—) بدل إخفائها", d:0 }
+  ]}
+];
+let PD_SEL_PROGRAMS = null; // مجموعة رموز البرامج المختارة (null = الكل)
+let PD_SEL_YEARS = null;
+
+function pdLoadSaved(){ try{ return JSON.parse(localStorage.getItem(PD_STORE_KEY)||"null"); }catch(e){ return null; } }
+function pdSave(o){ try{ localStorage.setItem(PD_STORE_KEY, JSON.stringify(o)); }catch(e){} }
+function pdYearsAvailable(){
+  const ys = new Set(["2026","2027","2028","2029","2030"]);
+  ALL_PROJECTS.forEach(p=>{ if(p.year) ys.add(String(p.year)); });
+  return [...ys].sort();
+}
+function pdBuildControls(){
+  const saved = pdLoadSaved() || {};
+  const savedFlags = saved.flags || {};
+  const wrap = document.getElementById("pdOptionsGroups");
+  wrap.innerHTML = PD_OPT_GROUPS.map(g=>`
+    <div class="pd-opt-card">
+      <div class="pd-opt-title">${g.title}</div>
+      ${g.items.map(it=>{
+        const on = it.k in savedFlags ? savedFlags[it.k] : !!it.d;
+        return `<label class="pd-opt"><input type="checkbox" data-pd="${it.k}" ${on?"checked":""}> ${it.l}</label>`;
+      }).join("")}
+    </div>`).join("");
+  // السنوات
+  const years = pdYearsAvailable();
+  const curY = String(new Date().getFullYear());
+  PD_SEL_YEARS = new Set(saved.years && saved.years.length ? saved.years.filter(y=>years.includes(y)) : (years.includes(curY) ? [curY] : years));
+  document.getElementById("pdYears").innerHTML = years.map(y=>{
+    const n = ALL_PROJECTS.filter(p=>String(p.year)===y).length;
+    return `<label class="pd-year"><input type="checkbox" data-pdyear="${y}" ${PD_SEL_YEARS.has(y)?"checked":""}> ${y} <span class="pd-year-n">${n} مشروع</span></label>`;
+  }).join("");
+  // البرامج
+  const savedProgs = saved.programs;
+  PD_SEL_PROGRAMS = new Set(savedProgs && savedProgs.length ? savedProgs.filter(c=>PROGRAMS.some(p=>p.code===c)) : PROGRAMS.map(p=>p.code));
+  document.getElementById("pdProgramsTree").innerHTML = STRATEGIC_GOALS.map(g=>{
+    const progs = PROGRAMS.filter(p=>p.goalId===g.id);
+    if(!progs.length) return "";
+    const allOn = progs.every(p=>PD_SEL_PROGRAMS.has(p.code));
+    return `<details class="pd-goal">
+      <summary><label class="pd-opt" onclick="event.stopPropagation()"><input type="checkbox" data-pdgoal="${g.id}" ${allOn?"checked":""}> <b>${g.id}. ${escapeHtml(g.name)}</b> <span class="pd-year-n">${progs.length} برنامج</span></label></summary>
+      <div class="pd-goal-progs">${progs.map(p=>`<label class="pd-opt"><input type="checkbox" data-pdprog="${p.code}" ${PD_SEL_PROGRAMS.has(p.code)?"checked":""}> ${p.code} ${escapeHtml(p.name)}</label>`).join("")}</div>
+    </details>`;
+  }).join("");
+  if(saved.text){
+    ["pdTitle","pdSubtitle","pdVersion","pdIssuer","pdIntro"].forEach(id=>{ if(saved.text[id]!=null) document.getElementById(id).value = saved.text[id]; });
+  }
+  if(!document.getElementById("pdDate").value) document.getElementById("pdDate").value = todayLocalStr();
+  pdWireControls();
+}
+function pdWireControls(){
+  const root = document.getElementById("planDocScreen");
+  root.querySelectorAll("[data-pd]").forEach(el=> el.onchange = pdRefresh);
+  root.querySelectorAll("[data-pdyear]").forEach(el=> el.onchange = ()=>{
+    if(el.checked) PD_SEL_YEARS.add(el.dataset.pdyear); else PD_SEL_YEARS.delete(el.dataset.pdyear);
+    pdRefresh();
+  });
+  root.querySelectorAll("[data-pdprog]").forEach(el=> el.onchange = ()=>{
+    if(el.checked) PD_SEL_PROGRAMS.add(el.dataset.pdprog); else PD_SEL_PROGRAMS.delete(el.dataset.pdprog);
+    const goalId = PROGRAMS.find(p=>p.code===el.dataset.pdprog).goalId;
+    const gEl = root.querySelector(`[data-pdgoal="${goalId}"]`);
+    gEl.checked = PROGRAMS.filter(p=>p.goalId===goalId).every(p=>PD_SEL_PROGRAMS.has(p.code));
+    pdRefresh();
+  });
+  root.querySelectorAll("[data-pdgoal]").forEach(el=> el.onchange = ()=>{
+    const gid = Number(el.dataset.pdgoal);
+    PROGRAMS.filter(p=>p.goalId===gid).forEach(p=>{
+      if(el.checked) PD_SEL_PROGRAMS.add(p.code); else PD_SEL_PROGRAMS.delete(p.code);
+      const c = root.querySelector(`[data-pdprog="${p.code}"]`); if(c) c.checked = el.checked;
+    });
+    pdRefresh();
+  });
+  ["pdTitle","pdSubtitle","pdVersion","pdDate","pdIssuer","pdIntro"].forEach(id=>{ document.getElementById(id).oninput = pdRefresh; });
+}
+function pdReadOpts(){
+  const flags = {};
+  document.querySelectorAll("#planDocScreen [data-pd]").forEach(el=> flags[el.dataset.pd] = el.checked);
+  const years = [...PD_SEL_YEARS].sort();
+  const text = {};
+  ["pdTitle","pdSubtitle","pdVersion","pdIssuer","pdIntro"].forEach(id=> text[id] = document.getElementById(id).value);
+  return { flags, years, programs:[...PD_SEL_PROGRAMS], text, date: document.getElementById("pdDate").value };
+}
+
+/* ---------- مساعدات التنسيق ---------- */
+function pdFmtDate(iso){
+  if(!iso) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+}
+function pdYearsLabel(years){
+  if(years.length===0) return "";
+  if(years.length===1) return `للعام ${years[0]}`;
+  const nums = years.map(Number);
+  const contiguous = nums.every((n,i)=> i===0 || n===nums[i-1]+1);
+  return contiguous ? `للأعوام ${years[0]} – ${years[years.length-1]}` : `للأعوام ${years.join("، ")}`;
+}
+function pdProjectStatus(pr, detail){
+  if(pr.closed) return { label:"مغلق", cls:"closed" };
+  const pct = detail ? computeOverallPct(detail) : 0;
+  if(pct>=100) return { label:"مكتمل", cls:"done" };
+  if(pct>0) return { label:"جارٍ التنفيذ", cls:"run" };
+  return { label:"لم يبدأ", cls:"todo" };
+}
+function pdDetailDates(detail){
+  let s = detail && detail.startDate, e = detail && detail.endDate;
+  if((!s || !e) && detail && Array.isArray(detail.phases)){
+    const ds = [], de = [];
+    detail.phases.forEach(ph=> (ph.steps||[]).forEach(st=>{ if(st.startDate) ds.push(st.startDate); if(st.endDate) de.push(st.endDate); }));
+    if(!s && ds.length) s = ds.sort()[0];
+    if(!e && de.length) e = de.sort().slice(-1)[0];
+  }
+  return { start:s||"", end:e||"" };
+}
+function pdVal(v){
+  if(Array.isArray(v)) return v.filter(x=>x && String(x).trim()).map(x=>escapeHtml(String(x).trim())).join("، ");
+  return v && String(v).trim() ? escapeHtml(String(v).trim()).replace(/\n/g,"<br>") : "";
+}
+
+/* ---------- بناء الوثيقة ---------- */
+function buildPlanDocHTML(o, idp){
+  const f = o.flags;
+  const years = o.years;
+  const selProgs = new Set(o.programs);
+  const title = (o.text.pdTitle||"").trim() || "الخطة الخمسية الحادية عشرة 2026–2030";
+  const subtitle = (o.text.pdSubtitle||"").trim() || ("الخطة التنفيذية المعمَّمة " + pdYearsLabel(years));
+  const issuer = (o.text.pdIssuer||"").trim() || "قسم التخطيط والدراسات";
+  const version = (o.text.pdVersion||"").trim();
+  const dateTxt = pdFmtDate(o.date);
+  const orgName = "المديرية العامة للخدمات الصحية بمحافظة شمال الشرقية";
+
+  // تجميع البيانات
+  const programs = PROGRAMS.filter(p=> selProgs.has(p.code)).sort((a,b)=> a.code.localeCompare(b.code, undefined, {numeric:true}));
+  const projectsOf = code => ALL_PROJECTS
+    .filter(p=> p.programCode===code && years.includes(String(p.year)) && (f.includeClosed || !p.closed))
+    .sort((a,b)=> String(a.year).localeCompare(String(b.year)) || String(a.projectName||"").localeCompare(String(b.projectName||""),"ar"));
+  const rows = programs.map(p=> ({ prog:p, projects:projectsOf(p.code) }))
+    .filter(r=> r.projects.length>0 || f.emptyPrograms);
+  const goalsUsed = STRATEGIC_GOALS.filter(g=> rows.some(r=> r.prog.goalId===g.id));
+  const totalProjects = rows.reduce((s,r)=> s+r.projects.length, 0);
+  const progsWithProjects = rows.filter(r=>r.projects.length>0).length;
+
+  let h = `<div class="pd-doc">`;
+
+  // الغلاف
+  if(f.cover){
+    h += `<section class="pd-cover">
+      <div class="pd-cover-top"><img src="moh-logo.png" alt=""><div class="pd-cover-org">سلطنة عُمان<br>وزارة الصحة<br>${orgName}</div></div>
+      <div class="pd-cover-mid">
+        <div class="pd-cover-kicker">منصة رصد لمتابعة الخطة</div>
+        <div class="pd-cover-title">${escapeHtml(title)}</div>
+        <div class="pd-cover-rule"></div>
+        <div class="pd-cover-sub">${escapeHtml(subtitle)}</div>
+        <div class="pd-cover-years">${years.map(y=>`<span>${y}</span>`).join("")}</div>
+      </div>
+      <div class="pd-cover-bottom">
+        <div class="pd-cover-meta"><div><span>الجهة المُصدِرة</span><b>${escapeHtml(issuer)}</b></div>
+        ${version?`<div><span>رقم الإصدار</span><b>${escapeHtml(version)}</b></div>`:""}
+        ${dateTxt?`<div><span>تاريخ الإصدار</span><b>${dateTxt}</b></div>`:""}</div>
+      </div>
+    </section>`;
+  }
+
+  // التقديم
+  if(f.intro && (o.text.pdIntro||"").trim()){
+    h += `<section class="pd-page pd-intro"><h2 class="pd-h2">تقديم</h2><div class="pd-rule"></div>
+      <div class="pd-intro-text">${escapeHtml(o.text.pdIntro.trim()).replace(/\n/g,"<br>")}</div>
+      <div class="pd-intro-sign">${escapeHtml(issuer)}<br>${orgName}</div></section>`;
+  }
+
+  // الفهرس
+  if(f.toc){
+    h += `<section class="pd-page"><h2 class="pd-h2">الفهرس</h2><div class="pd-rule"></div><div class="pd-toc">`;
+    goalsUsed.forEach(g=>{
+      h += `<div class="pd-toc-goal"><a href="#${idp}-g${g.id}"><span class="pd-toc-num">${g.id}</span>${escapeHtml(g.name)}</a></div>`;
+      rows.filter(r=>r.prog.goalId===g.id).forEach(r=>{
+        h += `<div class="pd-toc-prog"><a href="#${idp}-p${r.prog.code}"><span class="pd-toc-code">${r.prog.code}</span>${escapeHtml(r.prog.name)}<span class="pd-toc-n">${r.projects.length>0 ? r.projects.length+" مشروع" : "—"}</span></a></div>`;
+      });
+    });
+    h += `</div></section>`;
+  }
+
+  // النظرة العامة
+  if(f.overview){
+    const byYear = years.map(y=> ({ y, n: rows.reduce((s,r)=> s+r.projects.filter(p=>String(p.year)===y).length, 0) }));
+    h += `<section class="pd-page"><h2 class="pd-h2">نظرة عامة</h2><div class="pd-rule"></div>
+      <div class="pd-stats">
+        <div class="pd-stat"><b>${goalsUsed.length}</b><span>هدف استراتيجي</span></div>
+        <div class="pd-stat"><b>${rows.length}</b><span>برنامج تنفيذي</span></div>
+        <div class="pd-stat"><b>${progsWithProjects}</b><span>برنامج لديه مشاريع</span></div>
+        <div class="pd-stat gold"><b>${totalProjects}</b><span>مشروع ${years.length===1?"للعام "+years[0]:"في الفترة المحددة"}</span></div>
+      </div>
+      <table class="pd-table pd-ov-table"><thead><tr><th style="width:6%">م</th><th>الهدف الاستراتيجي</th><th style="width:14%">البرامج التنفيذية</th>${byYear.map(b=>`<th style="width:11%">مشاريع ${b.y}</th>`).join("")}</tr></thead><tbody>
+      ${goalsUsed.map(g=>{
+        const gr = rows.filter(r=>r.prog.goalId===g.id);
+        return `<tr><td class="c">${g.id}</td><td>${escapeHtml(g.name)}</td><td class="c">${gr.length}</td>${years.map(y=>`<td class="c">${gr.reduce((s,r)=> s+r.projects.filter(p=>String(p.year)===y).length,0)}</td>`).join("")}</tr>`;
+      }).join("")}
+      <tr class="tot"><td></td><td>الإجمالي</td><td class="c">${rows.length}</td>${byYear.map(b=>`<td class="c">${b.n}</td>`).join("")}</tr>
+      </tbody></table>
+    </section>`;
+  }
+
+  // الأهداف والبرامج
+  const projCounter = { n:0 };
+  goalsUsed.forEach(g=>{
+    const gr = rows.filter(r=>r.prog.goalId===g.id);
+    if(f.goalDividers){
+      h += `<section class="pd-goal-page" id="${idp}-g${g.id}">
+        <div class="pd-goal-num">${g.id}</div>
+        <div class="pd-goal-label">الهدف الاستراتيجي</div>
+        <div class="pd-goal-name">${escapeHtml(g.name)}</div>
+        <div class="pd-goal-list">${gr.map(r=>`<div><span>${r.prog.code}</span>${escapeHtml(r.prog.name)}<em>${r.projects.length>0 ? r.projects.length+" مشروع" : "—"}</em></div>`).join("")}</div>
+      </section>`;
+    }
+    gr.forEach((r, gi)=>{
+      h += pdProgramHTML(r.prog, r.projects, g, f, years, idp, !f.goalDividers && gi===0, projCounter);
+    });
+  });
+
+  if(rows.length===0) h += `<section class="pd-page"><div class="pd-empty">لا توجد برامج مطابقة للاختيار الحالي.</div></section>`;
+  h += `</div>`;
+  return h;
+}
+
+function pdProgramHTML(prog, projects, goal, f, years, idp, showGoalTag, counter){
+  const card = ALL_PROGRAM_CARDS.find(c=>c.id===prog.code) || {};
+  const emp = f.showEmpty ? `<span class="pd-na">—</span>` : "";
+  const meta = [];
+  if(f.pg_exec && prog.govManager) meta.push(["المدير التنفيذي", escapeHtml(prog.govManager)]);
+  if(f.pg_central && prog.central && prog.central.name) meta.push(["المدير المركزي", escapeHtml(prog.central.name) + (prog.central.title ? ` <small>(${escapeHtml(prog.central.title)})</small>` : "")]);
+  if(f.pc_mgr && pdVal(card.programManager)) meta.push(["مدير البرنامج", pdVal(card.programManager)]);
+  if(f.pc_dates && (card.startDate || card.endDate)) meta.push(["مدة البرنامج", `${pdFmtDate(card.startDate)||"—"} ← ${pdFmtDate(card.endDate)||"—"}`]);
+  if(f.pc_cost && pdVal(card.totalCost)) meta.push(["التكلفة الإجمالية", pdVal(card.totalCost)]);
+
+  let h = `<section class="pd-prog${projects.length===0?" pd-prog-empty":""}" id="${idp}-p${prog.code}">
+    <div class="pd-prog-head"><div class="pd-prog-code">${prog.code}</div><div><div class="pd-prog-goal">${goal.id}. ${escapeHtml(goal.name)}</div><div class="pd-prog-name">${escapeHtml(prog.name)}</div></div></div>`;
+  if(meta.length) h += `<div class="pd-meta">${meta.map(m=>`<div><span>${m[0]}</span><b>${m[1]}</b></div>`).join("")}</div>`;
+
+  if(f.pc_desc){
+    const d = pdVal(card.description);
+    if(d || emp) h += `<div class="pd-block"><div class="pd-block-t">وصف البرنامج</div><div class="pd-block-b">${d||emp}</div></div>`;
+  }
+  const tg = (card.targets||[]).filter(x=>x && String(x).trim());
+  if(f.pc_targets && (tg.length || f.showEmpty)){
+    h += `<div class="pd-block"><div class="pd-block-t">مستهدفات البرنامج</div><ol class="pd-list">${tg.length ? tg.map(x=>`<li>${escapeHtml(String(x).trim())}</li>`).join("") : "<li>—</li>"}</ol></div>`;
+  }
+  const rel = (card.relatedProjects||[]).filter(x=>x && String(x).trim());
+  const ent = (card.executingEntities||[]).filter(x=>x && String(x).trim());
+  const cols = [];
+  if(f.pc_related && (rel.length||f.showEmpty)) cols.push(["المشاريع المرتبطة بالبرنامج", rel]);
+  if(f.pc_entities && (ent.length||f.showEmpty)) cols.push(["الجهات المنفذة", ent]);
+  if(cols.length) h += `<div class="pd-cols">${cols.map(c=>`<div class="pd-block"><div class="pd-block-t">${c[0]}</div><ul class="pd-list">${c[1].length ? c[1].map(x=>`<li>${escapeHtml(String(x).trim())}</li>`).join("") : "<li>—</li>"}</ul></div>`).join("")}</div>`;
+
+  // المشاريع
+  h += `<div class="pd-sub">مشاريع البرنامج ${years.length===1 ? "للعام "+years[0] : "(" + years.join("، ") + ")"}</div>`;
+  if(projects.length===0){
+    h += `<div class="pd-noproj">لا توجد مشاريع مسجَّلة لهذا البرنامج ${years.length===1 ? "في عام "+years[0] : "في الأعوام المحددة"} حاليًا. أُدرج البرنامج للعلم والاطلاع على وجوده ضمن الخطة.</div>`;
+  }else{
+    if(f.pr_table){
+      h += `<table class="pd-table pd-proj-table"><thead><tr><th style="width:5%">م</th><th>المشروع</th><th style="width:9%">السنة</th>${f.pr_status?'<th style="width:14%">الحالة</th>':""}${f.pr_progress?'<th style="width:11%">الإنجاز</th>':""}</tr></thead><tbody>
+        ${projects.map((p,i)=>{
+          const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id);
+          const st = pdProjectStatus(p, d);
+          return `<tr><td class="c">${i+1}</td><td>${escapeHtml(p.projectName||"")}</td><td class="c">${p.year||""}</td>${f.pr_status?`<td class="c"><span class="pd-chip ${st.cls}">${st.label}</span></td>`:""}${f.pr_progress?`<td class="c">${d?computeOverallPct(d):0}%</td>`:""}</tr>`;
+        }).join("")}</tbody></table>`;
+    }
+    if(f.pr_cards){
+      projects.forEach((p,i)=>{ h += pdProjectCardHTML(p, i+1, f); });
+    }
+  }
+  h += `</section>`;
+  return h;
+}
+
+function pdProjectCardHTML(p, idx, f){
+  const d = ALL_PROJECT_DETAILS.find(x=>x.id===p.id) || {};
+  const st = pdProjectStatus(p, ALL_PROJECT_DETAILS.find(x=>x.id===p.id));
+  const pct = computeOverallPct(d);
+  const hasSteps = f.st_on && Array.isArray(d.phases) && d.phases.some(ph=> (ph.steps||[]).some(s=>s.name && s.name.trim()));
+  const emp = f.showEmpty ? "—" : "";
+  const short = [];
+  const longs = [];
+  const add = (key, label, long)=>{
+    if(!f["f_"+key]) return;
+    const v = pdVal(d[key]);
+    if(!v && !f.showEmpty) return;
+    (long ? longs : short).push([label, v || emp]);
+  };
+  add("goalIndicator","الهدف / المؤشر", true);
+  add("description","وصف المشروع", true);
+  add("desiredOutcome","الهدف المنشود", true);
+  if(f.f_dates){
+    const dt = pdDetailDates(d);
+    if(dt.start || dt.end || f.showEmpty) short.push(["مدة المشروع", `${pdFmtDate(dt.start)||"—"} ← ${pdFmtDate(dt.end)||"—"}`]);
+  }
+  add("projectManager","مدير المشروع");
+  add("owningEntity","الجهة المالكة");
+  add("supportingEntities","الجهات المساندة");
+  add("sector","القطاع");
+  add("location","الموقع");
+  add("priority","الأولوية");
+  add("totalCost","التكلفة الإجمالية");
+  add("currentSpending","مستوى الصرف");
+  add("budgetType","نوع الميزانية");
+  add("teamMembers","فريق المشروع", true);
+
+  let h = `<div class="pd-pcard ${hasSteps?"has-steps":""}">
+    <div class="pd-pc-head"><span class="pd-pc-n">${idx}</span><span class="pd-pc-name">${escapeHtml(p.projectName||"")}</span>
+      <span class="pd-pc-tags"><span class="pd-yr">${p.year||""}</span>${f.pr_status?`<span class="pd-chip ${st.cls}">${st.label}</span>`:""}${f.pr_progress?`<span class="pd-pct">${pct}%</span>`:""}</span></div>`;
+  if(f.pr_progress) h += `<div class="pd-bar"><i style="width:${pct}%"></i></div>`;
+  const anyBody = short.length || longs.length;
+  if(!anyBody){
+    h += `<div class="pd-pc-note">الخطة التفصيلية للمشروع قيد الإعداد.</div>`;
+  }else{
+    // الحقول القصيرة في شبكة من عمودين
+    const pairs = [];
+    for(let i=0;i<short.length;i+=2) pairs.push(short.slice(i,i+2));
+    if(pairs.length) h += `<table class="pd-kv">${pairs.map(pr=>`<tr>${pr.map(x=>`<th>${x[0]}</th><td>${x[1]}</td>`).join("")}${pr.length===1?"<th></th><td></td>":""}</tr>`).join("")}</table>`;
+    longs.forEach(x=>{ h += `<div class="pd-long"><div class="pd-long-t">${x[0]}</div><div class="pd-long-b">${x[1]}</div></div>`; });
+  }
+  if(hasSteps) h += pdStepsHTML(d, f);
+  h += `</div>`;
+  return h;
+}
+
+function pdStepsHTML(d, f){
+  let h = `<div class="pd-steps">`;
+  d.phases.forEach(ph=>{
+    const steps = (ph.steps||[]).filter(s=> s.name && s.name.trim());
+    if(!steps.length) return;
+    h += `<div class="pd-phase">${escapeHtml(ph.name||"")}</div>
+    <table class="pd-table pd-steps-table"><thead><tr><th style="width:4%">م</th><th>الخطوة</th>${f.st_docs?"<th style=\"width:24%\">المستندات / المخرجات</th>":""}${f.st_dates?"<th style=\"width:10%\">البدء</th><th style=\"width:10%\">الانتهاء</th>":""}${f.st_dur?"<th style=\"width:8%\">المدة (أسبوع)</th>":""}${f.st_status?"<th style=\"width:10%\">الحالة</th>":""}</tr></thead><tbody>
+    ${steps.map((s,i)=>{
+      const cls = s.status==="مكتمل" ? "done" : (s.status==="قيد التنفيذ" ? "run" : "todo");
+      return `<tr><td class="c">${i+1}</td><td>${escapeHtml(s.name)}</td>${f.st_docs?`<td>${pdVal(s.docs)||"—"}</td>`:""}${f.st_dates?`<td class="c">${pdFmtDate(s.startDate)||"—"}</td><td class="c">${pdFmtDate(s.endDate)||"—"}</td>`:""}${f.st_dur?`<td class="c">${Number(s.durationWeeks)||"—"}</td>`:""}${f.st_status?`<td class="c"><span class="pd-chip ${cls}">${escapeHtml(s.status||"لم يبدأ")}</span></td>`:""}</tr>`;
+    }).join("")}</tbody></table>`;
+  });
+  return h + `</div>`;
+}
+
+/* ---------- العرض والطباعة ---------- */
+let pdRefreshTimer = null;
+function pdRefresh(){
+  clearTimeout(pdRefreshTimer);
+  pdRefreshTimer = setTimeout(()=>{
+    const o = pdReadOpts();
+    pdSave({ flags:o.flags, years:o.years, programs:o.programs, text:o.text });
+    document.getElementById("pdPreview").innerHTML = buildPlanDocHTML(o, "pv");
+    const warn = pdCollectWarnings(o);
+    document.getElementById("pdWarnings").innerHTML = warn;
+  }, 150);
+}
+function pdCollectWarnings(o){
+  const years = o.years;
+  if(!years.length) return `<div class="pd-warn">اختر سنة واحدة على الأقل.</div>`;
+  const progs = PROGRAMS.filter(p=> o.programs.includes(p.code));
+  const noCard = progs.filter(p=>{ const c = ALL_PROGRAM_CARDS.find(x=>x.id===p.code); return !c || computeProgramCardPct(c)<100; });
+  const projs = ALL_PROJECTS.filter(p=> o.programs.includes(p.programCode) && years.includes(String(p.year)) && (o.flags.includeClosed || !p.closed));
+  const incomplete = projs.filter(p=> computeProjectBasicInfoPct(ALL_PROJECT_DETAILS.find(d=>d.id===p.id))<100);
+  let h = "";
+  if(noCard.length) h += `<div class="pd-warn"><b>${noCard.length}</b> برنامج بطاقته غير مكتملة: ${noCard.slice(0,12).map(p=>p.code).join("، ")}${noCard.length>12?" …":""}</div>`;
+  if(incomplete.length) h += `<div class="pd-warn"><b>${incomplete.length}</b> مشروع من أصل ${projs.length} بياناته الأساسية غير مكتملة — ستظهر الحقول الناقصة فارغة أو محذوفة.</div>`;
+  return h || `<div class="pd-ok">جميع بطاقات البرامج وبيانات المشاريع المختارة مكتملة.</div>`;
+}
+function printPlanDoc(){
+  const o = pdReadOpts();
+  if(!o.years.length){ alert("اختر سنة واحدة على الأقل."); return; }
+  if(!o.programs.length){ alert("اختر برنامجًا واحدًا على الأقل."); return; }
+  const cont = document.getElementById("planDocPrintContainer");
+  cont.innerHTML = buildPlanDocHTML(o, "pr");
+  document.body.classList.add("printing-plandoc");
+  const ver = (o.text.pdVersion||"").trim();
+  const footL = `الخطة الخمسية الحادية عشرة 2026–2030${ver ? " — الإصدار " + ver : ""}`;
+  const tag = document.createElement("style");
+  tag.id = "tempLandscapePageStyle";
+  tag.textContent = `@media print{
+    @page{ size:A4 portrait; margin:16mm 14mm 17mm 14mm;
+      @bottom-center{ content: counter(page); font-family:'Cairo',sans-serif; font-size:9pt; color:#6B7688; }
+      @bottom-right{ content: "${footL.replace(/"/g,'')}"; font-family:'Cairo',sans-serif; font-size:8pt; color:#8A93A2; }
+      @bottom-left{ content: "قسم التخطيط والدراسات"; font-family:'Cairo',sans-serif; font-size:8pt; color:#8A93A2; }
+    }
+    @page cover{ margin:0; @bottom-center{content:none;} @bottom-right{content:none;} @bottom-left{content:none;} }
+    @page goalpage{ margin:0; @bottom-center{content:none;} @bottom-right{content:none;} @bottom-left{content:none;} }
+  }`;
+  document.head.appendChild(tag);
+  window.print();
+  setTimeout(()=>{
+    document.body.classList.remove("printing-plandoc");
+    const t = document.getElementById("tempLandscapePageStyle"); if(t) t.remove();
+    cont.innerHTML = "";
+  }, 800);
+  logActivity(ADMIN_NAME, "print_plan_doc", `${o.years.join("،")} — ${o.programs.length} برنامج`);
+}
+function openPlanDocScreen(){
+  showScreen("planDocScreen");
+  pdBuildControls();
+  pdRefresh();
+}
+document.getElementById("navPlanDocBtn").onclick = openPlanDocScreen;
+document.getElementById("pdPrintBtn").onclick = printPlanDoc;
+document.getElementById("pdSelAllProgs").onclick = ()=>{ PROGRAMS.forEach(p=>PD_SEL_PROGRAMS.add(p.code)); document.querySelectorAll("#planDocScreen [data-pdprog],#planDocScreen [data-pdgoal]").forEach(c=>c.checked=true); pdRefresh(); };
+document.getElementById("pdSelNoProgs").onclick = ()=>{ PD_SEL_PROGRAMS.clear(); document.querySelectorAll("#planDocScreen [data-pdprog],#planDocScreen [data-pdgoal]").forEach(c=>c.checked=false); pdRefresh(); };
+document.getElementById("pdAllYears").onclick = ()=>{ pdYearsAvailable().forEach(y=>PD_SEL_YEARS.add(y)); document.querySelectorAll("#pdYears input").forEach(c=>c.checked=true); pdRefresh(); };
 
 /* ---------------- Init ---------------- */
 wireDetailModalStaticEvents();
